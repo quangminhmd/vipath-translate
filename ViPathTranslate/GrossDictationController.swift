@@ -142,7 +142,7 @@ nonisolated final class DictationMicrophone: @unchecked Sendable {
     /// Tạm dừng ghi vào tệp (lúc trao đổi với KTV) — bản chép lại bằng Whisper sẽ không có đoạn này.
     func setRecording(_ on: Bool) { lock.withLock { recording = on } }
 
-    nonisolated(unsafe) static let recordFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16_000,
+    static let recordFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16_000,
                                             channels: 1, interleaved: false)!
 
     func start(format: AVAudioFormat, recordTo url: URL?, onBuffer: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws {

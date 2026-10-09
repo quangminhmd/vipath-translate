@@ -109,12 +109,12 @@ nonisolated enum GrossParser {
     static let timesWords: Set<String> = ["nhân", "x", "×", "by"]
     static let rangeWords: Set<String> = ["đến", "tới", "-", "–", "to"]
 
-    nonisolated(unsafe) private static let tokenRx = rx("[\\p{L}\\p{M}]+|[0-9]+(?:[.,][0-9]+)?|%|[^\\s\\p{L}\\p{M}0-9]", [])
-    nonisolated(unsafe) private static let digitTokRx = rx("^[0-9]+(?:[.,][0-9]+)?$", [])
-    nonisolated(unsafe) private static let hyphenUnitRx = rx("(xăng|xen|mi)-(ti|li)-(mét|lít)")
-    nonisolated(unsafe) private static let hyphenKgRx = rx("ki-lô-gam")
-    nonisolated(unsafe) private static let digitUnitRx = rx("([0-9])(?=(?:cm|mm|kg|ml|g)(?![\\p{L}\\p{N}]))", [])
-    nonisolated(unsafe) private static let digitXRx = rx("([0-9])\\s*[xX](?=\\s*[0-9])", [])
+    private static let tokenRx = rx("[\\p{L}\\p{M}]+|[0-9]+(?:[.,][0-9]+)?|%|[^\\s\\p{L}\\p{M}0-9]", [])
+    private static let digitTokRx = rx("^[0-9]+(?:[.,][0-9]+)?$", [])
+    private static let hyphenUnitRx = rx("(xăng|xen|mi)-(ti|li)-(mét|lít)")
+    private static let hyphenKgRx = rx("ki-lô-gam")
+    private static let digitUnitRx = rx("([0-9])(?=(?:cm|mm|kg|ml|g)(?![\\p{L}\\p{N}]))", [])
+    private static let digitXRx = rx("([0-9])\\s*[xX](?=\\s*[0-9])", [])
 
     static func isDigitTok(_ t: String) -> Bool {
         digitTokRx.firstMatch(in: t, range: NSRange(t.startIndex..., in: t)) != nil
@@ -324,8 +324,8 @@ nonisolated enum GrossParser {
         (cmd("(?:dừng|kết\\s+thúc)\\s+ghi(?:\\s+âm)?|stop\\s+dictation"), { _ in .stop }),
     ]
 
-    nonisolated(unsafe) private static let trailingPunctRx = rx("[\\s.,;:!?]+$", [])
-    nonisolated(unsafe) private static let leadingPunctRx = rx("^[\\s.,;:!?]+", [])
+    private static let trailingPunctRx = rx("[\\s.,;:!?]+$", [])
+    private static let leadingPunctRx = rx("^[\\s.,;:!?]+", [])
 
     /// Tách một câu đọc thành văn bản và lệnh.
     static func parse(_ input: String) -> [GrossOp] {
