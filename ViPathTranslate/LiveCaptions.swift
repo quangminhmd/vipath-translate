@@ -4,8 +4,18 @@ import Observation
 import Speech
 import UIKit
 
-/// Kiểu 2 — phụ đề trực tiếp: âm thanh → nhận dạng tiếng Anh trên máy → tách câu →
+/// Bộ nhận dạng dùng cho phụ đề: tiếng Anh (EnglishTranscriber) hoặc tiếng Việt (LiveDictationRecognizer).
+nonisolated protocol CaptionRecognizer: AnyObject, Sendable {
+    var analyzerFormat: AVAudioFormat? { get }
+    func feed(_ buffer: AVAudioPCMBuffer)
+    func finish() async
+}
+extension EnglishTranscriber: CaptionRecognizer {}
+extension LiveDictationRecognizer: CaptionRecognizer {}
+
+/// Kiểu 2 — phụ đề trực tiếp: âm thanh → nhận dạng trên máy (Anh hoặc Việt) → tách câu →
 /// khớp glossary → LLM dịch → phụ đề song ngữ. Mọi thứ chạy offline.
+/// `Caption.en` = câu nghe được (ngôn ngữ nguồn), `Caption.vi` = bản dịch (ngôn ngữ đích).
 @MainActor
 @Observable
 final class LiveCaptionsController {
@@ -67,6 +77,10 @@ final class LiveCaptionsController {
 
     // Trạng thái hiển thị
     var source: Source = .microphone
+    /// Chiều phụ đề: Anh → Việt (mặc định) hoặc Việt → Anh. Chỉ đổi được khi đang dừng.
+    var direction: TranslationDirection = TranslationDirection(rawValue: UserDefaults.standard.string(forKey: "captionsDirection") ?? "") ?? .enToVi {
+        didSet { UserDefaults.standard.set(direction.rawValue, forKey: "captionsDirection") }
+    }
     var isRunning = false
     var status = ""
     var volatileText = ""        // câu đang nói, chưa chốt (chữ xám)
@@ -88,7 +102,13 @@ final class LiveCaptionsController {
     var speakTranslations = false
 
     private let vm: TranslatorViewModel
-    private var transcriber: EnglishTranscriber?
+    private var transcriber: (any CaptionRecognizer)?
+    /// Chiều của phiên đang chạy (cố định từ lúc bấm Bắt đầu).
+    private var dir: TranslationDirection = .enToVi
+    /// Tiếng Việt: bộ nhận dạng giữ chữ ở dạng tạm đến khi dừng → tự chốt khi người nói ngừng.
+    private var volatileWords: [String] = []
+    private var committedWords = 0
+    private var lastVolatileChange = Date()
     private var audio: AudioSource?
     private var pendingText = ""                 // phần đã chốt nhưng chưa thành câu trọn
     private var lastFinalAt = Date()
@@ -113,7 +133,7 @@ final class LiveCaptionsController {
     private var volatileTask: Task<Void, Never>?
     /// Chế độ thực tế: "Nhanh nhất" chỉ khi Dịch nhanh sẵn sàng; không có mô hình → như Nhanh nhất.
     private var effectiveMode: Mode {
-        let fastOK = FastTranslator.shared.isActive(.enToVi)
+        let fastOK = FastTranslator.shared.isActive(dir)
         if vm.loadedModel == nil { return .fastest }
         if mode == .fastest && !fastOK { return .balanced }
         return mode
@@ -148,7 +168,7 @@ final class LiveCaptionsController {
             + SavedItem.autoTitle(first.en)
         // giữ tiêu đề người dùng đã đổi
         let keptTitle = SavedStore.shared.items.first { $0.id == id }?.title ?? title
-        let item = SavedItem(id: id, kind: .captions, createdAt: created, title: keptTitle, direction: .enToVi,
+        let item = SavedItem(id: id, kind: .captions, createdAt: created, title: keptTitle, direction: dir,
                              engine: vm.loadedModel?.shortName ?? "—",
                              source: done.map(\.en).joined(separator: "\n"),
                              translation: done.map(\.vi).joined(separator: "\n"),
@@ -171,7 +191,9 @@ final class LiveCaptionsController {
         starting = true
         defer { starting = false }
         errorText = nil
-        guard vm.loadedModel != nil || FastTranslator.shared.isActive(.enToVi) else {
+        let dir = direction
+        self.dir = dir
+        guard vm.loadedModel != nil || FastTranslator.shared.isActive(dir) else {
             errorText = "Hãy nạp mô hình dịch (tab Dịch) hoặc bật Dịch nhanh trong Tuỳ chọn."
             return
         }
@@ -191,17 +213,33 @@ final class LiveCaptionsController {
         pendingText = ""
         volatileText = ""
         volatileFast = ""
+        volatileWords = []
+        committedWords = 0
         queue = []
         status = "Đang chuẩn bị…"
         UIApplication.shared.isIdleTimerDisabled = true   // không khoá màn hình khi đang nghe
 
-        let transcriber = EnglishTranscriber()
-        self.transcriber = transcriber
+        let onStatus: @Sendable (String) -> Void = { s in Task { @MainActor in self.status = s } }
+        let onResult: @Sendable (String, Bool) -> Void = { text, isFinal in
+            Task { @MainActor in self.handle(text: text, isFinal: isFinal) }
+        }
+        let transcriber: any CaptionRecognizer
         do {
-            try await transcriber.start(
-                status: { s in Task { @MainActor in self.status = s } },
-                onResult: { text, isFinal in Task { @MainActor in self.handle(text: text, isFinal: isFinal) } }
-            )
+            if dir == .enToVi {
+                let t = EnglishTranscriber()
+                transcriber = t
+                self.transcriber = t
+                try await t.start(status: onStatus, onResult: onResult)
+            } else {
+                let t = LiveDictationRecognizer()
+                transcriber = t
+                self.transcriber = t
+                // thuật ngữ tiếng Việt trong glossary giúp bộ nhận dạng viết đúng
+                let vocab = Array(Set(vm.glossary.allEntries.map(\.vi)
+                    .filter { !$0.isEmpty && $0.split(separator: " ").count <= 4 }).sorted().prefix(100))
+                try await t.start(language: .vi, vocabulary: vocab, status: onStatus, onResult: onResult)
+                status = "Đang nghe · \(t.engineLabel)"
+            }
             // người dùng bấm Dừng trong lúc đang tải mô hình nhận dạng → không bật micro nữa
             guard !stopping else {
                 await teardown()
@@ -295,22 +333,59 @@ final class LiveCaptionsController {
 
     private func handle(text: String, isFinal: Bool) {
         guard isRunning else { return }   // kết quả trễ của phiên đã dừng
+        if dir == .viToEn { handleVietnamese(text: text, isFinal: isFinal); return }
         if isFinal {
             volatileText = ""
             volatileFast = ""
-            let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !t.isEmpty else { return }
-            pendingText = pendingText.isEmpty ? t : pendingText + " " + t
-            lastFinalAt = Date()
-            let (complete, rest) = SentenceSplitter.completeSentences(in: pendingText)
-            for s in complete { enqueue(s) }   // tránh đổi hàm @MainActor sang kiểu closure không cô lập
-            pendingText = rest.trimmingCharacters(in: .whitespaces)
-            splitLongClause()
-            if pendingText.split(separator: " ").count >= maxWordsPerCaption { flushPending() }
+            acceptFinal(text)
         } else {
             volatileText = text
             translateVolatile()
         }
+    }
+
+    private func acceptFinal(_ text: String) {
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return }
+        pendingText = pendingText.isEmpty ? t : pendingText + " " + t
+        lastFinalAt = Date()
+        let (complete, rest) = SentenceSplitter.completeSentences(in: pendingText)
+        for s in complete { enqueue(s) }   // tránh đổi hàm @MainActor sang kiểu closure không cô lập
+        pendingText = rest.trimmingCharacters(in: .whitespaces)
+        splitLongClause()
+        if pendingText.split(separator: " ").count >= maxWordsPerCaption { flushPending() }
+    }
+
+    /// Tiếng Việt: chữ tạm cứ dài ra cho đến khi dừng hẳn. Phần đã chốt được đếm bằng số từ;
+    /// khung trên chỉ hiện phần chưa chốt. Kết quả cuối (khi dừng) chỉ lấy phần sau số từ đã chốt.
+    private func handleVietnamese(text: String, isFinal: Bool) {
+        let all = text.split(whereSeparator: \.isWhitespace).map(String.init)
+        if isFinal {
+            let rest = all.dropFirst(min(committedWords, all.count)).joined(separator: " ")
+            committedWords = 0
+            volatileWords = []
+            volatileText = ""
+            volatileFast = ""
+            acceptFinal(rest)
+            return
+        }
+        if all != volatileWords { lastVolatileChange = Date() }
+        volatileWords = all
+        if all.count < committedWords { committedWords = all.count }   // bộ nhận dạng sửa lại ngắn hơn
+        let live = all.dropFirst(committedWords)
+        volatileText = live.joined(separator: " ")
+        if live.count >= maxWordsPerCaption { commitVolatile() } else { translateVolatile() }
+    }
+
+    /// Chốt phần chữ tạm chưa chốt thành câu phụ đề (khi người nói ngừng hoặc câu quá dài).
+    private func commitVolatile() {
+        guard volatileWords.count > committedWords else { return }
+        let rest = volatileWords.dropFirst(committedWords).joined(separator: " ")
+        committedWords = volatileWords.count
+        volatileText = ""
+        volatileFast = ""
+        acceptFinal(rest)
+        flushPending()
     }
 
     /// Câu dài chưa có dấu chấm: cắt tại dấu phẩy / chấm phẩy cuối cùng (vế trái ≥ 8 từ).
@@ -336,14 +411,14 @@ final class LiveCaptionsController {
 
     /// Dịch nhanh câu đang nói (chưa chốt): một lượt chạy tại một thời điểm, luôn lấy bản mới nhất.
     private func translateVolatile() {
-        guard volatileTask == nil, FastTranslator.shared.isActive(.enToVi) else { return }
+        guard volatileTask == nil, FastTranslator.shared.isActive(dir) else { return }
         volatileTask = Task {
             var last = ""
             while !Task.isCancelled {
                 let src = (pendingText.isEmpty ? "" : pendingText + " ") + volatileText
                 guard !volatileText.isEmpty, src != last else { break }
                 last = src
-                if let t = try? await FastTranslator.shared.translate(src, .enToVi), !volatileText.isEmpty {
+                if let t = try? await FastTranslator.shared.translate(src, dir), !volatileText.isEmpty {
                     volatileFast = t
                 }
                 try? await Task.sleep(for: .milliseconds(120))
@@ -367,13 +442,13 @@ final class LiveCaptionsController {
         captions.append(c)
         let useModel = effectiveMode != .fastest
         if useModel { queue.append(c.id) }
-        if FastTranslator.shared.isActive(.enToVi) { fastTranslate(c.id, sentence, final: !useModel) }
+        if FastTranslator.shared.isActive(dir) { fastTranslate(c.id, sentence, final: !useModel) }
     }
 
     /// Giữ bản ⚡ làm bản cuối (kèm kiểm tra glossary) cho câu không kịp qua mô hình.
     private func finalizeWithFast(_ id: Int) {
         guard let j = index(of: id), !captions[j].fast.isEmpty, captions[j].state != .done else { return }
-        let hits = vm.glossary.matcher.hits(in: captions[j].en)
+        let hits = vm.glossary.hits(in: captions[j].en, direction: dir)
         captions[j].hits = hits
         captions[j].vi = captions[j].fast
         captions[j].missing = GlossaryQA.missing(hits: hits, source: captions[j].en, output: captions[j].fast)
@@ -382,18 +457,18 @@ final class LiveCaptionsController {
         let d = Date().timeIntervalSince(captions[j].heardAt)
         captions[j].delay = d
         lastDelay = d
-        if speakTranslations { SpeechOutput.shared.speak(captions[j].fast, enqueue: true) }
+        if speakTranslations { speak(captions[j].fast, enqueue: true) }
     }
 
     /// Dịch nhanh bằng Apple Translation (chạy song song với mô hình, không dùng GPU).
     /// `final`: không có mô hình offline → bản nhanh là bản cuối.
     private func fastTranslate(_ id: Int, _ text: String, final: Bool) {
         Task {
-            guard let t = try? await FastTranslator.shared.translate(text, .enToVi),
+            guard let t = try? await FastTranslator.shared.translate(text, dir),
                   let j = index(of: id), captions[j].state != .done else { return }
             captions[j].fast = t
             if final {
-                let hits = vm.glossary.matcher.hits(in: captions[j].en)
+                let hits = vm.glossary.hits(in: captions[j].en, direction: dir)
                 captions[j].hits = hits
                 captions[j].vi = t
                 captions[j].missing = GlossaryQA.missing(hits: hits, source: captions[j].en, output: t)
@@ -402,15 +477,24 @@ final class LiveCaptionsController {
                 let d = Date().timeIntervalSince(captions[j].heardAt)
                 captions[j].delay = d
                 lastDelay = d
-                if speakTranslations { SpeechOutput.shared.speak(t, enqueue: true) }
+                if speakTranslations { speak(t, enqueue: true) }
             }
         }
+    }
+
+    private func speak(_ text: String, enqueue: Bool) {
+        if dir == .enToVi { SpeechOutput.shared.speak(text, enqueue: enqueue) }
+        else { SpeechOutput.shared.speakEnglish(text, enqueue: enqueue) }
     }
 
     private func startFlusher() {
         flusher = Task {
             while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(400))
+                try? await Task.sleep(for: .milliseconds(300))
+                // Tiếng Việt: chữ tạm đứng yên ≥ 0,9 s (người nói ngừng) → chốt thành câu
+                if dir == .viToEn, !volatileText.isEmpty, Date().timeIntervalSince(lastVolatileChange) > silenceFlush {
+                    commitVolatile()
+                }
                 if !pendingText.isEmpty, Date().timeIntervalSince(lastFinalAt) > silenceFlush {
                     flushPending()
                 }
@@ -470,17 +554,18 @@ final class LiveCaptionsController {
 
                 let id = queue.removeFirst()
                 guard let i = index(of: id) else { continue }
-                captions[i].hits = vm.glossary.matcher.hits(in: captions[i].en)
+                captions[i].hits = vm.glossary.hits(in: captions[i].en, direction: dir)
                 captions[i].state = .translating
                 let en = captions[i].en
                 let hits = captions[i].hits
                 // style guide làm prompt dài thêm → chỉ dùng ở chế độ Chính xác
                 let style = effectiveMode == .accurate ? vm.glossary.styleGuide : ""
                 currentID = id
+                let d = dir
 
                 let job = Task {
                     do {
-                        let stats = try await engine.translate(en, hits: hits, styleGuide: style) { t in
+                        let stats = try await engine.translate(en, hits: hits, styleGuide: style, direction: d) { t in
                             Task { @MainActor in
                                 if let j = self.index(of: id), self.captions[j].state == .translating {
                                     self.captions[j].vi = t
@@ -491,7 +576,7 @@ final class LiveCaptionsController {
                         captions[j].vi = stats.text
                         captions[j].missing = GlossaryQA.missing(hits: hits, source: en, output: stats.text)
                         captions[j].state = .done
-                        if speakTranslations { SpeechOutput.shared.speak(stats.text, enqueue: true) }
+                        if speakTranslations { speak(stats.text, enqueue: true) }
                         let d = Date().timeIntervalSince(captions[j].heardAt)
                         captions[j].delay = d
                         lastDelay = d

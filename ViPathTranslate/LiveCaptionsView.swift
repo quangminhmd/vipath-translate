@@ -48,6 +48,10 @@ struct LiveCaptionsView: View {
             TranslationModelStatusRow(compact: true)
                 .padding(10)
                 .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 10))
+            Picker("Chiều dịch", selection: $cc.direction) {
+                ForEach(TranslationDirection.allCases) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.segmented)
             Picker("Nguồn âm thanh", selection: $cc.source) {
                 ForEach(LiveCaptionsController.Source.allCases) { Text($0.title).tag($0) }
             }
@@ -59,10 +63,10 @@ struct LiveCaptionsView: View {
             .pickerStyle(.segmented)
             Text(cc.mode.detail).font(.caption).foregroundStyle(.secondary)
             Button { showSettings = true } label: {
-                FastStatusLabel(direction: .enToVi)
+                FastStatusLabel(direction: cc.direction)
             }
             .buttonStyle(.plain)
-            if vm.loadedModel == nil && FastTranslator.shared.isActive(.enToVi) {
+            if vm.loadedModel == nil && FastTranslator.shared.isActive(cc.direction) {
                 Label("Chưa nạp mô hình — chỉ dùng Dịch nhanh (Apple). Nạp Qwen ở tab Dịch để có bản chuẩn theo glossary.",
                       systemImage: "bolt.fill")
                     .font(.caption).foregroundStyle(.orange)
@@ -89,13 +93,13 @@ struct LiveCaptionsView: View {
         GeometryReader { geo in
             VStack(spacing: 0) {
                 if cc.showEnglish && !cc.bigMode {
-                    paneHeader("Nghe được · tiếng Anh", systemImage: "ear", live: cc.isRunning && !cc.volatileText.isEmpty)
+                    paneHeader("Nghe được · \(cc.direction.sourceName.lowercased())", systemImage: "ear", live: cc.isRunning && !cc.volatileText.isEmpty)
                     transcriptPane
                         .frame(height: max(80, geo.size.height * cc.topRatio - 28))
                     Divider()
                 }
                 if !cc.bigMode {
-                    paneHeader("Phụ đề · tiếng Việt", systemImage: "captions.bubble",
+                    paneHeader("Phụ đề · \(cc.direction.targetName.lowercased())", systemImage: "captions.bubble",
                                live: cc.captions.contains { $0.state == .translating } || !cc.volatileFast.isEmpty)
                 }
                 Group {
@@ -109,7 +113,7 @@ struct LiveCaptionsView: View {
                 ContentUnavailableView(cc.isRunning ? "Đang nghe…" : "Chưa có phụ đề",
                                        systemImage: cc.isRunning ? "waveform" : "captions.bubble",
                                        description: Text(cc.isRunning ? cc.status
-                                                         : "Khung trên: lời nói tiếng Anh nhận dạng được. Khung dưới: phụ đề tiếng Việt dịch ngay trên máy, không cần mạng."))
+                                                         : "Khung trên: lời nói \(cc.direction.sourceName.lowercased()) nhận dạng được. Khung dưới: phụ đề \(cc.direction.targetName.lowercased()) dịch ngay trên máy, không cần mạng."))
                     .background(Color(.systemBackground))
             }
         }
@@ -223,7 +227,7 @@ struct LiveCaptionsView: View {
             if cc.isRunning {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(cc.status).font(.caption).foregroundStyle(.secondary).lineLimit(2)
-                    Text(vm.loadedModel.map { "Dịch: \($0.shortName) · \(cc.mode.title)" } ?? "Dịch: chỉ Dịch nhanh (Apple)")
+                    Text("\(cc.direction.label) · " + (vm.loadedModel.map { "\($0.shortName) · \(cc.mode.title)" } ?? "chỉ Dịch nhanh (Apple)"))
                         .font(.caption2).foregroundStyle(.tertiary)
                 }
                 Spacer()
@@ -239,7 +243,7 @@ struct LiveCaptionsView: View {
                     Label("Bắt đầu nghe", systemImage: "mic.fill")
                 }
                 .buttonStyle(.glassProminent)
-                .disabled(vm.loadedModel == nil && !FastTranslator.shared.isActive(.enToVi))
+                .disabled(vm.loadedModel == nil && !FastTranslator.shared.isActive(cc.direction))
             }
         }
         .controlSize(.large)
@@ -261,15 +265,15 @@ struct LiveCaptionsView: View {
                     .pickerStyle(.segmented)
                 } header: { Text("Tốc độ phụ đề") } footer: { Text(cc.mode.detail) }
                 Section {
-                    FastTranslateSettings(directions: [.enToVi])
+                    FastTranslateSettings(directions: [cc.direction])
                 } footer: {
                     Text("Dịch nhanh còn cho phép hiện phụ đề ngay trong lúc người nói chưa dứt câu.")
                 }
                 Toggle("Phụ đề lớn (chiếu màn hình, xem từ xa)", isOn: $cc.bigMode)
-                Toggle("Hiện khung tiếng Anh (trên)", isOn: $cc.showEnglish)
+                Toggle("Hiện khung lời nói (trên)", isOn: $cc.showEnglish)
                 if cc.showEnglish {
                     VStack(alignment: .leading) {
-                        Text("Chiều cao khung tiếng Anh")
+                        Text("Chiều cao khung lời nói")
                         Slider(value: $cc.topRatio, in: 0.2...0.6, step: 0.02)
                     }
                 }
@@ -278,7 +282,7 @@ struct LiveCaptionsView: View {
                     Toggle("Đọc bản dịch (thông dịch bằng giọng)", isOn: $cc.speakTranslations)
                         .onChange(of: cc.speakTranslations) { _, on in if !on { SpeechOutput.shared.stop() } }
                 } footer: {
-                    Text(SpeechOutput.shared.hasVietnameseVoice
+                    Text(cc.direction == .viToEn || SpeechOutput.shared.hasVietnameseVoice
                          ? "Đeo tai nghe để giọng đọc không lọt lại vào micro hoặc bản ghi âm thanh app."
                          : "Chưa có giọng tiếng Việt: Cài đặt → Trợ năng → Nội dung được đọc → Giọng nói → Tiếng Việt, tải giọng chất lượng cao.")
                 }

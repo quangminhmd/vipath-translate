@@ -67,6 +67,22 @@ final class SpeechOutput: NSObject, AVSpeechSynthesizerDelegate {
         }
     }
 
+    /// Đọc tiếng Anh (phụ đề chiều Việt → Anh) bằng giọng iOS tốt nhất có trên máy.
+    func speakEnglish(_ text: String, enqueue: Bool = false) {
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !t.isEmpty else { return }
+        Task { await VieNeuPlayer.preparePlaybackSession() }
+        if !enqueue { stop() }
+        let u = AVSpeechUtterance(string: t)
+        u.voice = AVSpeechSynthesisVoice.speechVoices()
+            .filter { $0.language.hasPrefix("en") }
+            .max { ($0.quality.rawValue, $0.language == "en-US" ? 1 : 0) < ($1.quality.rawValue, $1.language == "en-US" ? 1 : 0) }
+            ?? AVSpeechSynthesisVoice(language: "en-US")
+        u.rate = rate
+        u.postUtteranceDelay = 0.15
+        synth.speak(u)
+    }
+
     func stop() {
         synth.stopSpeaking(at: .immediate)
         vieneuQueue.removeAll()
