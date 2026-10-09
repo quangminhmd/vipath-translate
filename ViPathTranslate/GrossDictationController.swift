@@ -147,7 +147,9 @@ nonisolated final class DictationMicrophone: @unchecked Sendable {
     static let recordFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16_000,
                                             channels: 1, interleaved: false)!
 
-    func start(format: AVAudioFormat, recordTo url: URL?, onBuffer: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws {
+    func start(format: AVAudioFormat, recordTo url: URL?,
+               onLevel: (@Sendable (_ rms: Float, _ seconds: Double) -> Void)? = nil,
+               onBuffer: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws {
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.playAndRecord, mode: .default,
                                 options: [.allowBluetoothHFP, .defaultToSpeaker, .mixWithOthers])
@@ -163,6 +165,12 @@ nonisolated final class DictationMicrophone: @unchecked Sendable {
         let toRecognizer = BufferConverter(target: format)
         let toFile = BufferConverter(target: Self.recordFormat)
         input.installTap(onBus: 0, bufferSize: 4096, format: inputFormat) { @Sendable [weak self] buffer, _ in
+            if let onLevel, let ch = buffer.floatChannelData?[0], buffer.frameLength > 0 {
+                let n = Int(buffer.frameLength)
+                var e: Float = 0
+                for i in 0 ..< n { e += ch[i] * ch[i] }
+                onLevel((e / Float(n)).squareRoot(), Double(n) / buffer.format.sampleRate)
+            }
             if let out = toRecognizer.convert(buffer) { onBuffer(out) }
             guard let self else { return }
             self.lock.withLock {
@@ -219,6 +227,30 @@ enum GrossEngine: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// Báo mỗi lần người đọc ngừng nói (≥ 0,7 s sau ≥ 0,3 s lời nói) — để chốt chữ ngay, không đợi bấm Dừng.
+nonisolated final class SilenceGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var speech: Double = 0
+    private var silence: Double = 0
+    private var fired = false
+    private let onPause: @Sendable () -> Void
+
+    init(onPause: @escaping @Sendable () -> Void) { self.onPause = onPause }
+
+    func level(_ rms: Float, seconds: Double) {
+        let fire: Bool = lock.withLock {
+            if rms > 0.012 {
+                speech += seconds; silence = 0; fired = false
+                return false
+            }
+            silence += seconds
+            if !fired, speech > 0.3, silence > 0.7 { fired = true; speech = 0; return true }
+            return false
+        }
+        if fire { onPause() }
+    }
+}
+
 /// Cắt âm thanh micro (16 kHz mono) thành từng đoạn tại chỗ ngừng nói để đưa vào Whisper.
 nonisolated final class VoiceChunker: @unchecked Sendable {
     private let lock = NSLock()
@@ -263,7 +295,14 @@ nonisolated final class VoiceChunker: @unchecked Sendable {
 
     func setActive(_ on: Bool) { lock.withLock { active = on; if !on { reset() } } }
 
-    private func reset() { buf = []; silence = 0; speech = 0 }
+    /// Đoạn đang nói dở (để nhận dạng xem trước) kèm số thế hệ — đoạn bị gửi đi / bỏ thì thế hệ tăng.
+    func snapshot() -> (samples: [Float], generation: Int)? {
+        lock.withLock { speech > sampleRate * 2 / 5 ? (buf, generation) : nil }
+    }
+    var currentGeneration: Int { lock.withLock { generation } }
+    private var generation = 0
+
+    private func reset() { buf = []; silence = 0; speech = 0; generation += 1 }
 }
 
 // MARK: - Điều khiển tab Đại thể
@@ -317,6 +356,12 @@ final class GrossDictationController {
     private var chunkQueue: [[Float]] = []
     private var chunkTask: Task<Void, Never>?
     private var liveWhisper: WhisperModelChoice?
+    /// Whisper: nhận dạng xem trước đoạn đang nói dở
+    private var partialLoop: Task<Void, Never>?
+    private var partialTask: Task<Void, Never>?
+    /// Apple: số từ của câu "đang nghe" đã được chốt sớm tại chỗ ngừng nói
+    private var committedWords = 0
+    private var gate: SilenceGate?
 
     var templateID: String = UserDefaults.standard.string(forKey: "grossTemplate") ?? "biopsy" {
         didSet { UserDefaults.standard.set(templateID, forKey: "grossTemplate") }
@@ -394,7 +439,10 @@ final class GrossDictationController {
             guard let format = rec.analyzerFormat else { throw LiveDictationRecognizer.RecognizerError.noFormat }
             let url = keepAudio ? newAudioURL() : nil
             let m = DictationMicrophone()
-            try m.start(format: format, recordTo: url) { buffer in rec.feed(buffer) }
+            committedWords = 0
+            let g = SilenceGate { Task { @MainActor in self.commitVolatile() } }
+            gate = g
+            try m.start(format: format, recordTo: url, onLevel: { rms, sec in g.level(rms, seconds: sec) }) { buffer in rec.feed(buffer) }
             mic = m
             if let url { appendAudio(url) }
             status = "Đang nghe · \(targetLabel)"
@@ -424,6 +472,7 @@ final class GrossDictationController {
             mic = m
             if let url { appendAudio(url) }
             status = "Đang nghe (\(model.title)) · \(targetLabel)"
+            startPartialLoop(ch)
         } catch {
             errorText = "Không nạp được \(model.title): \(error.localizedDescription)"
             await teardown()
@@ -438,11 +487,40 @@ final class GrossDictationController {
         startChunkWorker()
     }
 
+    private var whisperPrompt: String {
+        (GrossParser.vocabulary.prefix(30) + corrections.map(\.to)).joined(separator: ", ")
+    }
+
+    /// Mỗi ~1 s: nếu Whisper rảnh, nhận dạng đoạn đang nói dở → hiện xem trước (chữ nghiêng) ngay khi đang nói.
+    private func startPartialLoop(_ ch: VoiceChunker) {
+        partialLoop = Task {
+            while !Task.isCancelled, isRunning {
+                try? await Task.sleep(for: .milliseconds(900))
+                guard isRunning, chunkTask == nil, partialTask == nil,
+                      let snap = ch.snapshot(), liveWhisper != nil else { continue }
+                let lang = language
+                let prompt = whisperPrompt
+                let job = Task {
+                    let t = (try? await WhisperRunner.shared.transcribe(samples: snap.samples, language: lang,
+                                                                        promptText: prompt)) ?? ""
+                    // đoạn đã được gửi đi nhận dạng chính thức trong lúc chờ → bỏ bản xem trước cũ
+                    if !t.isEmpty, ch.currentGeneration == snap.generation, chunkTask == nil {
+                        handle(t, isFinal: false)
+                    }
+                }
+                partialTask = job
+                await job.value
+                partialTask = nil
+            }
+        }
+    }
+
     private func startChunkWorker() {
         guard chunkTask == nil, liveWhisper != nil, !chunkQueue.isEmpty else { return }
         let lang = language
-        let prompt = (GrossParser.vocabulary.prefix(30) + corrections.map(\.to)).joined(separator: ", ")
+        let prompt = whisperPrompt
         chunkTask = Task {
+            await partialTask?.value          // không chạy song song hai lượt Whisper
             while !chunkQueue.isEmpty {
                 let s = chunkQueue.removeFirst()
                 whisperBusy = true
@@ -488,6 +566,11 @@ final class GrossDictationController {
         await recognizer?.finish()
         recognizer = nil
         chunker = nil
+        gate = nil
+        committedWords = 0
+        partialLoop?.cancel()
+        partialLoop = nil
+        partialTask = nil
         chunkTask?.cancel()
         chunkTask = nil
         chunkQueue = []
@@ -512,16 +595,46 @@ final class GrossDictationController {
         guard isFinal else {
             // Bộ nhận dạng tiếng Việt có thể giữ cả tràng nói ở dạng "đang nghe" rất lâu →
             // áp lệnh lên bản xem trước để cát xét / xuống dòng hiện ngay, không đợi chốt câu.
-            if !isPaused {
-                volatileText = text
-                preview = GrossParser.preview(doc, volatile: text, corrections: corrections,
+            // Phần đã chốt sớm (tại chỗ ngừng nói) không áp lại.
+            volatileText = text
+            let rest = Self.words(text, after: committedWords)
+            if !isPaused, !rest.isEmpty {
+                preview = GrossParser.preview(doc, volatile: rest, corrections: corrections,
                                               cassetteReturn: cassetteReturn, inlineMarker: inlineMarker)
-                status = "Đang nghe · \(targetLabel)"
+            } else {
+                preview = nil
             }
+            updateStatus()
             return
         }
         volatileText = ""
+        let rest = Self.words(text, after: committedWords)
+        committedWords = 0
         lastHeard = text
+        guard !rest.isEmpty else { updateStatus(); return }
+        apply(rest)
+    }
+
+    /// Phần từ thứ `n` trở đi của một câu.
+    private static func words(_ text: String, after n: Int) -> String {
+        guard n > 0 else { return text }
+        return text.split(whereSeparator: \.isWhitespace).dropFirst(n).joined(separator: " ")
+    }
+
+    /// Người đọc vừa ngừng nói → chốt luôn phần "đang nghe" vào văn bản (chữ thường, sửa được),
+    /// không đợi bộ nhận dạng chốt câu hay bấm Dừng.
+    private func commitVolatile() {
+        guard isRunning, !volatileText.isEmpty else { return }
+        let all = volatileText.split(whereSeparator: \.isWhitespace)
+        guard all.count > committedWords else { return }
+        let rest = all.dropFirst(committedWords).joined(separator: " ")
+        committedWords = all.count
+        preview = nil
+        lastHeard = rest
+        apply(rest)
+    }
+
+    private func apply(_ text: String) {
         let signals = GrossParser.apply(GrossParser.parse(text), to: &doc, paused: isPaused, corrections: corrections,
                                         cassetteReturn: cassetteReturn, inlineMarker: inlineMarker)
         for s in signals {
