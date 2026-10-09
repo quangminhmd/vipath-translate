@@ -1,0 +1,571 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B10000000000000000000001 /* MLXLLM in Frameworks */ = {isa = PBXBuildFile; productRef = B30000000000000000000001 /* MLXLLM */; };
+		B10000000000000000000002 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = B30000000000000000000002 /* MLXLMCommon */; };
+		B10000000000000000000003 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = B30000000000000000000003 /* MLX */; };
+		B10000000000000000000004 /* ViPathBroadcast.appex in Frameworks */ = {isa = PBXBuildFile; fileRef = B20000000000000000000002 /* ViPathBroadcast.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D20000000000000000000001 /* Frameworks/AudioCpp.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = D10000000000000000000001 /* Frameworks/AudioCpp.xcframework */; };
+		D20000000000000000000002 /* Frameworks/SeaG2P.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = D10000000000000000000002 /* Frameworks/SeaG2P.xcframework */; };
+		D20000000000000000000003 /* Frameworks/AudioCpp.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = D10000000000000000000001 /* Frameworks/AudioCpp.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		FD1AC3283078386F00BC5DF1 /* ViPathBroadcast.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B20000000000000000000002 /* ViPathBroadcast.appex */; };
+		FD1AC3293078386F00BC5DF1 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = B30000000000000000000004 /* WhisperKit */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B40000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B90000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B80000000000000000000002;
+			remoteInfo = ViPathBroadcast;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B50000000000000000000001 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				FD1AC3283078386F00BC5DF1 /* ViPathBroadcast.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D30000000000000000000001 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				D20000000000000000000003 /* Frameworks/AudioCpp.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		B20000000000000000000001 /* ViPathTranslate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ViPathTranslate.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B20000000000000000000002 /* ViPathBroadcast.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ViPathBroadcast.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B20000000000000000000003 /* ViPathTranslate.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ViPathTranslate.entitlements; sourceTree = "<group>"; };
+		B20000000000000000000004 /* ViPathBroadcast.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ViPathBroadcast.entitlements; sourceTree = "<group>"; };
+		B20000000000000000000005 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		D10000000000000000000001 /* Frameworks/AudioCpp.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Frameworks/AudioCpp.xcframework; sourceTree = "<group>"; };
+		D10000000000000000000002 /* Frameworks/SeaG2P.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Frameworks/SeaG2P.xcframework; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		B60000000000000000000001 /* Exceptions for "ViPathBroadcast" folder in "ViPathBroadcast" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = B80000000000000000000002 /* ViPathBroadcast */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		B70000000000000000000001 /* ViPathTranslate */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ViPathTranslate;
+			sourceTree = "<group>";
+		};
+		B70000000000000000000002 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		B70000000000000000000003 /* ViPathBroadcast */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B60000000000000000000001 /* Exceptions for "ViPathBroadcast" folder in "ViPathBroadcast" target */,
+			);
+			path = ViPathBroadcast;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BA0000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FD1AC3293078386F00BC5DF1 /* WhisperKit in Frameworks */,
+				D20000000000000000000001 /* Frameworks/AudioCpp.xcframework in Frameworks */,
+				D20000000000000000000002 /* Frameworks/SeaG2P.xcframework in Frameworks */,
+				B10000000000000000000001 /* MLXLLM in Frameworks */,
+				B10000000000000000000002 /* MLXLMCommon in Frameworks */,
+				B10000000000000000000003 /* MLX in Frameworks */,
+				B10000000000000000000004 /* ViPathBroadcast.appex in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BA0000000000000000000002 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		BB0000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				D40000000000000000000001 /* Frameworks */,
+				B20000000000000000000005 /* README.md */,
+				B70000000000000000000001 /* ViPathTranslate */,
+				B70000000000000000000002 /* Shared */,
+				B70000000000000000000003 /* ViPathBroadcast */,
+				BB0000000000000000000003 /* Config */,
+				BB0000000000000000000002 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		BB0000000000000000000002 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B20000000000000000000001 /* ViPathTranslate.app */,
+				B20000000000000000000002 /* ViPathBroadcast.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		BB0000000000000000000003 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				B20000000000000000000003 /* ViPathTranslate.entitlements */,
+				B20000000000000000000004 /* ViPathBroadcast.entitlements */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		D40000000000000000000001 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D10000000000000000000001 /* Frameworks/AudioCpp.xcframework */,
+				D10000000000000000000002 /* Frameworks/SeaG2P.xcframework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B80000000000000000000001 /* ViPathTranslate */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BC0000000000000000000002 /* Build configuration list for PBXNativeTarget "ViPathTranslate" */;
+			buildPhases = (
+				BD0000000000000000000001 /* Sources */,
+				BA0000000000000000000001 /* Frameworks */,
+				BE0000000000000000000001 /* Resources */,
+				B50000000000000000000001 /* Embed Foundation Extensions */,
+				D30000000000000000000001 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BF0000000000000000000001 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				B70000000000000000000001 /* ViPathTranslate */,
+				B70000000000000000000002 /* Shared */,
+			);
+			name = ViPathTranslate;
+			packageProductDependencies = (
+				B30000000000000000000001 /* MLXLLM */,
+				B30000000000000000000002 /* MLXLMCommon */,
+				B30000000000000000000003 /* MLX */,
+				B30000000000000000000004 /* WhisperKit */,
+			);
+			productName = ViPathTranslate;
+			productReference = B20000000000000000000001 /* ViPathTranslate.app */;
+			productType = "com.apple.product-type.application";
+		};
+		B80000000000000000000002 /* ViPathBroadcast */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BC0000000000000000000003 /* Build configuration list for PBXNativeTarget "ViPathBroadcast" */;
+			buildPhases = (
+				BD0000000000000000000002 /* Sources */,
+				BA0000000000000000000002 /* Frameworks */,
+				BE0000000000000000000002 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B70000000000000000000002 /* Shared */,
+				B70000000000000000000003 /* ViPathBroadcast */,
+			);
+			name = ViPathBroadcast;
+			packageProductDependencies = (
+			);
+			productName = ViPathBroadcast;
+			productReference = B20000000000000000000002 /* ViPathBroadcast.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		B90000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					B80000000000000000000001 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					B80000000000000000000002 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+				};
+			};
+			buildConfigurationList = BC0000000000000000000001 /* Build configuration list for PBXProject "ViPathTranslate" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				vi,
+				Base,
+			);
+			mainGroup = BB0000000000000000000001;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				B00000000000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */,
+				B00000000000000000000002 /* XCRemoteSwiftPackageReference "mlx-swift" */,
+				B00000000000000000000003 /* XCRemoteSwiftPackageReference "argmax-oss-swift" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = BB0000000000000000000002 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B80000000000000000000001 /* ViPathTranslate */,
+				B80000000000000000000002 /* ViPathBroadcast */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BE0000000000000000000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BE0000000000000000000002 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BD0000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BD0000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BF0000000000000000000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B80000000000000000000002 /* ViPathBroadcast */;
+			targetProxy = B40000000000000000000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		C10000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		C10000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		C10000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/ViPathTranslate.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7BJXZV3PG8;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = ViPath;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				INFOPLIST_KEY_NSCameraUsageDescription = "ViPath dùng máy ảnh để quét tài liệu, slide và trích chữ ngay trên máy.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "ViPath dùng micro để nhận dạng lời giảng tiếng Anh và dịch phụ đề ngay trên máy.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nhận dạng giọng nói chạy trên máy, không gửi dữ liệu ra ngoài.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = vn.quangminh.vipath.translate;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		C10000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/ViPathTranslate.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7BJXZV3PG8;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = ViPath;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				INFOPLIST_KEY_NSCameraUsageDescription = "ViPath dùng máy ảnh để quét tài liệu, slide và trích chữ ngay trên máy.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "ViPath dùng micro để nhận dạng lời giảng tiếng Anh và dịch phụ đề ngay trên máy.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nhận dạng giọng nói chạy trên máy, không gửi dữ liệu ra ngoài.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = vn.quangminh.vipath.translate;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		C10000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/ViPathBroadcast.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7BJXZV3PG8;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ViPathBroadcast/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ViPath;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = vn.quangminh.vipath.translate.broadcast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		C10000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Config/ViPathBroadcast.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7BJXZV3PG8;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ViPathBroadcast/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ViPath;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = vn.quangminh.vipath.translate.broadcast;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		BC0000000000000000000001 /* Build configuration list for PBXProject "ViPathTranslate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C10000000000000000000001 /* Debug */,
+				C10000000000000000000002 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BC0000000000000000000002 /* Build configuration list for PBXNativeTarget "ViPathTranslate" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C10000000000000000000003 /* Debug */,
+				C10000000000000000000004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BC0000000000000000000003 /* Build configuration list for PBXNativeTarget "ViPathBroadcast" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C10000000000000000000005 /* Debug */,
+				C10000000000000000000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		B00000000000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift-lm";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 2.31.3;
+			};
+		};
+		B00000000000000000000002 /* XCRemoteSwiftPackageReference "mlx-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ml-explore/mlx-swift";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 0.31.3;
+			};
+		};
+		B00000000000000000000003 /* XCRemoteSwiftPackageReference "argmax-oss-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/argmaxinc/argmax-oss-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B30000000000000000000001 /* MLXLLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B00000000000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLLM;
+		};
+		B30000000000000000000002 /* MLXLMCommon */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B00000000000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift-lm" */;
+			productName = MLXLMCommon;
+		};
+		B30000000000000000000003 /* MLX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B00000000000000000000002 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+			productName = MLX;
+		};
+		B30000000000000000000004 /* WhisperKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B00000000000000000000003 /* XCRemoteSwiftPackageReference "argmax-oss-swift" */;
+			productName = WhisperKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = B90000000000000000000001 /* Project object */;
+}

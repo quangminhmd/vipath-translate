@@ -1,0 +1,9 @@
+# Tệp lớn / sinh ra khi build — không đưa lên GitHub
+build/
+Frameworks/*.xcframework
+ViPathTranslate/Resources/VieNeu/
+DerivedData/
+*.xcresult
+xcuserdata/
+.DS_Store
+*.tgz

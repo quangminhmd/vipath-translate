@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ViPath Web</title>
+<meta name="description" content="Dịch y học và giải phẫu bệnh Anh ↔ Việt chạy trong trình duyệt: glossary Vitranslate, phụ đề, chép lời, chữ trong ảnh, Claude tuỳ chọn.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=JetBrains+Mono:wght@400;600&display=swap&subset=vietnamese">
+<link rel="icon" href="{{ICON}}">
+<style>
+{{STYLE}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="rail" aria-label="Chức năng">
+    <a class="brand" href="#translate" aria-label="ViPath"><img src="{{ICON}}" alt="" width="44" height="44" style="border-radius:11px"><b>ViPath</b></a>
+    <button class="tab" data-tab="translate" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9M8.5 3v2M6 5c.5 3 2.5 5.5 5 7M11 5c-.8 3.5-3.5 6.5-7 8"/><path d="M13 20l4-9 4 9M14.5 17h5"/></svg>Dịch</button>
+    <button class="tab" data-tab="captions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 11h4M13 11h4M7 15h7"/></svg>Phụ đề</button>
+    <button class="tab" data-tab="transcribe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 12v0M7 9v6M10 6v12M13 9v6M16 7v10M19 11v2"/></svg>Chép lời</button>
+    <button class="tab" data-tab="image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M8 10h8M8 14h5"/></svg>Ảnh</button>
+    <button class="tab" data-tab="glossary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg>Thuật ngữ<span class="badge" id="badge-terms" hidden>0</span></button>
+    <button class="tab" data-tab="saved"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13l2.5-7h11L20 13v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M4 13h5l1 2h4l1-2h5"/></svg>Đã lưu</button>
+    <div class="spacer"></div>
+    <button class="tab" data-open="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Cài đặt</button>
+  </nav>
+
+  <div class="main">
+    <header class="topbar">
+      <h1 id="view-title">Dịch</h1>
+      <div class="grow"></div>
+      <button class="chip" id="chip-model" title="Mô hình dịch offline"><span class="dot"></span><span id="chip-model-text">Chưa nạp mô hình</span></button>
+      <button class="chip cloud" id="chip-claude" title="Kết nối / ngắt kết nối Claude"><span class="dot"></span><span id="chip-claude-text">Claude: tắt</span></button>
+    </header>
+
+    <!-- ===================== DỊCH ===================== -->
+    <section class="view" id="view-translate">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-head">
+            <div class="seg" id="dir-mode" role="group" aria-label="Chiều dịch">
+              <button data-v="auto" aria-pressed="true">Tự động</button>
+              <button data-v="enToVi" aria-pressed="false">Anh → Việt</button>
+              <button data-v="viToEn" aria-pressed="false">Việt → Anh</button>
+            </div>
+            <button class="btn ghost" id="btn-swap" title="Đảo chiều">⇄</button>
+            <div class="grow"></div>
+            <span class="label-slide" id="dir-label">EN → VI</span>
+          </div>
+          <textarea id="input" placeholder="Nhập hoặc dán văn bản tiếng Anh hoặc tiếng Việt: đại thể, vi thể, kết luận, bài báo, slide…"></textarea>
+          <div class="row">
+            <label class="check"><input type="checkbox" id="live-typing"> Dịch khi gõ</label>
+            <div class="grow" style="flex:1"></div>
+            <button class="btn ghost" id="btn-paste">Dán</button>
+            <button class="btn ghost" id="btn-to-image">Từ ảnh</button>
+            <button class="btn ghost" id="btn-clear">Xoá</button>
+          </div>
+          <div class="small" id="hits-line"></div>
+          <div class="row">
+            <button class="btn primary big" id="btn-translate" style="flex:1">Dịch</button>
+            <button class="btn big" id="btn-stop" hidden>Dừng</button>
+          </div>
+          <div class="stack" id="claude-row" hidden>
+            <button class="btn hema" id="btn-claude">Hiệu đính bằng Claude</button>
+            <div class="tiny muted">Họ tên, PID, mã bệnh phẩm, ngày sinh… được che trước khi gửi; bạn xem và xác nhận.</div>
+          </div>
+          <div class="note warn" id="translate-error" hidden></div>
+        </div>
+
+        <div class="stack" style="gap:16px">
+          <div class="card" id="out-card" hidden>
+            <div class="card-head">
+              <h2 id="out-title">Bản dịch · offline</h2>
+              <div class="grow"></div>
+              <button class="btn ghost" id="btn-speak">Đọc</button>
+              <button class="btn ghost" id="btn-copy-out">Chép</button>
+              <button class="btn ghost" id="btn-save-out">Lưu</button>
+            </div>
+            <div class="stack" id="segments"></div>
+            <div class="miss" id="miss-line"></div>
+            <div class="stats" id="stats-line"></div>
+            <div class="tiny muted">Bản dịch máy, cần bác sĩ duyệt trước khi dùng trong hồ sơ bệnh án.</div>
+          </div>
+          <div class="card" id="claude-card" hidden>
+            <div class="card-head">
+              <h2>Claude</h2><span class="label-slide" id="claude-model-label"></span>
+              <div class="grow"></div>
+              <button class="btn ghost" id="btn-copy-claude">Chép</button>
+              <button class="btn ghost" id="btn-save-claude">Lưu</button>
+            </div>
+            <div class="out" id="claude-out"></div>
+            <div class="miss" id="claude-lost"></div>
+            <div class="stats" id="claude-info"></div>
+            <button class="btn" id="btn-review-terms" hidden>Duyệt thuật ngữ Claude đề xuất</button>
+          </div>
+          <div class="card" id="empty-out">
+            <div class="card-head"><h2>Cách dùng</h2></div>
+            <ol class="small muted" style="margin:0;padding-left:18px;display:grid;gap:4px">
+              <li>Mở <b>Cài đặt</b> và nạp mô hình dịch (lần đầu tải 1,3–4 GB, sau đó chạy offline).</li>
+              <li>Dán văn bản; app tự nhận chiều Anh ↔ Việt và chèn thuật ngữ từ glossary Vitranslate.</li>
+              <li>Tuỳ chọn: bật Claude (dán API key của bạn) để hiệu đính câu phức, thuật ngữ hiếm.</li>
+            </ol>
+            <div class="note small" id="sample-note">Ví dụ: <span class="mono">Immunohistochemistry shows diffuse large B-cell lymphoma; Ki-67 is about 80%.</span>
+              <button class="btn ghost small" id="btn-sample">Dùng ví dụ</button></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== PHỤ ĐỀ ===================== -->
+    <section class="view" id="view-captions" hidden>
+      <div class="card">
+        <div class="row">
+          <div class="stack" style="gap:4px;min-width:200px;flex:1">
+            <span class="tiny muted">Nguồn âm thanh</span>
+            <div class="seg" id="cap-source"><button data-v="mic" aria-pressed="true">Micro</button><button data-v="tab" aria-pressed="false">Âm thanh tab / Zoom</button></div>
+          </div>
+          <div class="stack" style="gap:4px;min-width:200px;flex:1">
+            <span class="tiny muted">Bộ nhận dạng tiếng Anh</span>
+            <div class="seg" id="cap-asr"><button data-v="web" aria-pressed="true">Trình duyệt</button><button data-v="whisper" aria-pressed="false">Whisper (offline)</button></div>
+          </div>
+          <label class="check"><input type="checkbox" id="cap-fast" checked> ⚡ Dịch nhanh</label>
+          <label class="check"><input type="checkbox" id="cap-speak"> Đọc bản dịch</label>
+        </div>
+        <div class="tiny muted" id="cap-hint"></div>
+        <div class="row">
+          <button class="btn primary big" id="cap-start">Bắt đầu nghe</button>
+          <button class="btn big" id="cap-stop" hidden>Dừng</button>
+          <div style="flex:1"></div>
+          <span class="stats" id="cap-status"></span>
+          <button class="btn ghost" id="cap-copy">Chép</button>
+          <button class="btn ghost" id="cap-save">Lưu</button>
+          <button class="btn ghost" id="cap-clear">Xoá</button>
+        </div>
+      </div>
+      <div class="captions">
+        <div class="pane"><div class="pane-head"><span class="live" id="cap-live-en" hidden></span>Nghe được · tiếng Anh</div><div class="pane-body" id="cap-en"></div></div>
+        <div class="pane"><div class="pane-head"><span class="live" id="cap-live-vi" hidden></span>Phụ đề · tiếng Việt</div><div class="pane-body" id="cap-vi" style="font-size:19px"></div></div>
+      </div>
+    </section>
+
+    <!-- ===================== CHÉP LỜI ===================== -->
+    <section class="view" id="view-transcribe" hidden>
+      <div class="card">
+        <div class="row">
+          <div class="stack" style="gap:4px">
+            <span class="tiny muted">Ngôn ngữ nói</span>
+            <div class="seg" id="tr-lang"><button data-v="en" aria-pressed="true">Tiếng Anh</button><button data-v="vi" aria-pressed="false">Tiếng Việt</button></div>
+          </div>
+          <div class="stack" style="gap:4px;flex:1;min-width:220px">
+            <span class="tiny muted">Mô hình Whisper</span>
+            <select id="tr-model"></select>
+          </div>
+        </div>
+        <label class="drop" id="tr-drop" for="tr-file">
+          <b>Chọn tệp ghi âm hoặc video</b>
+          <span class="small">m4a, mp3, wav, mp4, mov… hoặc kéo thả vào đây</span>
+          <input type="file" id="tr-file" accept="audio/*,video/*" hidden>
+        </label>
+        <div class="stack" id="tr-progress" hidden>
+          <div class="row"><span class="small" id="tr-status"></span><div style="flex:1"></div><span class="stats" id="tr-pct"></span><button class="btn ghost" id="tr-cancel">Huỷ</button></div>
+          <progress id="tr-bar" max="1" value="0"></progress>
+        </div>
+        <div class="note warn" id="tr-error" hidden></div>
+      </div>
+      <div class="card" id="tr-result" hidden>
+        <div class="card-head">
+          <h2>Bản ghi lời</h2><span class="label-slide" id="tr-summary"></span>
+          <div class="grow"></div>
+          <div class="seg" id="tr-display"><button data-v="source" aria-pressed="true">Gốc</button><button data-v="translation" aria-pressed="false">Bản dịch</button><button data-v="bilingual" aria-pressed="false">Song ngữ</button></div>
+        </div>
+        <div class="row">
+          <button class="btn" id="tr-fast">⚡ Dịch nhanh</button>
+          <button class="btn primary" id="tr-translate">Dịch chuẩn (glossary)</button>
+          <button class="btn" id="tr-stop-translate" hidden>Dừng dịch</button>
+          <div style="flex:1"></div>
+          <select id="tr-copy" style="width:auto"><option value="">Chép…</option><option value="source">Văn bản gốc</option><option value="translation">Bản dịch</option><option value="bilingual">Song ngữ</option><option value="source-t">Gốc + mốc giờ</option><option value="translation-t">Bản dịch + mốc giờ</option></select>
+          <select id="tr-export" style="width:auto"><option value="">Xuất tệp…</option><option value="srt:source">SRT · gốc</option><option value="srt:translation">SRT · bản dịch</option><option value="srt:bilingual">SRT · song ngữ</option><option value="vtt:translation">VTT · bản dịch</option><option value="txt:bilingual">TXT · song ngữ</option></select>
+          <button class="btn ghost" id="tr-save">Lưu</button>
+        </div>
+        <div class="tl" id="tr-list"></div>
+        <div class="player" id="tr-player"></div>
+      </div>
+    </section>
+
+    <!-- ===================== ẢNH ===================== -->
+    <section class="view" id="view-image" hidden>
+      <div class="card">
+        <div class="row">
+          <div class="stack" style="gap:4px">
+            <span class="tiny muted">Ngôn ngữ chữ</span>
+            <div class="seg" id="ocr-lang"><button data-v="vie+eng" aria-pressed="true">Việt + Anh</button><button data-v="vie" aria-pressed="false">Tiếng Việt</button><button data-v="eng" aria-pressed="false">Tiếng Anh</button></div>
+          </div>
+          <label class="check"><input type="checkbox" id="ocr-join" checked> Nối dòng bị ngắt giữa câu</label>
+        </div>
+        <label class="drop" id="ocr-drop" for="ocr-file">
+          <b>Chọn ảnh hoặc PDF</b>
+          <span class="small">Chụp bằng máy ảnh (điện thoại), chọn nhiều ảnh, kéo thả, hoặc dán ảnh (⌘V / Ctrl+V)</span>
+          <input type="file" id="ocr-file" accept="image/*,application/pdf" multiple hidden>
+        </label>
+        <div class="thumbs" id="ocr-thumbs"></div>
+        <div class="small muted" id="ocr-status"></div>
+      </div>
+      <div class="card" id="ocr-result" hidden>
+        <div class="card-head"><h2>Văn bản trích được</h2><div class="grow"></div><span class="stats" id="ocr-count"></span></div>
+        <textarea id="ocr-text" style="min-height:240px"></textarea>
+        <div class="row">
+          <button class="btn" id="ocr-copy">Chép</button>
+          <button class="btn primary" data-ocr-dir="auto">Dịch (tự nhận chiều)</button>
+          <button class="btn" data-ocr-dir="enToVi">Anh → Việt</button>
+          <button class="btn" data-ocr-dir="viToEn">Việt → Anh</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== THUẬT NGỮ ===================== -->
+    <section class="view" id="view-glossary" hidden>
+      <div class="card" id="review-card" hidden>
+        <div class="card-head"><h2>Claude đề xuất · chờ duyệt</h2><div class="grow"></div><span class="label-slide" id="learned-count"></span></div>
+        <div class="stack" id="review-list"></div>
+        <div class="tiny muted">Thuật ngữ đã duyệt được thêm vào glossary của bạn, thay mục gốc nếu trùng, và mô hình offline dùng ngay từ lần dịch sau.</div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Thêm thuật ngữ của bạn</h2></div>
+        <div class="grid-2" style="gap:8px">
+          <input type="text" id="add-en" placeholder="Tiếng Anh (nhiều biến thể cách nhau bởi “ / ”)">
+          <input type="text" id="add-vi" placeholder="Tiếng Việt">
+        </div>
+        <div class="row"><input type="text" id="add-note" placeholder="Ghi chú (tuỳ chọn)" style="flex:1"><button class="btn primary" id="btn-add-term">Thêm</button></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2 id="gl-title">Glossary</h2><div class="grow"></div><input type="search" id="gl-search" placeholder="Tìm tiếng Anh hoặc tiếng Việt" style="max-width:320px"></div>
+        <div class="table-wrap"><table><thead><tr><th>Tiếng Anh</th><th>Tiếng Việt</th><th>Ghi chú</th><th></th></tr></thead><tbody id="gl-body"></tbody></table></div>
+      </div>
+    </section>
+
+    <!-- ===================== ĐÃ LƯU ===================== -->
+    <section class="view" id="view-saved" hidden>
+      <div class="card">
+        <div class="row"><input type="search" id="sv-search" placeholder="Tìm trong bản lưu" style="flex:1;min-width:200px">
+          <div class="seg" id="sv-filter"><button data-v="all" aria-pressed="true">Tất cả</button><button data-v="text" aria-pressed="false">Văn bản</button><button data-v="timed" aria-pressed="false">Phụ đề / chép lời</button></div></div>
+        <div class="list" id="sv-list"></div>
+        <div class="note" id="sv-empty" hidden>Chưa lưu gì. Bấm Lưu ở tab Dịch, Phụ đề hoặc Chép lời. Bản lưu nằm trong trình duyệt này (IndexedDB), không gửi đi đâu.</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+<script type="application/json" id="glossary-data">{{GLOSSARY}}</script>
+<script type="module">
+{{LOGIC}}
+{{APP}}
+</script>
+</body>
+</html>

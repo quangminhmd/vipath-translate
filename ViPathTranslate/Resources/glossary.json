@@ -1,0 +1,5636 @@
+{
+ "source": "github.com/cloud1710/Vitranslate",
+ "domains": [
+  "pathology"
+ ],
+ "profiles": {
+  "pathology": {
+   "Giọng văn": "Học thuật y khoa (giọng giáo trình / bài giảng chuyên ngành). Chủ động, trực tiếp, chính xác; không diễn giải đơn giản hóa. Kèm EN trong ngoặc cho khái niệm quan trọng ở lần đầu (concordance, reproducibility, surrogate marker...). marker = dấu ấn, alteration = biến đổi, progression = tiến triển.",
+   "Giữ nguyên tiếng Anh": "References/Bibliography; tên người/trường/bệnh viện; tên gen/marker/kháng thể (BRAF VE1, CD20, ER/PR/HER2); mã staging/TNM (pT1aN1b); tên phân loại WHO khi chưa có bản Việt chuẩn (kèm EN lần đầu).",
+   "Ghi chú": "Case vignette dùng \"bệnh nhân nữ/nam\" (không \"phụ nữ/đàn ông\"); \"phụ nữ\" chỉ giữ ở ngữ cảnh dịch tễ/dân số. histologic = \"mô bệnh học\" (không \"mô học\"). myxoid = niêm, fibro = sợi, sclerosing = xơ hóa; nhưng thực thể myxoma vẫn là \"u nhầy\". Xem thêm mục \"Giọng văn\" trong glossary."
+  }
+ },
+ "rules": [
+  {
+   "section": "Giọng văn (Tone)",
+   "text": "Basic science / academic pathology: giọng văn giáo trình y khoa, bài giảng chuyên ngành."
+  },
+  {
+   "section": "Giọng văn (Tone)",
+   "text": "Dùng thuật ngữ chuyên sâu chính xác, không diễn giải đơn giản hóa."
+  },
+  {
+   "section": "Giọng văn (Tone)",
+   "text": "Ưu tiên cách nói chủ động, trực tiếp: \"Mất 1p là chỉ điểm...\" thay vì \"Mất 1p có thể được coi là dấu ấn...\""
+  },
+  {
+   "section": "Giọng văn (Tone)",
+   "text": "Dùng \"dấu ấn\" cho marker, \"biến đổi\" cho alteration, \"tiến triển\" cho progression."
+  },
+  {
+   "section": "Giọng văn (Tone)",
+   "text": "Kèm thuật ngữ tiếng Anh trong ngoặc ở các khái niệm quan trọng: (concordance), (reproducibility), (surrogate marker), (cost-effective)..."
+  },
+  {
+   "section": "Giọng văn (Tone)",
+   "text": "advanced stage = giai đoạn tiến xa."
+  },
+  {
+   "section": "Quy tắc chung",
+   "text": "Thuật ngữ có bản dịch chuẩn trong giáo trình Việt Nam → dùng tiếng Việt, ghi gốc ở lần đầu."
+  },
+  {
+   "section": "Quy tắc chung",
+   "text": "Thuật ngữ chưa có bản dịch phổ biến hoặc dịch ra mơ hồ → giữ nguyên tiếng Anh."
+  },
+  {
+   "section": "Quy tắc chung",
+   "text": "Tên phương pháp, tên gen, tên protein, tên kháng thể → giữ nguyên tiếng Anh."
+  },
+  {
+   "section": "Học hàm, học vị",
+   "text": "Ví dụ: \"Dr King Tan\" → \"BS. King Tan\""
+  },
+  {
+   "section": "Học hàm, học vị",
+   "text": "Ví dụ: \"Thiyaphat Laohawetwanit, MD\" → \"BS. Thiyaphat Laohawetwanit\""
+  },
+  {
+   "section": "Học hàm, học vị",
+   "text": "Ví dụ: \"Prof. John Smith, M.D., Ph.D.\" → \"GS. TS. BS. John Smith\""
+  },
+  {
+   "section": "Học hàm, học vị",
+   "text": "Ví dụ: \"A/Prof Alex Tan, MD, PhD\" → \"PGS. TS. BS. Alex Tan\""
+  },
+  {
+   "section": "Ngày tháng",
+   "text": "Dịch tên tháng tiếng Anh sang tiếng Việt: January → tháng 1, February → tháng 2, ..."
+  },
+  {
+   "section": "Ngày tháng",
+   "text": "Giữ nguyên số ngày và năm."
+  },
+  {
+   "section": "Ngày tháng",
+   "text": "Ví dụ: \"14 SEP 1990\" → \"14 tháng 9 năm 1990\", \"January to May, 1997\" → \"tháng 1 đến tháng 5, 1997\""
+  },
+  {
+   "section": "Ngày tháng",
+   "text": "Áp dụng trong phần nội dung chính. KHÔNG áp dụng trong References/Bibliography/Lectures."
+  },
+  {
+   "section": "Tên cơ sở",
+   "text": "\"University of X\" / \"X University\" → \"Đại học X\""
+  },
+  {
+   "section": "Tên cơ sở",
+   "text": "\"Medical Center\" → \"Trung tâm Y khoa\" (KHÔNG dùng \"Trung tâm Y tế\")"
+  },
+  {
+   "section": "Tên cơ sở",
+   "text": "\"Hospital\" → \"Bệnh viện\""
+  },
+  {
+   "section": "Tên cơ sở",
+   "text": "Áp dụng trong phần nội dung chính. KHÔNG áp dụng trong References/Bibliography/Fellows/Lectures."
+  },
+  {
+   "section": "Tên cơ sở có chỉ hướng",
+   "text": "East/West/South/North → miền Đông/Tây/Nam/Bắc (KHÔNG dùng \"phía\")"
+  },
+  {
+   "section": "Tên cơ sở có chỉ hướng",
+   "text": "Ví dụ: National Cancer Center Hospital East → Bệnh viện Ung thư Quốc gia miền Đông"
+  },
+  {
+   "section": "Quy tắc dịch myxoid / fibro / sclerosing (user chốt 2026-08-01)",
+   "text": "myxoid = niêm (mô tả, VD myxoid liposarcoma = sarcôm mỡ dạng niêm)"
+  },
+  {
+   "section": "Quy tắc dịch myxoid / fibro / sclerosing (user chốt 2026-08-01)",
+   "text": "fibro- = sợi (VD fibromyxoid = sợi niêm)"
+  },
+  {
+   "section": "Quy tắc dịch myxoid / fibro / sclerosing (user chốt 2026-08-01)",
+   "text": "sclerosing = xơ hóa (KHÔNG dùng \"xơ\" cho myxoid)"
+  },
+  {
+   "section": "Quy tắc dịch myxoid / fibro / sclerosing (user chốt 2026-08-01)",
+   "text": "LƯU Ý: myxoma (thực thể) = \"u nhầy\" (cardiac myxoma = u nhầy tim, journal chốt) — KHÁC \"myxoid\" (mô tả) = niêm."
+  }
+ ],
+ "entries": [
+  {
+   "en": "histopathology",
+   "vi": "mô bệnh học",
+   "note": "",
+   "terms": [
+    "histopathology"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 0
+  },
+  {
+   "en": "laboratory medicine",
+   "vi": "xét nghiệm y học",
+   "note": "KHÔNG dịch \"y học xét nghiệm\"",
+   "terms": [
+    "laboratory medicine"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 1
+  },
+  {
+   "en": "histologic classification",
+   "vi": "phân loại mô bệnh học",
+   "note": "KHÔNG dịch \"phân loại mô học\"",
+   "terms": [
+    "histologic classification"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 2
+  },
+  {
+   "en": "histologic grading",
+   "vi": "phân độ mô bệnh học",
+   "note": "",
+   "terms": [
+    "histologic grading"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 3
+  },
+  {
+   "en": "histologic features",
+   "vi": "đặc điểm mô bệnh học",
+   "note": "",
+   "terms": [
+    "histologic features"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 4
+  },
+  {
+   "en": "histologic patterns",
+   "vi": "kiểu hình mô bệnh học",
+   "note": "",
+   "terms": [
+    "histologic patterns"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 5
+  },
+  {
+   "en": "anaplasia / anaplastic",
+   "vi": "thoái sản",
+   "note": "KHÔNG dịch \"bất sản\" hay \"nghịch sản\"",
+   "terms": [
+    "anaplasia",
+    "anaplastic"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 6
+  },
+  {
+   "en": "aplasia / aplastic",
+   "vi": "bất sản",
+   "note": "aplasia ≠ anaplasia",
+   "terms": [
+    "aplasia",
+    "aplastic"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 7
+  },
+  {
+   "en": "biopsy",
+   "vi": "sinh thiết",
+   "note": "",
+   "terms": [
+    "biopsy"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 8
+  },
+  {
+   "en": "surgical pathology",
+   "vi": "giải phẫu bệnh",
+   "note": "KHÔNG dịch \"giải phẫu bệnh ngoại khoa\"",
+   "terms": [
+    "surgical pathology"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 9
+  },
+  {
+   "en": "anatomic pathology",
+   "vi": "giải phẫu bệnh",
+   "note": "surgical pathology = anatomic pathology = giải phẫu bệnh",
+   "terms": [
+    "anatomic pathology"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 10
+  },
+  {
+   "en": "breast pathology",
+   "vi": "giải phẫu bệnh tuyến vú",
+   "note": "",
+   "terms": [
+    "breast pathology"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 11
+  },
+  {
+   "en": "digital pathology",
+   "vi": "giải phẫu bệnh kỹ thuật số",
+   "note": "",
+   "terms": [
+    "digital pathology"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 12
+  },
+  {
+   "en": "neuropathology",
+   "vi": "giải phẫu bệnh thần kinh",
+   "note": "KHÔNG dùng \"thần kinh bệnh học\"",
+   "terms": [
+    "neuropathology"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 13
+  },
+  {
+   "en": "immunohistochemistry (IHC)",
+   "vi": "hóa mô miễn dịch",
+   "note": "",
+   "terms": [
+    "immunohistochemistry",
+    "IHC"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 14
+  },
+  {
+   "en": "meningioma",
+   "vi": "u màng não",
+   "note": "",
+   "terms": [
+    "meningioma"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 15
+  },
+  {
+   "en": "atypical meningioma",
+   "vi": "u màng não không điển hình",
+   "note": "",
+   "terms": [
+    "atypical meningioma"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 16
+  },
+  {
+   "en": "anaplastic meningioma",
+   "vi": "u màng não thoái sản",
+   "note": "",
+   "terms": [
+    "anaplastic meningioma"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 17
+  },
+  {
+   "en": "sarcoma",
+   "vi": "sarcôm / ung thư mô liên kết",
+   "note": "",
+   "terms": [
+    "sarcoma"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 18
+  },
+  {
+   "en": "osteosarcoma",
+   "vi": "sarcôm xương",
+   "note": "",
+   "terms": [
+    "osteosarcoma"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 19
+  },
+  {
+   "en": "chondrosarcoma",
+   "vi": "sarcôm sụn",
+   "note": "",
+   "terms": [
+    "chondrosarcoma"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 20
+  },
+  {
+   "en": "leiomyosarcoma",
+   "vi": "sarcôm cơ trơn",
+   "note": "",
+   "terms": [
+    "leiomyosarcoma"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 21
+  },
+  {
+   "en": "rhabdomyosarcoma",
+   "vi": "sarcôm cơ vân",
+   "note": "",
+   "terms": [
+    "rhabdomyosarcoma"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 22
+  },
+  {
+   "en": "liposarcoma",
+   "vi": "sarcôm mỡ",
+   "note": "",
+   "terms": [
+    "liposarcoma"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 23
+  },
+  {
+   "en": "carcinoma",
+   "vi": "ung thư biểu mô",
+   "note": "",
+   "terms": [
+    "carcinoma"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 24
+  },
+  {
+   "en": "neoplasm",
+   "vi": "tân sinh / u",
+   "note": "",
+   "terms": [
+    "neoplasm"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 25
+  },
+  {
+   "en": "malignant",
+   "vi": "ác tính",
+   "note": "",
+   "terms": [
+    "malignant"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 26
+  },
+  {
+   "en": "benign",
+   "vi": "lành tính",
+   "note": "",
+   "terms": [
+    "benign"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 27
+  },
+  {
+   "en": "tumor progression",
+   "vi": "tiến triển u",
+   "note": "",
+   "terms": [
+    "tumor progression"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 28
+  },
+  {
+   "en": "malignant transformation",
+   "vi": "chuyển dạng ác tính",
+   "note": "",
+   "terms": [
+    "malignant transformation"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 29
+  },
+  {
+   "en": "marker",
+   "vi": "dấu ấn",
+   "note": "",
+   "terms": [
+    "marker"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 30
+  },
+  {
+   "en": "surrogate marker",
+   "vi": "dấu ấn thay thế (surrogate marker)",
+   "note": "",
+   "terms": [
+    "surrogate marker"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 31
+  },
+  {
+   "en": "alteration (molecular)",
+   "vi": "biến đổi",
+   "note": "ngữ cảnh: molecular.",
+   "terms": [
+    "alteration"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 32
+  },
+  {
+   "en": "copy number alteration",
+   "vi": "biến đổi số lượng bản sao",
+   "note": "",
+   "terms": [
+    "copy number alteration"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 33
+  },
+  {
+   "en": "advanced stage",
+   "vi": "giai đoạn tiến xa",
+   "note": "",
+   "terms": [
+    "advanced stage"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 34
+  },
+  {
+   "en": "concordance",
+   "vi": "thống nhất chẩn đoán (concordance)",
+   "note": "",
+   "terms": [
+    "concordance"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 35
+  },
+  {
+   "en": "reproducibility",
+   "vi": "tính tái lập (reproducibility)",
+   "note": "",
+   "terms": [
+    "reproducibility"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 36
+  },
+  {
+   "en": "cost-effective",
+   "vi": "chi phí-hiệu quả (cost-effective)",
+   "note": "",
+   "terms": [
+    "cost-effective"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 37
+  },
+  {
+   "en": "indolent",
+   "vi": "lành tính / diễn tiến chậm (indolent)",
+   "note": "",
+   "terms": [
+    "indolent"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 38
+  },
+  {
+   "en": "borderline",
+   "vi": "borderline",
+   "note": "giữ nguyên, không dịch",
+   "terms": [
+    "borderline"
+   ],
+   "section": "Bảng thuật ngữ",
+   "domain": "pathology",
+   "id": 39
+  },
+  {
+   "en": "Professor",
+   "vi": "Giáo sư (GS)",
+   "note": "",
+   "terms": [
+    "Professor"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 40
+  },
+  {
+   "en": "Associate Professor",
+   "vi": "Phó Giáo sư (PGS)",
+   "note": "",
+   "terms": [
+    "Associate Professor"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 41
+  },
+  {
+   "en": "Assistant Professor",
+   "vi": "Phó Giáo sư (PGS)",
+   "note": "assistant professor = associate professor = Phó Giáo sư. KHÔNG dùng \"Trợ lý Giáo sư\"",
+   "terms": [
+    "Assistant Professor"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 42
+  },
+  {
+   "en": "Project Assistant Professor",
+   "vi": "PGS dự án",
+   "note": "",
+   "terms": [
+    "Project Assistant Professor"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 43
+  },
+  {
+   "en": "Clinical Professor",
+   "vi": "GS Lâm sàng",
+   "note": "",
+   "terms": [
+    "Clinical Professor"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 44
+  },
+  {
+   "en": "Visiting Professor",
+   "vi": "GS thỉnh giảng",
+   "note": "",
+   "terms": [
+    "Visiting Professor"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 45
+  },
+  {
+   "en": "Visiting Scholar",
+   "vi": "Học giả thỉnh giảng",
+   "note": "",
+   "terms": [
+    "Visiting Scholar"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 46
+  },
+  {
+   "en": "Lecturer",
+   "vi": "Giảng viên",
+   "note": "",
+   "terms": [
+    "Lecturer"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 47
+  },
+  {
+   "en": "Instructor",
+   "vi": "Giảng viên",
+   "note": "",
+   "terms": [
+    "Instructor"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 48
+  },
+  {
+   "en": "M.D. / MD",
+   "vi": "BS.",
+   "note": "KHÔNG dịch \"Bác sĩ Y khoa\", chỉ dùng BS.",
+   "terms": [
+    "M.D",
+    "MD"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 49
+  },
+  {
+   "en": "Ph.D. / PhD",
+   "vi": "TS.",
+   "note": "viết tắt nếu gốc viết tắt",
+   "terms": [
+    "Ph.D",
+    "PhD"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 50
+  },
+  {
+   "en": "B.Sc. / BSc",
+   "vi": "CN.",
+   "note": "viết tắt nếu gốc viết tắt",
+   "terms": [
+    "B.Sc",
+    "BSc"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 51
+  },
+  {
+   "en": "Diplomat",
+   "vi": "Chứng nhận Chuyên khoa",
+   "note": "",
+   "terms": [
+    "Diplomat"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 52
+  },
+  {
+   "en": "Fellow / Fellowship",
+   "vi": "Học viên chuyên sâu / Chương trình chuyên sâu",
+   "note": "",
+   "terms": [
+    "Fellow",
+    "Fellowship"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 53
+  },
+  {
+   "en": "Chief Resident / Chief Residency",
+   "vi": "Trưởng nội trú",
+   "note": "",
+   "terms": [
+    "Chief Resident",
+    "Chief Residency"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 54
+  },
+  {
+   "en": "Resident / Residency",
+   "vi": "BS nội trú / Nội trú",
+   "note": "",
+   "terms": [
+    "Resident",
+    "Residency"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 55
+  },
+  {
+   "en": "Intern / Internship",
+   "vi": "BS thực tập / Thực tập",
+   "note": "",
+   "terms": [
+    "Intern",
+    "Internship"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 56
+  },
+  {
+   "en": "Honorary Doctorate",
+   "vi": "TS danh dự",
+   "note": "",
+   "terms": [
+    "Honorary Doctorate"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 57
+  },
+  {
+   "en": "honoris causa",
+   "vi": "danh dự (honoris causa)",
+   "note": "",
+   "terms": [
+    "honoris causa"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 58
+  },
+  {
+   "en": "upgraded",
+   "vi": "nâng độ (upgraded)",
+   "note": "",
+   "terms": [
+    "upgraded"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 59
+  },
+  {
+   "en": "recurrence",
+   "vi": "tái phát",
+   "note": "",
+   "terms": [
+    "recurrence"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 60
+  },
+  {
+   "en": "prognosis / prognostic",
+   "vi": "tiên lượng",
+   "note": "",
+   "terms": [
+    "prognosis",
+    "prognostic"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 61
+  },
+  {
+   "en": "mitotic figures (MF)",
+   "vi": "phân bào",
+   "note": "KHÔNG dịch \"hình phân bào\". Ví dụ: 5 mitotic figures / 10 HPF → 5 phân bào / 10 vi trường",
+   "terms": [
+    "mitotic figures",
+    "MF"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 62
+  },
+  {
+   "en": "HPF (high power field)",
+   "vi": "vi trường (HPF)",
+   "note": "giữ viết tắt HPF",
+   "terms": [
+    "HPF",
+    "high power field"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 63
+  },
+  {
+   "en": "grading",
+   "vi": "phân độ",
+   "note": "",
+   "terms": [
+    "grading"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 64
+  },
+  {
+   "en": "staging",
+   "vi": "phân giai đoạn",
+   "note": "",
+   "terms": [
+    "staging"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 65
+  },
+  {
+   "en": "driver mutation",
+   "vi": "đột biến điều khiển (driver mutation)",
+   "note": "",
+   "terms": [
+    "driver mutation"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 66
+  },
+  {
+   "en": "copy number alteration",
+   "vi": "biến đổi số lượng bản sao",
+   "note": "",
+   "terms": [
+    "copy number alteration"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 67
+  },
+  {
+   "en": "chromosomal loss",
+   "vi": "mất nhiễm sắc thể",
+   "note": "",
+   "terms": [
+    "chromosomal loss"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 68
+  },
+  {
+   "en": "homozygous deletion",
+   "vi": "mất đoạn đồng hợp tử",
+   "note": "\"mất đoạn\"=deletion (áp đảo y văn di truyền VN); KHÔNG \"xóa đoạn/xóa đồng hợp tử\". Khớp \"co-deletion=đồng mất đoạn\"",
+   "terms": [
+    "homozygous deletion"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 69
+  },
+  {
+   "en": "tumor suppressor gene",
+   "vi": "gen ức chế khối u",
+   "note": "",
+   "terms": [
+    "tumor suppressor gene"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 70
+  },
+  {
+   "en": "DNA methylation profiling",
+   "vi": "phân tích methyl hóa DNA",
+   "note": "",
+   "terms": [
+    "DNA methylation profiling"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 71
+  },
+  {
+   "en": "concordance",
+   "vi": "đồng thuận",
+   "note": "",
+   "terms": [
+    "concordance"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 72
+  },
+  {
+   "en": "whole-slide image (WSI)",
+   "vi": "hình ảnh toàn tiêu bản (WSI)",
+   "note": "",
+   "terms": [
+    "whole-slide image",
+    "WSI"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 73
+  },
+  {
+   "en": "Grade 1/2/3",
+   "vi": "Độ 1/2/3",
+   "note": "",
+   "terms": [
+    "Grade 1/2/3"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 74
+  },
+  {
+   "en": "meningothelial",
+   "vi": "dạng màng não (meningothelial)",
+   "note": "kiểu hình u màng não",
+   "terms": [
+    "meningothelial"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 75
+  },
+  {
+   "en": "transitional",
+   "vi": "dạng chuyển tiếp (transitional)",
+   "note": "",
+   "terms": [
+    "transitional"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 76
+  },
+  {
+   "en": "fibrous",
+   "vi": "dạng xơ (fibrous)",
+   "note": "",
+   "terms": [
+    "fibrous"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 77
+  },
+  {
+   "en": "angiomatous",
+   "vi": "dạng mạch (angiomatous)",
+   "note": "",
+   "terms": [
+    "angiomatous"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 78
+  },
+  {
+   "en": "secretory",
+   "vi": "dạng chế tiết (secretory)",
+   "note": "",
+   "terms": [
+    "secretory"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 79
+  },
+  {
+   "en": "microcystic",
+   "vi": "dạng vi nang (microcystic)",
+   "note": "",
+   "terms": [
+    "microcystic"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 80
+  },
+  {
+   "en": "chordoid",
+   "vi": "dạng dây sống (chordoid)",
+   "note": "",
+   "terms": [
+    "chordoid"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 81
+  },
+  {
+   "en": "clear cell",
+   "vi": "tế bào sáng (clear cell)",
+   "note": "",
+   "terms": [
+    "clear cell"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 82
+  },
+  {
+   "en": "rhabdoid",
+   "vi": "dạng cơ vân (rhabdoid)",
+   "note": "",
+   "terms": [
+    "rhabdoid"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 83
+  },
+  {
+   "en": "papillary",
+   "vi": "dạng nhú (papillary)",
+   "note": "",
+   "terms": [
+    "papillary"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 84
+  },
+  {
+   "en": "frozen section",
+   "vi": "lát cắt lạnh",
+   "note": "",
+   "terms": [
+    "frozen section"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 85
+  },
+  {
+   "en": "paraffin section",
+   "vi": "lát cắt paraffin",
+   "note": "",
+   "terms": [
+    "paraffin section"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 86
+  },
+  {
+   "en": "H&E staining",
+   "vi": "nhuộm H&E",
+   "note": "",
+   "terms": [
+    "H&E staining"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 87
+  },
+  {
+   "en": "differentiation",
+   "vi": "biệt hóa",
+   "note": "",
+   "terms": [
+    "differentiation"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 88
+  },
+  {
+   "en": "undifferentiated",
+   "vi": "không biệt hóa",
+   "note": "",
+   "terms": [
+    "undifferentiated"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 89
+  },
+  {
+   "en": "flow cytometry",
+   "vi": "đếm tế bào dòng chảy (flow cytometry)",
+   "note": "KHÔNG dùng \"đo tế bào dòng chảy\"",
+   "terms": [
+    "flow cytometry"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 90
+  },
+  {
+   "en": "fine needle aspiration (FNA)",
+   "vi": "chọc hút tế bào bằng kim nhỏ (FNA)",
+   "note": "KHÔNG dùng \"chọc hút kim nhỏ\" (quá ngắn)",
+   "terms": [
+    "fine needle aspiration",
+    "FNA"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 91
+  },
+  {
+   "en": "hepatocellular carcinoma (HCC)",
+   "vi": "ung thư biểu mô tế bào gan (HCC)",
+   "note": "KHÔNG dùng \"ung thư tế bào gan\"",
+   "terms": [
+    "hepatocellular carcinoma",
+    "HCC"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 92
+  },
+  {
+   "en": "squamous cell carcinoma",
+   "vi": "ung thư biểu mô tế bào gai",
+   "note": "\"gai\" KHÔNG \"vảy\" (user chốt, khớp dòng carcinôm tế bào gai)",
+   "terms": [
+    "squamous cell carcinoma"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 93
+  },
+  {
+   "en": "benign prostatic hyperplasia (BPH)",
+   "vi": "tăng sản lành tính tuyến tiền liệt (BPH)",
+   "note": "\"tăng sản\" ≠ \"phì đại\"",
+   "terms": [
+    "benign prostatic hyperplasia",
+    "BPH"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 94
+  },
+  {
+   "en": "macrovesicular steatosis",
+   "vi": "thoái hóa mỡ giọt lớn",
+   "note": "",
+   "terms": [
+    "macrovesicular steatosis"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 95
+  },
+  {
+   "en": "lymphovascular invasion",
+   "vi": "xâm lấn mạch bạch huyết",
+   "note": "KHÔNG dùng \"viêm mạch bạch huyết\"",
+   "terms": [
+    "lymphovascular invasion"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 96
+  },
+  {
+   "en": "follicular lymphoma",
+   "vi": "u lympho dạng nang",
+   "note": "",
+   "terms": [
+    "follicular lymphoma"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 97
+  },
+  {
+   "en": "DLBCL",
+   "vi": "DLBCL",
+   "note": "giữ nguyên",
+   "terms": [
+    "DLBCL"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 98
+  },
+  {
+   "en": "cytogenetics",
+   "vi": "di truyền tế bào (cytogenetics)",
+   "note": "",
+   "terms": [
+    "cytogenetics"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 99
+  },
+  {
+   "en": "FISH",
+   "vi": "lai tại chỗ huỳnh quang (FISH)",
+   "note": "",
+   "terms": [
+    "FISH"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 100
+  },
+  {
+   "en": "rearrangement (gene)",
+   "vi": "tái sắp xếp",
+   "note": "ngữ cảnh: gene.",
+   "terms": [
+    "rearrangement"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 101
+  },
+  {
+   "en": "karyotype",
+   "vi": "nhiễm sắc thể đồ",
+   "note": "",
+   "terms": [
+    "karyotype"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 102
+  },
+  {
+   "en": "CNS tumor",
+   "vi": "u hệ thần kinh trung ương",
+   "note": "",
+   "terms": [
+    "CNS tumor"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 103
+  },
+  {
+   "en": "FFPE",
+   "vi": "FFPE",
+   "note": "giữ nguyên",
+   "terms": [
+    "FFPE"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 104
+  },
+  {
+   "en": "fresh frozen",
+   "vi": "đông lạnh tươi",
+   "note": "",
+   "terms": [
+    "fresh frozen"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 105
+  },
+  {
+   "en": "adenoma",
+   "vi": "u tuyến",
+   "note": "",
+   "terms": [
+    "adenoma"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 106
+  },
+  {
+   "en": "photomicrograph",
+   "vi": "ảnh vi thể",
+   "note": "",
+   "terms": [
+    "photomicrograph"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 107
+  },
+  {
+   "en": "gross examination",
+   "vi": "đại thể",
+   "note": "",
+   "terms": [
+    "gross examination"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 108
+  },
+  {
+   "en": "pseudoinvasion",
+   "vi": "giả xâm nhập (pseudoinvasion)",
+   "note": "",
+   "terms": [
+    "pseudoinvasion"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 109
+  },
+  {
+   "en": "cytopathology",
+   "vi": "tế bào học (cytopathology)",
+   "note": "",
+   "terms": [
+    "cytopathology"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 110
+  },
+  {
+   "en": "pathophysiology",
+   "vi": "sinh lý bệnh",
+   "note": "",
+   "terms": [
+    "pathophysiology"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 111
+  },
+  {
+   "en": "colonic polyp",
+   "vi": "polyp đại tràng",
+   "note": "",
+   "terms": [
+    "colonic polyp"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 112
+  },
+  {
+   "en": "tumor board",
+   "vi": "hội chẩn u",
+   "note": "",
+   "terms": [
+    "tumor board"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 113
+  },
+  {
+   "en": "intranodal thyroid inclusions",
+   "vi": "thể vùi tuyến giáp trong hạch",
+   "note": "",
+   "terms": [
+    "intranodal thyroid inclusions"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 114
+  },
+  {
+   "en": "lineage-specific markers",
+   "vi": "dấu ấn đặc hiệu dòng tế bào",
+   "note": "",
+   "terms": [
+    "lineage-specific markers"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 115
+  },
+  {
+   "en": "transdifferentiation",
+   "vi": "chuyển biệt hóa (transdifferentiation)",
+   "note": "",
+   "terms": [
+    "transdifferentiation"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 116
+  },
+  {
+   "en": "co-deletion",
+   "vi": "đồng mất đoạn",
+   "note": "",
+   "terms": [
+    "co-deletion"
+   ],
+   "section": "Học hàm, học vị",
+   "domain": "pathology",
+   "id": 117
+  },
+  {
+   "en": "glioma",
+   "vi": "u thần kinh đệm",
+   "note": "",
+   "terms": [
+    "glioma"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 118
+  },
+  {
+   "en": "diffuse glioma",
+   "vi": "u thần kinh đệm lan tỏa",
+   "note": "",
+   "terms": [
+    "diffuse glioma"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 119
+  },
+  {
+   "en": "astrocytoma",
+   "vi": "u sao bào",
+   "note": "user chốt \"u sao bào\" (KHÔNG \"sao bào u\")",
+   "terms": [
+    "astrocytoma"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 120
+  },
+  {
+   "en": "diffuse astrocytoma",
+   "vi": "u sao bào lan tỏa",
+   "note": "",
+   "terms": [
+    "diffuse astrocytoma"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 121
+  },
+  {
+   "en": "anaplastic astrocytoma",
+   "vi": "u sao bào thoái sản",
+   "note": "anaplastic → thoái sản",
+   "terms": [
+    "anaplastic astrocytoma"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 122
+  },
+  {
+   "en": "pilocytic astrocytoma",
+   "vi": "u sao bào lông",
+   "note": "user chốt (KHÔNG \"dạng lông\")",
+   "terms": [
+    "pilocytic astrocytoma"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 123
+  },
+  {
+   "en": "oligodendroglioma",
+   "vi": "u tế bào thần kinh đệm ít nhánh",
+   "note": "user chốt (có \"tế bào\")",
+   "terms": [
+    "oligodendroglioma"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 124
+  },
+  {
+   "en": "glioblastoma (GBM)",
+   "vi": "u nguyên bào thần kinh đệm (GBM)",
+   "note": "",
+   "terms": [
+    "glioblastoma",
+    "GBM"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 125
+  },
+  {
+   "en": "ependymoma",
+   "vi": "u màng ống nội tủy",
+   "note": "user chốt 2026-05-24 theo y văn VN (giữ \"màng\" = ependyma)",
+   "terms": [
+    "ependymoma"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 126
+  },
+  {
+   "en": "subependymal",
+   "vi": "dưới màng nội tủy",
+   "note": "",
+   "terms": [
+    "subependymal"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 127
+  },
+  {
+   "en": "low-grade glioma (LGG)",
+   "vi": "u thần kinh đệm độ thấp (LGG)",
+   "note": "",
+   "terms": [
+    "low-grade glioma",
+    "LGG"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 128
+  },
+  {
+   "en": "diffuse midline glioma",
+   "vi": "u thần kinh đệm đường giữa lan tỏa",
+   "note": "",
+   "terms": [
+    "diffuse midline glioma"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 129
+  },
+  {
+   "en": "diffuse hemispheric glioma",
+   "vi": "u thần kinh đệm bán cầu lan tỏa",
+   "note": "",
+   "terms": [
+    "diffuse hemispheric glioma"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 130
+  },
+  {
+   "en": "DIPG",
+   "vi": "u thần kinh đệm cầu não lan tỏa nội tại (DIPG)",
+   "note": "",
+   "terms": [
+    "DIPG"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 131
+  },
+  {
+   "en": "circumscribed (growth)",
+   "vi": "khu trú",
+   "note": "ngữ cảnh: growth. đối lập với lan tỏa/thâm nhiễm",
+   "terms": [
+    "circumscribed"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 132
+  },
+  {
+   "en": "diffusely infiltrative",
+   "vi": "thâm nhiễm lan tỏa",
+   "note": "",
+   "terms": [
+    "diffusely infiltrative"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 133
+  },
+  {
+   "en": "microvascular proliferation (MVP)",
+   "vi": "tăng sinh vi mạch (MVP)",
+   "note": "",
+   "terms": [
+    "microvascular proliferation",
+    "MVP"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 134
+  },
+  {
+   "en": "perivascular pseudorosettes",
+   "vi": "thể giả hoa hồng quanh mạch",
+   "note": "user chốt",
+   "terms": [
+    "perivascular pseudorosettes"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 135
+  },
+  {
+   "en": "chicken wire (vasculature)",
+   "vi": "mạch máu chân chim",
+   "note": "ngữ cảnh: vasculature. user chốt. [y văn GPB VN không dùng \"chân chim\"; hay gặp \"lưới mắt cáo\" / giữ EN]",
+   "terms": [
+    "chicken wire"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 136
+  },
+  {
+   "en": "satellitosis",
+   "vi": "hiện tượng vệ tinh (satellitosis)",
+   "note": "user chốt kèm EN để tránh nhầm \"tế bào vệ tinh\"=satellite glial cell",
+   "terms": [
+    "satellitosis"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 137
+  },
+  {
+   "en": "perinuclear halo",
+   "vi": "quầng sáng quanh nhân",
+   "note": "",
+   "terms": [
+    "perinuclear halo"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 138
+  },
+  {
+   "en": "Scherer's secondary structures",
+   "vi": "cấu trúc thứ phát của Scherer",
+   "note": "",
+   "terms": [
+    "Scherer's secondary structures"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 139
+  },
+  {
+   "en": "1p/19q codeletion",
+   "vi": "đồng mất đoạn 1p/19q",
+   "note": "",
+   "terms": [
+    "1p/19q codeletion"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 140
+  },
+  {
+   "en": "histogenetic classification",
+   "vi": "phân loại mô phát sinh",
+   "note": "",
+   "terms": [
+    "histogenetic classification"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 141
+  },
+  {
+   "en": "cellular differentiation",
+   "vi": "biệt hóa tế bào",
+   "note": "",
+   "terms": [
+    "cellular differentiation"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 142
+  },
+  {
+   "en": "cell lineage",
+   "vi": "dòng tế bào",
+   "note": "",
+   "terms": [
+    "cell lineage"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 143
+  },
+  {
+   "en": "IDH-mutant / IDH-wildtype",
+   "vi": "giữ nguyên IDH-mutant / IDH-wildtype",
+   "note": "tên trạng thái gen, không dịch",
+   "terms": [
+    "IDH-mutant",
+    "IDH-wildtype"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 144
+  },
+  {
+   "en": "intranodal thyroid inclusions (ITIs)",
+   "vi": "mô tuyến giáp vùi trong hạch",
+   "note": "KHÔNG dịch \"thể vùi tuyến giáp\" (người nghe khó hiểu); giữ viết tắt ITIs",
+   "terms": [
+    "intranodal thyroid inclusions",
+    "ITIs"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 145
+  },
+  {
+   "en": "nuclear pseudoinclusion",
+   "vi": "giả thể vùi (trong nhân)",
+   "note": "\"giả thể vùi\" = pseudoinclusion trong NHÂN, khác \"mô tuyến giáp vùi\"",
+   "terms": [
+    "nuclear pseudoinclusion"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 146
+  },
+  {
+   "en": "tonsil / tonsillectomy",
+   "vi": "amidan / cắt amidan",
+   "note": "miền Nam dùng \"amidan\", KHÔNG dùng \"hạnh nhân\"",
+   "terms": [
+    "tonsil",
+    "tonsillectomy"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 147
+  },
+  {
+   "en": "heterotopia-associated",
+   "vi": "liên quan mô lạc chỗ",
+   "note": "",
+   "terms": [
+    "heterotopia-associated"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 148
+  },
+  {
+   "en": "subcapsular location",
+   "vi": "vị trí dưới vỏ",
+   "note": "",
+   "terms": [
+    "subcapsular location"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 149
+  },
+  {
+   "en": "undulating luminal border",
+   "vi": "bờ lòng nang gợn sóng",
+   "note": "luminal border of follicles = bờ lòng NANG (không phải \"ống\"/duct)",
+   "terms": [
+    "undulating luminal border"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 150
+  },
+  {
+   "en": "smooth luminal border",
+   "vi": "bờ lòng nang trơn nhẵn",
+   "note": "",
+   "terms": [
+    "smooth luminal border"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 151
+  },
+  {
+   "en": "desmoplasia",
+   "vi": "phản ứng xơ hóa mô đệm (desmoplasia)",
+   "note": "giữ EN gloss",
+   "terms": [
+    "desmoplasia"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 152
+  },
+  {
+   "en": "psammomatous calcification",
+   "vi": "vôi hóa dạng thể cát",
+   "note": "psammoma body = thể cát",
+   "terms": [
+    "psammomatous calcification"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 153
+  },
+  {
+   "en": "nuclear pseudoinclusion",
+   "vi": "giả thể vùi (trong nhân)",
+   "note": "",
+   "terms": [
+    "nuclear pseudoinclusion"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 154
+  },
+  {
+   "en": "nuclear grooves",
+   "vi": "rãnh nhân",
+   "note": "",
+   "terms": [
+    "nuclear grooves"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 155
+  },
+  {
+   "en": "tumor-to-tumor metastasis",
+   "vi": "di căn u-trong-u",
+   "note": "",
+   "terms": [
+    "tumor-to-tumor metastasis"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 156
+  },
+  {
+   "en": "metastasis organotropism",
+   "vi": "tính hướng cơ quan trong di căn",
+   "note": "giữ EN gloss",
+   "terms": [
+    "metastasis organotropism"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 157
+  },
+  {
+   "en": "lymphangitis carcinomatosis",
+   "vi": "viêm bạch mạch do ung thư",
+   "note": "giữ EN gloss",
+   "terms": [
+    "lymphangitis carcinomatosis"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 158
+  },
+  {
+   "en": "salivary duct carcinoma (SDC)",
+   "vi": "ung thư biểu mô ống tuyến nước bọt",
+   "note": "giữ viết tắt SDC",
+   "terms": [
+    "salivary duct carcinoma",
+    "SDC"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 159
+  },
+  {
+   "en": "goiter",
+   "vi": "nhân giáp",
+   "note": "",
+   "terms": [
+    "goiter"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 160
+  },
+  {
+   "en": "nodular goiter",
+   "vi": "phình giáp",
+   "note": "KHÔNG dịch \"bệnh nốt dạng nang\"",
+   "terms": [
+    "nodular goiter"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 161
+  },
+  {
+   "en": "follicular goiter / follicular nodular disease (FND)",
+   "vi": "phình giáp tuyến",
+   "note": "KHÔNG dịch \"bệnh nốt dạng nang\"",
+   "terms": [
+    "follicular goiter",
+    "follicular nodular disease",
+    "FND"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 162
+  },
+  {
+   "en": "lymphoma",
+   "vi": "lymphôm",
+   "note": "KHÔNG dịch \"u lympho\" (dùng phiên âm lymphôm). Nhưng \"lymphocyte\"=tế bào lympho, \"lymphoblastic\"=nguyên bào lympho, \"lymphoid lineage\"=dòng lympho GIỮ NGUYÊN",
+   "terms": [
+    "lymphoma"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 163
+  },
+  {
+   "en": "follicular lymphoma (FL)",
+   "vi": "lymphôm dạng nang",
+   "note": "giữ viết tắt FL",
+   "terms": [
+    "follicular lymphoma",
+    "FL"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 164
+  },
+  {
+   "en": "diffuse large B-cell lymphoma (DLBCL)",
+   "vi": "lymphôm tế bào B lớn lan tỏa",
+   "note": "giữ viết tắt DLBCL",
+   "terms": [
+    "diffuse large B-cell lymphoma",
+    "DLBCL"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 165
+  },
+  {
+   "en": "Hodgkin lymphoma",
+   "vi": "lymphôm Hodgkin",
+   "note": "",
+   "terms": [
+    "Hodgkin lymphoma"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 166
+  },
+  {
+   "en": "lymphocyte",
+   "vi": "lympho bào",
+   "note": "KHÔNG dịch \"tế bào lympho\"",
+   "terms": [
+    "lymphocyte"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 167
+  },
+  {
+   "en": "squamous cell carcinoma",
+   "vi": "carcinôm tế bào gai",
+   "note": "\"squamous\" = tế bào GAI (KHÔNG \"vảy\"); carcinoma = carcinôm",
+   "terms": [
+    "squamous cell carcinoma"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 168
+  },
+  {
+   "en": "transformation (lymphoma)",
+   "vi": "chuyển dạng",
+   "note": "ngữ cảnh: lymphoma.",
+   "terms": [
+    "transformation"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 169
+  },
+  {
+   "en": "indolent lymphoma",
+   "vi": "lymphôm diễn tiến chậm (indolent)",
+   "note": "",
+   "terms": [
+    "indolent lymphoma"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 170
+  },
+  {
+   "en": "aggressive lymphoma",
+   "vi": "lymphôm diễn tiến nhanh (aggressive)",
+   "note": "KHÔNG thêm \"ác tính\" (aggressive != malignant)",
+   "terms": [
+    "aggressive lymphoma"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 171
+  },
+  {
+   "en": "clonally-related / -unrelated",
+   "vi": "cùng dòng / không cùng dòng",
+   "note": "",
+   "terms": [
+    "clonally-related"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 172
+  },
+  {
+   "en": "de novo",
+   "vi": "nguyên phát (de novo)",
+   "note": "",
+   "terms": [
+    "de novo"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 173
+  },
+  {
+   "en": "blastoid",
+   "vi": "dạng nguyên bào (blastoid)",
+   "note": "",
+   "terms": [
+    "blastoid"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 174
+  },
+  {
+   "en": "monoclonal / polyclonal",
+   "vi": "đơn dòng / đa dòng",
+   "note": "",
+   "terms": [
+    "monoclonal",
+    "polyclonal"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 175
+  },
+  {
+   "en": "somatic (hypermutation/mutation)",
+   "vi": "sinh dưỡng",
+   "note": "ngữ cảnh: hypermutation/mutation. somatic = sinh dưỡng (đột biến sinh dưỡng). VD somatic hypermutation = siêu đột biến sinh dưỡng",
+   "terms": [
+    "somatic"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 176
+  },
+  {
+   "en": "flow cytometry",
+   "vi": "đếm tế bào dòng chảy (flow cytometry)",
+   "note": "",
+   "terms": [
+    "flow cytometry"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 177
+  },
+  {
+   "en": "PET avid",
+   "vi": "tăng chuyển hóa trên PET (PET avid)",
+   "note": "",
+   "terms": [
+    "PET avid"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 178
+  },
+  {
+   "en": "core biopsy",
+   "vi": "sinh thiết lõi",
+   "note": "",
+   "terms": [
+    "core biopsy"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 179
+  },
+  {
+   "en": "performance status",
+   "vi": "tổng trạng",
+   "note": "",
+   "terms": [
+    "performance status"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 180
+  },
+  {
+   "en": "classifier (Hans/iDZ)",
+   "vi": "bảng phân loại",
+   "note": "",
+   "terms": [
+    "classifier",
+    "Hans",
+    "iDZ"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 181
+  },
+  {
+   "en": "supraclavicular",
+   "vi": "hố thượng đòn",
+   "note": "",
+   "terms": [
+    "supraclavicular"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 182
+  },
+  {
+   "en": "parotid",
+   "vi": "tuyến mang tai",
+   "note": "",
+   "terms": [
+    "parotid"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 183
+  },
+  {
+   "en": "light chain restriction",
+   "vi": "hạn chế chuỗi nhẹ (lambda/kappa)",
+   "note": "lambda/kappa giữ nguyên",
+   "terms": [
+    "light chain restriction"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 184
+  },
+  {
+   "en": "rearrangement (FISH/huyết học)",
+   "vi": "giữ nguyên \"rearrangement\"",
+   "note": "ngữ cảnh: FISH/huyết học. Trong ngữ cảnh FISH/gene huyết học GIỮ English; văn xuôi thần kinh vẫn \"tái sắp xếp\"",
+   "terms": [
+    "rearrangement"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 185
+  },
+  {
+   "en": "HGBCL / DLBCL / FLIPI / POD24",
+   "vi": "giữ nguyên",
+   "note": "viết tắt tiên lượng/phân loại, giữ như staging code",
+   "terms": [
+    "HGBCL",
+    "DLBCL",
+    "FLIPI",
+    "POD24"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 186
+  },
+  {
+   "en": "poorly differentiated thyroid carcinoma (PDTC)",
+   "vi": "ung thư biểu mô tuyến giáp biệt hóa kém",
+   "note": "giữ viết tắt PDTC",
+   "terms": [
+    "poorly differentiated thyroid carcinoma",
+    "PDTC"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 187
+  },
+  {
+   "en": "anaplastic thyroid carcinoma (ATC)",
+   "vi": "ung thư biểu mô tuyến giáp thoái sản",
+   "note": "anaplastic = thoái sản",
+   "terms": [
+    "anaplastic thyroid carcinoma",
+    "ATC"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 188
+  },
+  {
+   "en": "oncocytic",
+   "vi": "dạng tế bào ái toan (oncocytic)",
+   "note": "",
+   "terms": [
+    "oncocytic"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 189
+  },
+  {
+   "en": "cribriform",
+   "vi": "dạng sàng",
+   "note": "growth pattern",
+   "terms": [
+    "cribriform"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 190
+  },
+  {
+   "en": "micropapillary",
+   "vi": "vi nhú",
+   "note": "",
+   "terms": [
+    "micropapillary"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 191
+  },
+  {
+   "en": "renal cell carcinoma (RCC)",
+   "vi": "ung thư biểu mô tế bào thận",
+   "note": "giữ viết tắt RCC",
+   "terms": [
+    "renal cell carcinoma",
+    "RCC"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 192
+  },
+  {
+   "en": "wedge-shaped arrangement",
+   "vi": "sắp xếp hình chêm",
+   "note": "",
+   "terms": [
+    "wedge-shaped arrangement"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 193
+  },
+  {
+   "en": "nodular goiter",
+   "vi": "bướu giáp nhân",
+   "note": "",
+   "terms": [
+    "nodular goiter"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 194
+  },
+  {
+   "en": "follicular nodular disease with metastatic X",
+   "vi": "bệnh nốt dạng nang kèm di căn X",
+   "note": "",
+   "terms": [
+    "follicular nodular disease with metastatic X"
+   ],
+   "section": "Neuropathology — u thần kinh đệm (glioma) & CNS",
+   "domain": "pathology",
+   "id": 195
+  },
+  {
+   "en": "epithelioid",
+   "vi": "dạng biểu mô (epithelioid)",
+   "note": "",
+   "terms": [
+    "epithelioid"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 196
+  },
+  {
+   "en": "spindle cell",
+   "vi": "tế bào hình thoi",
+   "note": "KHÔNG dịch \"tế bào trục\"",
+   "terms": [
+    "spindle cell"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 197
+  },
+  {
+   "en": "signet ring cell",
+   "vi": "tế bào nhẫn",
+   "note": "",
+   "terms": [
+    "signet ring cell"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 198
+  },
+  {
+   "en": "giant cell",
+   "vi": "tế bào khổng lồ",
+   "note": "",
+   "terms": [
+    "giant cell"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 199
+  },
+  {
+   "en": "small round blue cell",
+   "vi": "tế bào tròn nhỏ xanh",
+   "note": "",
+   "terms": [
+    "small round blue cell"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 200
+  },
+  {
+   "en": "pleomorphism / pleomorphic",
+   "vi": "đa hình thái",
+   "note": "",
+   "terms": [
+    "pleomorphism",
+    "pleomorphic"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 201
+  },
+  {
+   "en": "nuclear atypia",
+   "vi": "không điển hình nhân",
+   "note": "KHÔNG dịch \"nhân bất thường\" chung chung",
+   "terms": [
+    "nuclear atypia"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 202
+  },
+  {
+   "en": "cytologic atypia",
+   "vi": "không điển hình tế bào",
+   "note": "",
+   "terms": [
+    "cytologic atypia"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 203
+  },
+  {
+   "en": "apoptosis",
+   "vi": "chết theo chương trình (apoptosis)",
+   "note": "",
+   "terms": [
+    "apoptosis"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 204
+  },
+  {
+   "en": "necrosis",
+   "vi": "hoại tử",
+   "note": "",
+   "terms": [
+    "necrosis"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 205
+  },
+  {
+   "en": "tumor necrosis",
+   "vi": "hoại tử u",
+   "note": "",
+   "terms": [
+    "tumor necrosis"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 206
+  },
+  {
+   "en": "fibrosis",
+   "vi": "xơ hóa",
+   "note": "",
+   "terms": [
+    "fibrosis"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 207
+  },
+  {
+   "en": "sclerosis",
+   "vi": "xơ chai",
+   "note": "",
+   "terms": [
+    "sclerosis"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 208
+  },
+  {
+   "en": "hyalinization",
+   "vi": "thoái hóa kính (hyalinization)",
+   "note": "",
+   "terms": [
+    "hyalinization"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 209
+  },
+  {
+   "en": "calcification",
+   "vi": "vôi hóa",
+   "note": "",
+   "terms": [
+    "calcification"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 210
+  },
+  {
+   "en": "hemorrhage",
+   "vi": "xuất huyết",
+   "note": "",
+   "terms": [
+    "hemorrhage"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 211
+  },
+  {
+   "en": "inflammation",
+   "vi": "viêm",
+   "note": "",
+   "terms": [
+    "inflammation"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 212
+  },
+  {
+   "en": "inflammatory infiltrate",
+   "vi": "thâm nhiễm viêm",
+   "note": "infiltrate = thâm nhiễm, KHÔNG \"xâm nhập\" ở ngữ cảnh viêm",
+   "terms": [
+    "inflammatory infiltrate"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 213
+  },
+  {
+   "en": "granuloma",
+   "vi": "u hạt",
+   "note": "",
+   "terms": [
+    "granuloma"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 214
+  },
+  {
+   "en": "stroma / stromal",
+   "vi": "mô đệm",
+   "note": "KHÔNG dịch \"chất nền\"",
+   "terms": [
+    "stroma",
+    "stromal"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 215
+  },
+  {
+   "en": "solid",
+   "vi": "dạng đặc",
+   "note": "",
+   "terms": [
+    "solid"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 216
+  },
+  {
+   "en": "cystic",
+   "vi": "dạng nang",
+   "note": "",
+   "terms": [
+    "cystic"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 217
+  },
+  {
+   "en": "nest (of cells)",
+   "vi": "ổ (tế bào)",
+   "note": "ngữ cảnh: of cells. nests = các ổ",
+   "terms": [
+    "nest"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 218
+  },
+  {
+   "en": "sheet (of cells)",
+   "vi": "đám / dải (tế bào)",
+   "note": "ngữ cảnh: of cells. KHÔNG dịch \"tờ\"",
+   "terms": [
+    "sheet"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 219
+  },
+  {
+   "en": "trabecular",
+   "vi": "dạng bè",
+   "note": "",
+   "terms": [
+    "trabecular"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 220
+  },
+  {
+   "en": "storiform",
+   "vi": "dạng xoáy lốc (storiform)",
+   "note": "",
+   "terms": [
+    "storiform"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 221
+  },
+  {
+   "en": "fascicle / fascicular",
+   "vi": "bó / dạng bó",
+   "note": "",
+   "terms": [
+    "fascicle",
+    "fascicular"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 222
+  },
+  {
+   "en": "palisading",
+   "vi": "xếp hàng rào",
+   "note": "",
+   "terms": [
+    "palisading"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 223
+  },
+  {
+   "en": "rosette",
+   "vi": "hoa hồng (rosette)",
+   "note": "",
+   "terms": [
+    "rosette"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 224
+  },
+  {
+   "en": "whorl",
+   "vi": "xoáy (whorl)",
+   "note": "u màng não",
+   "terms": [
+    "whorl"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 225
+  },
+  {
+   "en": "focal",
+   "vi": "khu trú / ổ",
+   "note": "KHÔNG dịch \"tiêu điểm\"",
+   "terms": [
+    "focal"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 226
+  },
+  {
+   "en": "diffuse",
+   "vi": "lan tỏa",
+   "note": "",
+   "terms": [
+    "diffuse"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 227
+  },
+  {
+   "en": "multifocal",
+   "vi": "đa ổ",
+   "note": "",
+   "terms": [
+    "multifocal"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 228
+  },
+  {
+   "en": "patchy",
+   "vi": "rải rác / loang lổ",
+   "note": "",
+   "terms": [
+    "patchy"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 229
+  },
+  {
+   "en": "scattered",
+   "vi": "rải rác",
+   "note": "",
+   "terms": [
+    "scattered"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 230
+  },
+  {
+   "en": "confluent",
+   "vi": "hợp lưu",
+   "note": "",
+   "terms": [
+    "confluent"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 231
+  },
+  {
+   "en": "capsular invasion",
+   "vi": "xâm lấn vỏ bao",
+   "note": "",
+   "terms": [
+    "capsular invasion"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 232
+  },
+  {
+   "en": "vascular invasion",
+   "vi": "xâm lấn mạch máu",
+   "note": "",
+   "terms": [
+    "vascular invasion"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 233
+  },
+  {
+   "en": "perineural invasion",
+   "vi": "xâm lấn quanh thần kinh",
+   "note": "",
+   "terms": [
+    "perineural invasion"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 234
+  },
+  {
+   "en": "resection margin",
+   "vi": "diện cắt",
+   "note": "KHÔNG dịch \"lề cắt\"",
+   "terms": [
+    "resection margin"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 235
+  },
+  {
+   "en": "infiltrative border",
+   "vi": "bờ thâm nhiễm",
+   "note": "",
+   "terms": [
+    "infiltrative border"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 236
+  },
+  {
+   "en": "pushing border",
+   "vi": "bờ đẩy",
+   "note": "",
+   "terms": [
+    "pushing border"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 237
+  },
+  {
+   "en": "encapsulated",
+   "vi": "có vỏ bao",
+   "note": "KHÔNG dịch \"đóng gói\"",
+   "terms": [
+    "encapsulated"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 238
+  },
+  {
+   "en": "expression",
+   "vi": "bộc lộ",
+   "note": "ngữ cảnh protein/IHC: bộc lộ, KHÔNG \"biểu hiện\"",
+   "terms": [
+    "expression"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 239
+  },
+  {
+   "en": "overexpression",
+   "vi": "bộc lộ quá mức",
+   "note": "",
+   "terms": [
+    "overexpression"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 240
+  },
+  {
+   "en": "loss of expression",
+   "vi": "mất bộc lộ",
+   "note": "",
+   "terms": [
+    "loss of expression"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 241
+  },
+  {
+   "en": "retained expression",
+   "vi": "còn bộc lộ",
+   "note": "",
+   "terms": [
+    "retained expression"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 242
+  },
+  {
+   "en": "aberrant expression",
+   "vi": "bộc lộ bất thường",
+   "note": "",
+   "terms": [
+    "aberrant expression"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 243
+  },
+  {
+   "en": "positive / negative (staining)",
+   "vi": "dương tính / âm tính",
+   "note": "ngữ cảnh: staining. KHÔNG dịch \"tích cực / tiêu cực\"",
+   "terms": [
+    "positive",
+    "negative"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 244
+  },
+  {
+   "en": "membranous / cytoplasmic / nuclear staining",
+   "vi": "nhuộm màng / bào tương / nhân",
+   "note": "",
+   "terms": [
+    "membranous",
+    "cytoplasmic",
+    "nuclear staining"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 245
+  },
+  {
+   "en": "well-differentiated",
+   "vi": "biệt hóa tốt",
+   "note": "",
+   "terms": [
+    "well-differentiated"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 246
+  },
+  {
+   "en": "moderately differentiated",
+   "vi": "biệt hóa vừa",
+   "note": "",
+   "terms": [
+    "moderately differentiated"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 247
+  },
+  {
+   "en": "poorly differentiated",
+   "vi": "biệt hóa kém",
+   "note": "",
+   "terms": [
+    "poorly differentiated"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 248
+  },
+  {
+   "en": "low-grade",
+   "vi": "độ thấp",
+   "note": "KHÔNG dịch \"mạn tính\"",
+   "terms": [
+    "low-grade"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 249
+  },
+  {
+   "en": "high-grade",
+   "vi": "độ cao",
+   "note": "KHÔNG dịch \"cấp tính\" / \"cao cấp\"",
+   "terms": [
+    "high-grade"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 250
+  },
+  {
+   "en": "bland",
+   "vi": "hiền (bland)",
+   "note": "tế bào hiền, không không điển hình",
+   "terms": [
+    "bland"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 251
+  },
+  {
+   "en": "brisk (mitoses)",
+   "vi": "nhiều (phân bào)",
+   "note": "ngữ cảnh: mitoses.",
+   "terms": [
+    "brisk"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 252
+  },
+  {
+   "en": "prominent",
+   "vi": "nổi bật",
+   "note": "",
+   "terms": [
+    "prominent"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 253
+  },
+  {
+   "en": "subtle",
+   "vi": "kín đáo",
+   "note": "",
+   "terms": [
+    "subtle"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 254
+  },
+  {
+   "en": "hallmark",
+   "vi": "dấu hiệu đặc trưng",
+   "note": "",
+   "terms": [
+    "hallmark"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 255
+  },
+  {
+   "en": "features",
+   "vi": "đặc điểm",
+   "note": "KHÔNG dịch \"tính năng\"",
+   "terms": [
+    "features"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 256
+  },
+  {
+   "en": "findings",
+   "vi": "kết quả / phát hiện",
+   "note": "",
+   "terms": [
+    "findings"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 257
+  },
+  {
+   "en": "present with",
+   "vi": "biểu hiện bằng",
+   "note": "",
+   "terms": [
+    "present with"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 258
+  },
+  {
+   "en": "differential diagnosis",
+   "vi": "chẩn đoán phân biệt",
+   "note": "",
+   "terms": [
+    "differential diagnosis"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 259
+  },
+  {
+   "en": "mimic / mimicker",
+   "vi": "tổn thương giả dạng (mimic)",
+   "note": "",
+   "terms": [
+    "mimic",
+    "mimicker"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 260
+  },
+  {
+   "en": "pitfall",
+   "vi": "bẫy chẩn đoán (pitfall)",
+   "note": "",
+   "terms": [
+    "pitfall"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 261
+  },
+  {
+   "en": "workup",
+   "vi": "tiếp cận chẩn đoán",
+   "note": "",
+   "terms": [
+    "workup"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 262
+  },
+  {
+   "en": "consistent with / in keeping with",
+   "vi": "phù hợp với",
+   "note": "",
+   "terms": [
+    "consistent with",
+    "in keeping with"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 263
+  },
+  {
+   "en": "favor (a diagnosis)",
+   "vi": "nghiêng về",
+   "note": "ngữ cảnh: a diagnosis.",
+   "terms": [
+    "favor"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 264
+  },
+  {
+   "en": "rule out",
+   "vi": "loại trừ",
+   "note": "",
+   "terms": [
+    "rule out"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 265
+  },
+  {
+   "en": "metaplasia",
+   "vi": "dị sản",
+   "note": "KHÔNG dịch \"chuyển hóa\" (= metabolism)",
+   "terms": [
+    "metaplasia"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 266
+  },
+  {
+   "en": "dysplasia",
+   "vi": "loạn sản",
+   "note": "",
+   "terms": [
+    "dysplasia"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 267
+  },
+  {
+   "en": "hyperplasia",
+   "vi": "tăng sản",
+   "note": "KHÔNG dịch \"phì đại\"",
+   "terms": [
+    "hyperplasia"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 268
+  },
+  {
+   "en": "hypertrophy",
+   "vi": "phì đại",
+   "note": "",
+   "terms": [
+    "hypertrophy"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 269
+  },
+  {
+   "en": "atrophy",
+   "vi": "teo",
+   "note": "",
+   "terms": [
+    "atrophy"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 270
+  },
+  {
+   "en": "interstitium / interstitial",
+   "vi": "mô kẽ",
+   "note": "ngữ cảnh phổi/mô: mô kẽ, KHÔNG \"mô liên kết\"",
+   "terms": [
+    "interstitium",
+    "interstitial"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 271
+  },
+  {
+   "en": "alveolus / alveoli / alveolar",
+   "vi": "phế nang",
+   "note": "KHÔNG dịch \"phổi\"",
+   "terms": [
+    "alveolus",
+    "alveoli",
+    "alveolar"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 272
+  },
+  {
+   "en": "bronchus / bronchi / bronchial",
+   "vi": "phế quản",
+   "note": "",
+   "terms": [
+    "bronchus",
+    "bronchi",
+    "bronchial"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 273
+  },
+  {
+   "en": "bronchiole / bronchioles",
+   "vi": "tiểu phế quản",
+   "note": "",
+   "terms": [
+    "bronchiole",
+    "bronchioles"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 274
+  },
+  {
+   "en": "goblet cell",
+   "vi": "tế bào đài",
+   "note": "KHÔNG viết \"gobet\"",
+   "terms": [
+    "goblet cell"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 275
+  },
+  {
+   "en": "ciliated epithelium",
+   "vi": "biểu mô có lông chuyển",
+   "note": "",
+   "terms": [
+    "ciliated epithelium"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 276
+  },
+  {
+   "en": "columnar epithelium",
+   "vi": "biểu mô trụ",
+   "note": "columnar = trụ, KHÔNG \"cột\"",
+   "terms": [
+    "columnar epithelium"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 277
+  },
+  {
+   "en": "cuboidal epithelium",
+   "vi": "biểu mô vuông",
+   "note": "",
+   "terms": [
+    "cuboidal epithelium"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 278
+  },
+  {
+   "en": "atelectasis",
+   "vi": "xẹp phổi",
+   "note": "KHÔNG dịch \"tắc nghẽn phổi\"",
+   "terms": [
+    "atelectasis"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 279
+  },
+  {
+   "en": "alveolar macrophage",
+   "vi": "đại thực bào phế nang",
+   "note": "",
+   "terms": [
+    "alveolar macrophage"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 280
+  },
+  {
+   "en": "interstitial pneumonia",
+   "vi": "viêm phổi mô kẽ",
+   "note": "",
+   "terms": [
+    "interstitial pneumonia"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 281
+  },
+  {
+   "en": "organizing pneumonia",
+   "vi": "viêm phổi tổ chức hóa",
+   "note": "",
+   "terms": [
+    "organizing pneumonia"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 282
+  },
+  {
+   "en": "desquamative",
+   "vi": "tróc vảy",
+   "note": "desquamative interstitial pneumonia = viêm phổi mô kẽ tróc vảy",
+   "terms": [
+    "desquamative"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 283
+  },
+  {
+   "en": "pleura / pleural",
+   "vi": "màng phổi",
+   "note": "",
+   "terms": [
+    "pleura",
+    "pleural"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 284
+  },
+  {
+   "en": "interlobular septa",
+   "vi": "vách gian tiểu thùy",
+   "note": "KHÔNG để \"septa\"",
+   "terms": [
+    "interlobular septa"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 285
+  },
+  {
+   "en": "fibroblast foci",
+   "vi": "ổ nguyên bào sợi",
+   "note": "",
+   "terms": [
+    "fibroblast foci"
+   ],
+   "section": "Hình thái & mô tả chung (general morphology / descriptors)",
+   "domain": "pathology",
+   "id": 286
+  },
+  {
+   "en": "neurodegeneration",
+   "vi": "thoái hóa thần kinh",
+   "note": "chuẩn (Wikipedia VI, Hội Thần kinh học VN)",
+   "terms": [
+    "neurodegeneration"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 287
+  },
+  {
+   "en": "neurodegenerative disease",
+   "vi": "bệnh thoái hóa thần kinh",
+   "note": "",
+   "terms": [
+    "neurodegenerative disease"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 288
+  },
+  {
+   "en": "dementia",
+   "vi": "sa sút trí tuệ",
+   "note": "",
+   "terms": [
+    "dementia"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 289
+  },
+  {
+   "en": "Alzheimer disease (AD)",
+   "vi": "bệnh Alzheimer",
+   "note": "giữ viết tắt AD",
+   "terms": [
+    "Alzheimer disease",
+    "AD"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 290
+  },
+  {
+   "en": "Lewy body",
+   "vi": "thể Lewy",
+   "note": "tần cao/áp đảo (MSD chuyên gia, Wikipedia VI). KHÔNG giữ \"Lewy body\", KHÔNG \"thể Lewy body\" (thừa)",
+   "terms": [
+    "Lewy body"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 291
+  },
+  {
+   "en": "Dementia with Lewy bodies (DLB)",
+   "vi": "sa sút trí tuệ thể Lewy",
+   "note": "giữ viết tắt DLB",
+   "terms": [
+    "Dementia with Lewy bodies",
+    "DLB"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 292
+  },
+  {
+   "en": "Parkinson disease",
+   "vi": "bệnh Parkinson",
+   "note": "",
+   "terms": [
+    "Parkinson disease"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 293
+  },
+  {
+   "en": "parkinsonism",
+   "vi": "hội chứng parkinson",
+   "note": "",
+   "terms": [
+    "parkinsonism"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 294
+  },
+  {
+   "en": "gliosis",
+   "vi": "tăng sinh thần kinh đệm",
+   "note": "biến thể \"tăng sinh tế bào thần kinh đệm\" chính xác hơn nhưng dài; giữ dạng ngắn (hợp khung PPTX)",
+   "terms": [
+    "gliosis"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 295
+  },
+  {
+   "en": "neuron / neuronal loss",
+   "vi": "neuron / mất neuron",
+   "note": "\"neuron\" giữ nguyên là chuẩn y văn thần kinh VN; \"tế bào thần kinh\" đồng nghĩa dùng được",
+   "terms": [
+    "neuron",
+    "neuronal loss"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 296
+  },
+  {
+   "en": "astrocyte",
+   "vi": "tế bào hình sao",
+   "note": "áp đảo \"tế bào sao\" (lưu ý astrocytoma vẫn = \"u sao bào\")",
+   "terms": [
+    "astrocyte"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 297
+  },
+  {
+   "en": "inclusion (neuro)",
+   "vi": "thể vùi",
+   "note": "ngữ cảnh: neuro.",
+   "terms": [
+    "inclusion"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 298
+  },
+  {
+   "en": "amyloid plaque",
+   "vi": "mảng amyloid",
+   "note": "",
+   "terms": [
+    "amyloid plaque"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 299
+  },
+  {
+   "en": "neuritic plaque",
+   "vi": "mảng amyloid dạng neuritic",
+   "note": "\"mảng lão hóa\" (senile plaque) là biến thể cổ điển; deck dùng \"mảng amyloid\" rõ hơn cho ABC scoring",
+   "terms": [
+    "neuritic plaque"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 300
+  },
+  {
+   "en": "neurofibrillary tangles (NFT)",
+   "vi": "đám rối tơ thần kinh",
+   "note": "\"tơ\" và \"sợi\" thần kinh dùng ngang nhau (MSD dùng cả hai); giữ viết tắt NFT",
+   "terms": [
+    "neurofibrillary tangles",
+    "NFT"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 301
+  },
+  {
+   "en": "tau / tauopathy",
+   "vi": "tau / bệnh lý tau",
+   "note": "tau giữ EN (tên protein)",
+   "terms": [
+    "tau",
+    "tauopathy"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 302
+  },
+  {
+   "en": "TDP-43 / tdp43",
+   "vi": "TDP-43",
+   "note": "giữ EN",
+   "terms": [
+    "TDP-43",
+    "tdp43"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 303
+  },
+  {
+   "en": "spongiform encephalopathy",
+   "vi": "bệnh não dạng xốp",
+   "note": "\"bệnh não xốp\" phổ biến ngang (tên TSE/bò điên); giữ \"dạng xốp\" cho nhất quán deck",
+   "terms": [
+    "spongiform encephalopathy"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 304
+  },
+  {
+   "en": "microvacuolation / microvacuolar",
+   "vi": "tạo vi hốc / thoái hóa vi hốc",
+   "note": "",
+   "terms": [
+    "microvacuolation",
+    "microvacuolar"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 305
+  },
+  {
+   "en": "substantia nigra (SN)",
+   "vi": "chất đen",
+   "note": "\"liềm đen\" hay gặp trong y văn Parkinson; \"chất đen\" là danh pháp giải phẫu chuẩn. Giữ viết tắt SN",
+   "terms": [
+    "substantia nigra",
+    "SN"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 306
+  },
+  {
+   "en": "sporadic",
+   "vi": "tản phát",
+   "note": "chuẩn y khoa VN, đối nghĩa \"gia đình/di truyền\" (MSD \"thể tản phát\"); KHÔNG dùng \"lẻ tẻ\" (cách nói phụ). VD: sporadic CJD = CJD tản phát",
+   "terms": [
+    "sporadic"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 307
+  },
+  {
+   "en": "prion disease",
+   "vi": "bệnh prion",
+   "note": "prion giữ EN",
+   "terms": [
+    "prion disease"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 308
+  },
+  {
+   "en": "Creutzfeldt-Jakob disease (CJD)",
+   "vi": "bệnh Creutzfeldt-Jakob (CJD)",
+   "note": "tên riêng giữ nguyên; giữ viết tắt CJD",
+   "terms": [
+    "Creutzfeldt-Jakob disease",
+    "CJD"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 309
+  },
+  {
+   "en": "frontotemporal dementia (FTD/FTLD)",
+   "vi": "sa sút trí tuệ thùy trán-thái dương",
+   "note": "giữ viết tắt FTD/FTLD; FTLD-17, FTDP-17, FTLD-tdp43 giữ EN",
+   "terms": [
+    "frontotemporal dementia",
+    "FTD",
+    "FTLD"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 310
+  },
+  {
+   "en": "progressive supranuclear palsy (PSP)",
+   "vi": "liệt trên nhân tiến triển",
+   "note": "giữ viết tắt PSP",
+   "terms": [
+    "progressive supranuclear palsy",
+    "PSP"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 311
+  },
+  {
+   "en": "corticobasal degeneration (CBD)",
+   "vi": "thoái hóa vỏ não-hạch nền",
+   "note": "giữ viết tắt CBD",
+   "terms": [
+    "corticobasal degeneration",
+    "CBD"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 312
+  },
+  {
+   "en": "motor neuron disease (MND)",
+   "vi": "bệnh neuron vận động",
+   "note": "giữ viết tắt MND",
+   "terms": [
+    "motor neuron disease",
+    "MND"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 313
+  },
+  {
+   "en": "Pick disease",
+   "vi": "bệnh Pick",
+   "note": "tần cao (Long Chau, Vinmec)",
+   "terms": [
+    "Pick disease"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 314
+  },
+  {
+   "en": "Pick bodies",
+   "vi": "Pick bodies (giữ EN)",
+   "note": "\"the Pick\" chua thanh chuan trong y van VN (VN mo ta \"te bao Pick\" + \"the vui\"). Giu EN",
+   "terms": [
+    "Pick bodies"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 315
+  },
+  {
+   "en": "hippocampus",
+   "vi": "hồi hải mã",
+   "note": "",
+   "terms": [
+    "hippocampus"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 316
+  },
+  {
+   "en": "cingulate gyrus",
+   "vi": "hồi đai",
+   "note": "",
+   "terms": [
+    "cingulate gyrus"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 317
+  },
+  {
+   "en": "dentate fascia (of hippocampus)",
+   "vi": "hồi răng cưa",
+   "note": "ngữ cảnh: of hippocampus.",
+   "terms": [
+    "dentate fascia"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 318
+  },
+  {
+   "en": "caudate",
+   "vi": "nhân đuôi",
+   "note": "",
+   "terms": [
+    "caudate"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 319
+  },
+  {
+   "en": "basal ganglia",
+   "vi": "hạch nền",
+   "note": "",
+   "terms": [
+    "basal ganglia"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 320
+  },
+  {
+   "en": "neuropil",
+   "vi": "neuropil",
+   "note": "giữ EN",
+   "terms": [
+    "neuropil"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 321
+  },
+  {
+   "en": "Braak stage",
+   "vi": "giai đoạn Braak",
+   "note": "\"stage\" dịch \"giai đoạn\"; Braak (tên riêng) giữ EN",
+   "terms": [
+    "Braak stage"
+   ],
+   "section": "Neuropathology — thoái hóa thần kinh (neurodegeneration)",
+   "domain": "pathology",
+   "id": 322
+  },
+  {
+   "en": "External Quality Assessment (EQA)",
+   "vi": "ngoại kiểm",
+   "note": "Chuẩn ngành: CSQL/Trung tâm Kiểm chuẩn (qcc.edu.vn), Sở Y tế TP.HCM, ĐH Y Dược. Dạng đầy đủ \"ngoại kiểm tra chất lượng xét nghiệm\". Giữ viết tắt EQA",
+   "terms": [
+    "External Quality Assessment",
+    "EQA"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 323
+  },
+  {
+   "en": "Quality Control (QC)",
+   "vi": "nội kiểm",
+   "note": "Chuẩn ngành (Trung tâm Kiểm chuẩn, chatluongxetnghiem.com); dạng đầy đủ \"nội kiểm tra chất lượng xét nghiệm\". Giữ viết tắt QC",
+   "terms": [
+    "Quality Control",
+    "QC"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 324
+  },
+  {
+   "en": "Quality Assurance (QA)",
+   "vi": "đảm bảo chất lượng",
+   "note": "Phổ biến hơn \"bảo đảm chất lượng\" (Sở Y tế TP.HCM). Giữ viết tắt QA",
+   "terms": [
+    "Quality Assurance",
+    "QA"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 325
+  },
+  {
+   "en": "antigen retrieval",
+   "vi": "bộc lộ kháng nguyên",
+   "note": "Tên bước 1 chuẩn của quy trình nhuộm HMMD (Vinmec, BvNTP, Bộ môn GPB ĐH Y HN). Biến thể \"phục hồi kháng nguyên\" dùng song song. KHÔNG dịch \"trình diện kháng nguyên\" (= antigen presentation, khác nghĩa)",
+   "terms": [
+    "antigen retrieval"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 326
+  },
+  {
+   "en": "reproducibility (ISO 15189)",
+   "vi": "tính tái lập / độ tái lập",
+   "note": "ngữ cảnh: ISO 15189. Deck dùng \"tính tái lập\". Register kiểm chuẩn/ISO 15189: \"độ tái lập\" (khác phòng/người/thiết bị), PHÂN BIỆT với \"độ lặp lại\" = repeatability (cùng phòng/người/thiết bị). \"độ lặp lại\" KHÔNG phải reproducibility",
+   "terms": [
+    "reproducibility"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 327
+  },
+  {
+   "en": "cut point / threshold",
+   "vi": "ngưỡng / điểm cắt",
+   "note": "\"điểm cắt\" = cut-off (GPB/thống kê); deck ghép \"ngưỡng (điểm cắt)\" cho rõ",
+   "terms": [
+    "cut point",
+    "threshold"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 328
+  },
+  {
+   "en": "targeted therapy",
+   "vi": "liệu pháp nhắm trúng đích",
+   "note": "Áp đảo (Vinmec, Tâm Anh, BV Ung Bướu HN, BV 108). KHÔNG dùng \"liệu pháp đích\"",
+   "terms": [
+    "targeted therapy"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 329
+  },
+  {
+   "en": "assay",
+   "vi": "xét nghiệm",
+   "note": "Chuẩn lâm sàng. KHÔNG dùng \"khảo nghiệm\" (sai register)",
+   "terms": [
+    "assay"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 330
+  },
+  {
+   "en": "estrogen receptor (ER)",
+   "vi": "thụ thể estrogen",
+   "note": "Áp đảo (Tâm Anh, Vinmec, NCI). \"thụ thể nội tiết\" = hormone receptor (ô dù), không thay riêng ER/PR. Giữ viết tắt ER",
+   "terms": [
+    "estrogen receptor",
+    "ER"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 331
+  },
+  {
+   "en": "progesterone receptor (PR)",
+   "vi": "thụ thể progesterone",
+   "note": "Như ER. Giữ viết tắt PR",
+   "terms": [
+    "progesterone receptor",
+    "PR"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 332
+  },
+  {
+   "en": "infiltrating / invasive ductal carcinoma",
+   "vi": "ung thư biểu mô ống xâm nhập",
+   "note": "Dạng chuẩn; biến thể \"thể ống xâm nhập\"/\"carcinôm ống xâm nhập\" cùng lưu hành",
+   "terms": [
+    "infiltrating",
+    "invasive ductal carcinoma"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 333
+  },
+  {
+   "en": "invasive lobular carcinoma",
+   "vi": "ung thư biểu mô tiểu thùy xâm nhập",
+   "note": "Song song với ống xâm nhập",
+   "terms": [
+    "invasive lobular carcinoma"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 334
+  },
+  {
+   "en": "false negative / false positive",
+   "vi": "âm tính giả / dương tính giả",
+   "note": "",
+   "terms": [
+    "false negative",
+    "false positive"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 335
+  },
+  {
+   "en": "endogenous peroxidase",
+   "vi": "peroxidase nội sinh",
+   "note": "",
+   "terms": [
+    "endogenous peroxidase"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 336
+  },
+  {
+   "en": "chromogen",
+   "vi": "chất tạo màu (chromogen)",
+   "note": "DAB, H2O2 giữ EN",
+   "terms": [
+    "chromogen"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 337
+  },
+  {
+   "en": "multiplex IHC",
+   "vi": "IHC đa dấu ấn (multiplex)",
+   "note": "Chưa có chuẩn VN cố định; giữ gloss (multiplex)",
+   "terms": [
+    "multiplex IHC"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 338
+  },
+  {
+   "en": "spatial pathology / spatial biology",
+   "vi": "giải phẫu bệnh không gian / sinh học không gian",
+   "note": "Thuật ngữ mới, chưa có chuẩn VN; giữ EN gloss khi cần",
+   "terms": [
+    "spatial pathology",
+    "spatial biology"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 339
+  },
+  {
+   "en": "ring study (EQA)",
+   "vi": "nghiên cứu vòng (ring study)",
+   "note": "mỗi phòng XN cùng làm trên ca của các phòng khác",
+   "terms": [
+    "ring study",
+    "EQA"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 340
+  },
+  {
+   "en": "laboratory accreditation",
+   "vi": "công nhận phòng xét nghiệm",
+   "note": "Laboratory Accreditation",
+   "terms": [
+    "laboratory accreditation"
+   ],
+   "section": "Lab QA / IHC — Ngoại kiểm hóa mô miễn dịch (EQA of IHC)",
+   "domain": "pathology",
+   "id": 341
+  },
+  {
+   "en": "cardiac pseudoneoplasm",
+   "vi": "giả u tim (pseudoneoplasm)",
+   "note": "tổn thương giống u nhưng không tân sinh",
+   "terms": [
+    "cardiac pseudoneoplasm"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 342
+  },
+  {
+   "en": "inflammatory myofibroblastic tumor (IMT)",
+   "vi": "u nguyên bào sợi cơ viêm",
+   "note": "myofibroblast = \"nguyên bào sợi cơ\"; KHÔNG đảo \"cơ sợi\". Giữ viết tắt IMT",
+   "terms": [
+    "inflammatory myofibroblastic tumor",
+    "IMT"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 343
+  },
+  {
+   "en": "myofibroblast",
+   "vi": "nguyên bào sợi cơ",
+   "note": "fibro=sợi, myo=cơ; KHÔNG \"cơ sợi\"",
+   "terms": [
+    "myofibroblast"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 344
+  },
+  {
+   "en": "papillary fibroelastoma (PFE)",
+   "vi": "u nhú sợi chun",
+   "note": "Journal VN (Tạp chí Y Dược Thực hành 175 - Viện Tim mạch TP.HCM; Hội Tim mạch học TP.HCM bài CLVT) dùng \"u nhú sợi chun\" (phổ biến hơn \"u nhú xơ chun\"). Giữ viết tắt PFE",
+   "terms": [
+    "papillary fibroelastoma",
+    "PFE"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 345
+  },
+  {
+   "en": "hamartoma",
+   "vi": "u mô thừa",
+   "note": "áp đảo (BV Bạch Mai, BV 115); \"u lạc mô\"=choristoma (KHÁC)",
+   "terms": [
+    "hamartoma"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 346
+  },
+  {
+   "en": "hamartoma of mature cardiac myocytes (HMCM)",
+   "vi": "u mô thừa tế bào cơ tim trưởng thành",
+   "note": "giữ viết tắt HMCM",
+   "terms": [
+    "hamartoma of mature cardiac myocytes",
+    "HMCM"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 347
+  },
+  {
+   "en": "cardiac myxoma",
+   "vi": "u nhầy (tim)",
+   "note": "\"u nhầy\"/\"u nhày\" song song; giữ \"u nhầy\"",
+   "terms": [
+    "cardiac myxoma"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 348
+  },
+  {
+   "en": "calcified amorphous tumor (CAT)",
+   "vi": "u vô định hình vôi hóa",
+   "note": "hiếm, mô tả tự đặt; \"vôi hóa\" > \"canxi hóa\". Giữ viết tắt CAT",
+   "terms": [
+    "calcified amorphous tumor",
+    "CAT"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 349
+  },
+  {
+   "en": "caseous calcification of mitral annulus (CCMA)",
+   "vi": "vôi hóa bã đậu vòng van hai lá",
+   "note": "caseous=\"bã đậu\". Giữ viết tắt CCMA",
+   "terms": [
+    "caseous calcification of mitral annulus",
+    "CCMA"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 350
+  },
+  {
+   "en": "mitral annular calcification (MAC)",
+   "vi": "vôi hóa vòng van hai lá",
+   "note": "chuẩn tim mạch VN. Giữ viết tắt MAC",
+   "terms": [
+    "mitral annular calcification",
+    "MAC"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 351
+  },
+  {
+   "en": "histiocytoid cardiomyopathy",
+   "vi": "bệnh cơ tim dạng mô bào",
+   "note": "rất hiếm, mô tả tự đặt",
+   "terms": [
+    "histiocytoid cardiomyopathy"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 352
+  },
+  {
+   "en": "lipomatous hypertrophy of atrial septum (LHAS)",
+   "vi": "phì đại mỡ vách liên nhĩ",
+   "note": "hypertrophy=phì đại (KHÔNG \"tăng sản\"). Giữ viết tắt LHAS",
+   "terms": [
+    "lipomatous hypertrophy of atrial septum",
+    "LHAS"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 353
+  },
+  {
+   "en": "MICE (mesothelial/monocytic incidental cardiac excrescence)",
+   "vi": "chồi tim tình cờ dạng trung biểu mô/đơn nhân",
+   "note": "excrescence=chồi, incidental=tình cờ. Giữ viết tắt MICE",
+   "terms": [
+    "MICE",
+    "mesothelial/monocytic incidental cardiac excrescence"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 354
+  },
+  {
+   "en": "cystic tumor of the AV node (CTAVN)",
+   "vi": "u dạng nang nút nhĩ thất",
+   "note": "Giữ viết tắt CTAVN",
+   "terms": [
+    "cystic tumor of the AV node",
+    "CTAVN"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 355
+  },
+  {
+   "en": "Lambl excrescence",
+   "vi": "chồi Lambl",
+   "note": "",
+   "terms": [
+    "Lambl excrescence"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 356
+  },
+  {
+   "en": "atrial septum / atrioventricular",
+   "vi": "vách liên nhĩ / nhĩ thất",
+   "note": "chuẩn giải phẫu tim VN",
+   "terms": [
+    "atrial septum",
+    "atrioventricular"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 357
+  },
+  {
+   "en": "endocardium / myocardium / pericardium",
+   "vi": "nội tâm mạc / cơ tim / màng ngoài tim",
+   "note": "KHÔNG \"ngoại tâm mạc\" cho pericardium",
+   "terms": [
+    "endocardium",
+    "myocardium",
+    "pericardium"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 358
+  },
+  {
+   "en": "mesothelial / mesothelium",
+   "vi": "trung biểu mô",
+   "note": "",
+   "terms": [
+    "mesothelial",
+    "mesothelium"
+   ],
+   "section": "Cardiac pathology - gia u tim (cardiac pseudoneoplasms)",
+   "domain": "pathology",
+   "id": 359
+  },
+  {
+   "en": "cervical cancer screening",
+   "vi": "tầm soát ung thư cổ tử cung",
+   "note": "\"tầm soát\" áp đảo (MOH, BvNTP); \"sàng lọc\" song song",
+   "terms": [
+    "cervical cancer screening"
+   ],
+   "section": "Cervical cytology - Bethesda (te bao hoc co tu cung)",
+   "domain": "pathology",
+   "id": 360
+  },
+  {
+   "en": "cervical cytology",
+   "vi": "tế bào học cổ tử cung",
+   "note": "",
+   "terms": [
+    "cervical cytology"
+   ],
+   "section": "Cervical cytology - Bethesda (te bao hoc co tu cung)",
+   "domain": "pathology",
+   "id": 361
+  },
+  {
+   "en": "squamous intraepithelial lesion (LSIL/HSIL)",
+   "vi": "tổn thương nội biểu mô vảy (độ thấp/độ cao)",
+   "note": "\"vảy\" KHÔNG \"gai\" cho Bethesda cổ tử cung; giữ LSIL/HSIL",
+   "terms": [
+    "squamous intraepithelial lesion",
+    "LSIL",
+    "HSIL"
+   ],
+   "section": "Cervical cytology - Bethesda (te bao hoc co tu cung)",
+   "domain": "pathology",
+   "id": 362
+  },
+  {
+   "en": "cervical intraepithelial neoplasia (CIN)",
+   "vi": "tân sinh trong biểu mô cổ tử cung (CIN)",
+   "note": "\"trong biểu mô\" áp đảo; giữ CIN/CIN2/CIN3",
+   "terms": [
+    "cervical intraepithelial neoplasia",
+    "CIN"
+   ],
+   "section": "Cervical cytology - Bethesda (te bao hoc co tu cung)",
+   "domain": "pathology",
+   "id": 363
+  },
+  {
+   "en": "cytotechnician / cytotechnologist",
+   "vi": "kỹ thuật viên tế bào học",
+   "note": "",
+   "terms": [
+    "cytotechnician",
+    "cytotechnologist"
+   ],
+   "section": "Cervical cytology - Bethesda (te bao hoc co tu cung)",
+   "domain": "pathology",
+   "id": 364
+  },
+  {
+   "en": "Bethesda codes (NILM/ASC-US/ASC-H/AGC/HSIL+)",
+   "vi": "giữ nguyên viết tắt",
+   "note": "ngữ cảnh: NILM/ASC-US/ASC-H/AGC/HSIL+. y văn VN giữ EN",
+   "terms": [
+    "Bethesda codes"
+   ],
+   "section": "Cervical cytology - Bethesda (te bao hoc co tu cung)",
+   "domain": "pathology",
+   "id": 365
+  },
+  {
+   "en": "myxofibrosarcoma",
+   "vi": "sarcôm sợi niêm",
+   "note": "myxo=niêm + fibro=sợi. KHÔNG \"sarcôm xơ nhầy\"",
+   "terms": [
+    "myxofibrosarcoma"
+   ],
+   "section": "Quy tắc dịch myxoid / fibro / sclerosing (user chốt 2026-08-01)",
+   "domain": "pathology",
+   "id": 366
+  },
+  {
+   "en": "low-grade fibromyxoid sarcoma (LGFMS)",
+   "vi": "sarcôm sợi niêm độ thấp",
+   "note": "fibromyxoid = sợi niêm",
+   "terms": [
+    "low-grade fibromyxoid sarcoma",
+    "LGFMS"
+   ],
+   "section": "Quy tắc dịch myxoid / fibro / sclerosing (user chốt 2026-08-01)",
+   "domain": "pathology",
+   "id": 367
+  },
+  {
+   "en": "myxoid (descriptor)",
+   "vi": "(dạng) niêm",
+   "note": "ngữ cảnh: descriptor. VD myxoid liposarcoma = sarcôm mỡ dạng niêm",
+   "terms": [
+    "myxoid"
+   ],
+   "section": "Quy tắc dịch myxoid / fibro / sclerosing (user chốt 2026-08-01)",
+   "domain": "pathology",
+   "id": 368
+  },
+  {
+   "en": "sclerosing",
+   "vi": "xơ hóa",
+   "note": "KHÔNG \"xơ\" đơn thuần cho myxoid",
+   "terms": [
+    "sclerosing"
+   ],
+   "section": "Quy tắc dịch myxoid / fibro / sclerosing (user chốt 2026-08-01)",
+   "domain": "pathology",
+   "id": 369
+  },
+  {
+   "en": "amyloidosis",
+   "vi": "thoái hóa dạng bột (amyloidosis)",
+   "note": "Journal Y Dược Phạm Ngọc Thạch, Vinmec, BvNTP; \"thoái hóa tinh bột\" là biến thể phổ thông. Bệnh = thoái hóa dạng bột; CHẤT = giữ \"amyloid\"",
+   "terms": [
+    "amyloidosis"
+   ],
+   "section": "Pulmonary pathology - amyloid / ILD",
+   "domain": "pathology",
+   "id": 370
+  },
+  {
+   "en": "amyloid",
+   "vi": "amyloid",
+   "note": "GIỮ cho chất/sợi/lắng đọng amyloid (mọi nguồn VN giữ \"amyloid\")",
+   "terms": [
+    "amyloid"
+   ],
+   "section": "Pulmonary pathology - amyloid / ILD",
+   "domain": "pathology",
+   "id": 371
+  },
+  {
+   "en": "hypersensitivity pneumonitis (HP/CHP)",
+   "vi": "viêm phổi quá mẫn",
+   "note": "chuẩn miễn dịch + MSD (\"viêm phổi kẽ quá mẫn\"); biến thể \"viêm phổi tăng cảm\", cổ điển \"viêm phế nang dị ứng ngoại lai\". Giữ viết tắt CHP",
+   "terms": [
+    "hypersensitivity pneumonitis",
+    "HP",
+    "CHP"
+   ],
+   "section": "Pulmonary pathology - amyloid / ILD",
+   "domain": "pathology",
+   "id": 372
+  },
+  {
+   "en": "interstitial lung disease (ILD)",
+   "vi": "bệnh phổi mô kẽ",
+   "note": "Bộ Y Tế QĐ 1005/2023; \"bệnh phổi kẽ\" song song. Giữ viết tắt ILD",
+   "terms": [
+    "interstitial lung disease",
+    "ILD"
+   ],
+   "section": "Pulmonary pathology - amyloid / ILD",
+   "domain": "pathology",
+   "id": 373
+  },
+  {
+   "en": "idiopathic pulmonary fibrosis (IPF)",
+   "vi": "xơ phổi vô căn",
+   "note": "Tạp chí Y học VN; \"xơ hóa phổi vô căn\" song song. Giữ viết tắt IPF",
+   "terms": [
+    "idiopathic pulmonary fibrosis",
+    "IPF"
+   ],
+   "section": "Pulmonary pathology - amyloid / ILD",
+   "domain": "pathology",
+   "id": 374
+  },
+  {
+   "en": "plasma cell",
+   "vi": "tương bào",
+   "note": "chuẩn GPB/huyết học. KHÔNG \"tế bào plasma\"/\"tế bào tương\"",
+   "terms": [
+    "plasma cell"
+   ],
+   "section": "Pulmonary pathology - amyloid / ILD",
+   "domain": "pathology",
+   "id": 375
+  },
+  {
+   "en": "plasma cell neoplasm",
+   "vi": "tân sinh tương bào",
+   "note": "phạm trù WHO. LƯU Ý \"u tương bào\" = plasmacytoma (thực thể cụ thể)",
+   "terms": [
+    "plasma cell neoplasm"
+   ],
+   "section": "Pulmonary pathology - amyloid / ILD",
+   "domain": "pathology",
+   "id": 376
+  },
+  {
+   "en": "lymphoproliferative disorder",
+   "vi": "rối loạn tăng sinh lympho",
+   "note": "disorder=rối loạn",
+   "terms": [
+    "lymphoproliferative disorder"
+   ],
+   "section": "Pulmonary pathology - amyloid / ILD",
+   "domain": "pathology",
+   "id": 377
+  },
+  {
+   "en": "monotypic (light chain)",
+   "vi": "đơn dòng (monotypic)",
+   "note": "ngữ cảnh: light chain. giữ EN gloss để phân biệt monoclonal (phân tử) vs monotypic (IHC/ISH chuỗi nhẹ)",
+   "terms": [
+    "monotypic"
+   ],
+   "section": "Pulmonary pathology - amyloid / ILD",
+   "domain": "pathology",
+   "id": 378
+  },
+  {
+   "en": "pulmonary/lung nodule",
+   "vi": "nốt (phổi)",
+   "note": "\"nốt\" cho phổi; \"nhân\" cho tuyến giáp",
+   "terms": [
+    "pulmonary/lung nodule"
+   ],
+   "section": "Pulmonary pathology - amyloid / ILD",
+   "domain": "pathology",
+   "id": 379
+  },
+  {
+   "en": "fibril (amyloid)",
+   "vi": "sợi (fibril)",
+   "note": "ngữ cảnh: amyloid. sợi amyloid; giữ EN gloss lần đầu",
+   "terms": [
+    "fibril"
+   ],
+   "section": "Pulmonary pathology - amyloid / ILD",
+   "domain": "pathology",
+   "id": 380
+  },
+  {
+   "en": "extracellular matrix (ECM)",
+   "vi": "chất nền ngoại bào",
+   "note": "KHÔNG nhầm stroma=mô đệm; \"khuôn ngoại bào\" ít dùng",
+   "terms": [
+    "extracellular matrix",
+    "ECM"
+   ],
+   "section": "Pulmonary pathology - amyloid / ILD",
+   "domain": "pathology",
+   "id": 381
+  },
+  {
+   "en": "cutaneous T-cell lymphoma (CTCL)",
+   "vi": "lymphôm tế bào T ở da (CTCL)",
+   "note": "house style lymphôm; y văn hay \"u lympho tế bào T ở da\". Giữ viết tắt CTCL",
+   "terms": [
+    "cutaneous T-cell lymphoma",
+    "CTCL"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 382
+  },
+  {
+   "en": "mycosis fungoides (MF)",
+   "vi": "u sùi dạng nấm (MF)",
+   "note": "áp đảo dalieu.vn/MSD/VICAS; KHÔNG \"u sùi thể nấm\". Giữ MF",
+   "terms": [
+    "mycosis fungoides",
+    "MF"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 383
+  },
+  {
+   "en": "lymphomatoid papulosis (LyP)",
+   "vi": "sẩn dạng lympho (LyP)",
+   "note": "dalieu.vn \"u sẩn dạng lympho\"; \"-oid\"=dạng lympho (KHÔNG \"lymphôm\"). Giữ LyP",
+   "terms": [
+    "lymphomatoid papulosis",
+    "LyP"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 384
+  },
+  {
+   "en": "primary cutaneous ALCL (pcALCL)",
+   "vi": "lymphôm tế bào lớn thoái sản nguyên phát ở da (pcALCL)",
+   "note": "anaplastic=thoái sản. Giữ pcALCL",
+   "terms": [
+    "primary cutaneous ALCL",
+    "pcALCL"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 385
+  },
+  {
+   "en": "primary cutaneous gamma-delta TCL (PCGDTCL)",
+   "vi": "lymphôm tế bào T gamma/delta ở da nguyên phát (PCGDTCL)",
+   "note": "hiếm (~3,7% NC VN). Giữ PCGDTCL",
+   "terms": [
+    "primary cutaneous gamma-delta TCL",
+    "PCGDTCL"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 386
+  },
+  {
+   "en": "extranodal NK/T-cell lymphoma, nasal type (ENKTCL)",
+   "vi": "lymphôm tế bào NK/T ngoài hạch, thể mũi",
+   "note": "Tạp chí NCYH \"típ mũi\". Giữ ENKTCL",
+   "terms": [
+    "extranodal NK/T-cell lymphoma, nasal type",
+    "ENKTCL"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 387
+  },
+  {
+   "en": "subcutaneous panniculitis-like TCL (SPTCL)",
+   "vi": "lymphôm tế bào T giống viêm mô mỡ dưới da",
+   "note": "dalieu.vn. Giữ SPTCL",
+   "terms": [
+    "subcutaneous panniculitis-like TCL",
+    "SPTCL"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 388
+  },
+  {
+   "en": "epidermotropism",
+   "vi": "hướng thượng bì",
+   "note": "dalieu.vn",
+   "terms": [
+    "epidermotropism"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 389
+  },
+  {
+   "en": "panniculitis / lobular panniculitis",
+   "vi": "viêm mô mỡ / viêm mô mỡ tiểu thùy",
+   "note": "VICAS, Tâm Anh",
+   "terms": [
+    "panniculitis",
+    "lobular panniculitis"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 390
+  },
+  {
+   "en": "subcutis / panniculus",
+   "vi": "hạ bì / lớp mỡ dưới da",
+   "note": "",
+   "terms": [
+    "subcutis",
+    "panniculus"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 391
+  },
+  {
+   "en": "angiocentric / angiodestructive",
+   "vi": "hướng mạch / phá hủy mạch (angiocentric)",
+   "note": "chưa chuẩn VN, giữ gloss EN",
+   "terms": [
+    "angiocentric",
+    "angiodestructive"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 392
+  },
+  {
+   "en": "cytotoxic markers",
+   "vi": "dấu ấn gây độc tế bào",
+   "note": "TIA-1/granzyme B/perforin giữ EN",
+   "terms": [
+    "cytotoxic markers"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 393
+  },
+  {
+   "en": "large cell transformation",
+   "vi": "chuyển dạng tế bào lớn",
+   "note": "",
+   "terms": [
+    "large cell transformation"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 394
+  },
+  {
+   "en": "patch / plaque (da)",
+   "vi": "dát / mảng",
+   "note": "ngữ cảnh: da. patch=dát, plaque=mảng (KHÔNG \"mảng bám\")",
+   "terms": [
+    "patch",
+    "plaque"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 395
+  },
+  {
+   "en": "skin-directed therapy",
+   "vi": "điều trị hướng vào da",
+   "note": "đối lập điều trị toàn thân",
+   "terms": [
+    "skin-directed therapy"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 396
+  },
+  {
+   "en": "karyorrhexis",
+   "vi": "vỡ nhân",
+   "note": "",
+   "terms": [
+    "karyorrhexis"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 397
+  },
+  {
+   "en": "hemophagocytic syndrome",
+   "vi": "hội chứng thực bào máu",
+   "note": "",
+   "terms": [
+    "hemophagocytic syndrome"
+   ],
+   "section": "CTCL / dermatopathology",
+   "domain": "pathology",
+   "id": 398
+  },
+  {
+   "en": "CDKN2A/B deletion",
+   "vi": "mất đoạn CDKN2A/B",
+   "note": "\"mất đoạn\"=deletion (áp đảo y văn di truyền VN, Long Châu/novagen); KHÔNG \"xóa đoạn\"",
+   "terms": [
+    "CDKN2A/B deletion"
+   ],
+   "section": "Meningioma molecular - bo sung",
+   "domain": "pathology",
+   "id": 399
+  },
+  {
+   "en": "arachnoid cap cell",
+   "vi": "tế bào mũ màng nhện",
+   "note": "bv108.vn, xray.vn",
+   "terms": [
+    "arachnoid cap cell"
+   ],
+   "section": "Meningioma molecular - bo sung",
+   "domain": "pathology",
+   "id": 400
+  },
+  {
+   "en": "TERT promoter mutation",
+   "vi": "đột biến vùng khởi động (promoter) TERT",
+   "note": "Tạp chí Y học VN; giữ tên gen TERT",
+   "terms": [
+    "TERT promoter mutation"
+   ],
+   "section": "Meningioma molecular - bo sung",
+   "domain": "pathology",
+   "id": 401
+  },
+  {
+   "en": "small cell lung carcinoma (SCLC)",
+   "vi": "carcinôm tế bào nhỏ (SCLC)",
+   "note": "deck phiên âm \"carcinôm\" nhất quán; mainstream \"ung thư phổi tế bào nhỏ\". Giữ SCLC",
+   "terms": [
+    "small cell lung carcinoma",
+    "SCLC"
+   ],
+   "section": "Pulmonary pathology - SCLC / SEF",
+   "domain": "pathology",
+   "id": 402
+  },
+  {
+   "en": "neuroendocrine (NE) marker",
+   "vi": "dấu ấn thần kinh nội tiết (NE)",
+   "note": "NE-cao/NE-thấp. Giữ NE",
+   "terms": [
+    "neuroendocrine marker",
+    "NE"
+   ],
+   "section": "Pulmonary pathology - SCLC / SEF",
+   "domain": "pathology",
+   "id": 403
+  },
+  {
+   "en": "basaloid",
+   "vi": "dạng đáy (basaloid)",
+   "note": "basal=đáy; \"carcinôm tế bào gai dạng đáy ở phổi\"",
+   "terms": [
+    "basaloid"
+   ],
+   "section": "Pulmonary pathology - SCLC / SEF",
+   "domain": "pathology",
+   "id": 404
+  },
+  {
+   "en": "tuft cell / tuft cell-like",
+   "vi": "(giống) tế bào chùm (tuft cell)",
+   "note": "TRÁNH \"tế bào tua\" (=dendritic cell). Giữ gloss EN",
+   "terms": [
+    "tuft cell",
+    "tuft cell-like"
+   ],
+   "section": "Pulmonary pathology - SCLC / SEF",
+   "domain": "pathology",
+   "id": 405
+  },
+  {
+   "en": "lineage factors",
+   "vi": "yếu tố dòng tế bào (lineage factors)",
+   "note": "",
+   "terms": [
+    "lineage factors"
+   ],
+   "section": "Pulmonary pathology - SCLC / SEF",
+   "domain": "pathology",
+   "id": 406
+  },
+  {
+   "en": "chemosensory cell",
+   "vi": "tế bào hóa cảm (chemosensory)",
+   "note": "",
+   "terms": [
+    "chemosensory cell"
+   ],
+   "section": "Pulmonary pathology - SCLC / SEF",
+   "domain": "pathology",
+   "id": 407
+  },
+  {
+   "en": "mesothelioma",
+   "vi": "u trung biểu mô",
+   "note": "Vinmec/VICAS; phân biệt mesothelium=trung biểu mô (mô)",
+   "terms": [
+    "mesothelioma"
+   ],
+   "section": "Pulmonary pathology - SCLC / SEF",
+   "domain": "pathology",
+   "id": 408
+  },
+  {
+   "en": "sclerosing epithelioid fibrosarcoma (SEF)",
+   "vi": "sarcôm sợi dạng biểu mô xơ hóa",
+   "note": "rule fibro=sợi+epithelioid=dạng biểu mô+sclerosing=xơ hóa; VN chưa có chuẩn. Giữ SEF",
+   "terms": [
+    "sclerosing epithelioid fibrosarcoma",
+    "SEF"
+   ],
+   "section": "Pulmonary pathology - SCLC / SEF",
+   "domain": "pathology",
+   "id": 409
+  },
+  {
+   "en": "gene fusion / fusion transcript",
+   "vi": "dung hợp gen / bản phiên mã dung hợp",
+   "note": "Gene Solutions VN",
+   "terms": [
+    "gene fusion",
+    "fusion transcript"
+   ],
+   "section": "Pulmonary pathology - SCLC / SEF",
+   "domain": "pathology",
+   "id": 410
+  },
+  {
+   "en": "break apart FISH",
+   "vi": "FISH tách đôi",
+   "note": "giữ tên gen (EWSR1)",
+   "terms": [
+    "break apart FISH"
+   ],
+   "section": "Pulmonary pathology - SCLC / SEF",
+   "domain": "pathology",
+   "id": 411
+  },
+  {
+   "en": "next generation sequencing (NGS)",
+   "vi": "giải trình tự thế hệ mới (NGS)",
+   "note": "",
+   "terms": [
+    "next generation sequencing",
+    "NGS"
+   ],
+   "section": "Pulmonary pathology - SCLC / SEF",
+   "domain": "pathology",
+   "id": 412
+  },
+  {
+   "en": "acinar pattern",
+   "vi": "kiểu túi tuyến",
+   "note": "",
+   "terms": [
+    "acinar pattern"
+   ],
+   "section": "Pulmonary pathology - SCLC / SEF",
+   "domain": "pathology",
+   "id": 413
+  },
+  {
+   "en": "chordoid meningioma",
+   "vi": "u màng não dạng dây sống",
+   "note": "WHO độ 2; hình thái giống chordoma",
+   "terms": [
+    "chordoid meningioma"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 414
+  },
+  {
+   "en": "rhabdoid meningioma",
+   "vi": "u màng não dạng cơ vân",
+   "note": "WHO 2021 KHÔNG mặc nhiên độ 3 (chỉ khi đặc điểm độ cao/mất BAP1)",
+   "terms": [
+    "rhabdoid meningioma"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 415
+  },
+  {
+   "en": "solitary fibrous tumor (SFT)",
+   "vi": "u sợi đơn độc (SFT)",
+   "note": "fibro=sợi; hemangiopericytoma bỏ khỏi thuật ngữ CNS từ WHO 2021. Giữ SFT",
+   "terms": [
+    "solitary fibrous tumor",
+    "SFT"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 416
+  },
+  {
+   "en": "hemangiopericytoma",
+   "vi": "hemangiopericytoma",
+   "note": "GIỮ EN (gộp vào SFT, WHO CNS5)",
+   "terms": [
+    "hemangiopericytoma"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 417
+  },
+  {
+   "en": "intracranial mesenchymal tumor, FET::CREB fusion",
+   "vi": "u trung mô nội sọ có dung hợp FET::CREB",
+   "note": "mô tả, chưa chuẩn VN",
+   "terms": [
+    "intracranial mesenchymal tumor, FET::CREB fusion"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 418
+  },
+  {
+   "en": "leptomeningeal melanocytoma",
+   "vi": "u tế bào hắc tố màng não mềm (leptomeningeal melanocytoma)",
+   "note": "melanocytoma=u tế bào hắc tố (lành/độ thấp)",
+   "terms": [
+    "leptomeningeal melanocytoma"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 419
+  },
+  {
+   "en": "malignant melanotic nerve sheath tumor (MMNST)",
+   "vi": "u bao thần kinh hắc tố ác tính",
+   "note": "trước gọi \"melanotic schwannoma\" (WHO 2020 đổi tên)",
+   "terms": [
+    "malignant melanotic nerve sheath tumor",
+    "MMNST"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 420
+  },
+  {
+   "en": "dural-based (neoplasm)",
+   "vi": "(u/khối) nền màng cứng",
+   "note": "ngữ cảnh: neoplasm. y văn thần kinh VN dùng \"màng cứng\"",
+   "terms": [
+    "dural-based"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 421
+  },
+  {
+   "en": "primary intracranial sarcoma, DICER1-mutant",
+   "vi": "sarcôm nội sọ nguyên phát, đột biến DICER1",
+   "note": "manh mối: cầu/giọt hyaline",
+   "terms": [
+    "primary intracranial sarcoma, DICER1-mutant"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 422
+  },
+  {
+   "en": "glioneuronal tumor (GNT)",
+   "vi": "u thần kinh đệm-thần kinh (GNT)",
+   "note": "glio=thần kinh đệm + neuronal=thần kinh (WHO CNS5). Giữ GNT",
+   "terms": [
+    "glioneuronal tumor",
+    "GNT"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 423
+  },
+  {
+   "en": "pleomorphic xanthoastrocytoma (PXA)",
+   "vi": "u sao bào vàng đa hình (PXA)",
+   "note": "VN \"u sao bào vàng\" (Tâm Anh) + pleomorphic=đa hình. Giữ PXA",
+   "terms": [
+    "pleomorphic xanthoastrocytoma",
+    "PXA"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 424
+  },
+  {
+   "en": "astroblastoma",
+   "vi": "u nguyên bào sao",
+   "note": "hiếm; astro=sao+blast=nguyên bào. KHÁC glioblastoma=u nguyên bào thần kinh đệm",
+   "terms": [
+    "astroblastoma"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 425
+  },
+  {
+   "en": "astroblastic (pseudo)rosette",
+   "vi": "(thể giả) hoa hồng nguyên bào sao",
+   "note": "ngữ cảnh: pseudo.",
+   "terms": [
+    "astroblastic rosette"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 426
+  },
+  {
+   "en": "high-grade astrocytoma with piloid features (HGAP)",
+   "vi": "u sao bào độ cao có đặc điểm dạng lông (HGAP)",
+   "note": "xác định bằng methyl hóa. Giữ HGAP (pilocytic vẫn \"u sao bào lông\")",
+   "terms": [
+    "high-grade astrocytoma with piloid features",
+    "HGAP"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 427
+  },
+  {
+   "en": "diffuse leptomeningeal glioneuronal tumor (DLGNT)",
+   "vi": "u thần kinh đệm-thần kinh màng mềm lan tỏa (DLGNT)",
+   "note": "",
+   "terms": [
+    "diffuse leptomeningeal glioneuronal tumor",
+    "DLGNT"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 428
+  },
+  {
+   "en": "multinodular and vacuolating neuronal tumor (MVNT)",
+   "vi": "u neuron đa nốt và tạo không bào (MVNT)",
+   "note": "",
+   "terms": [
+    "multinodular and vacuolating neuronal tumor",
+    "MVNT"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 429
+  },
+  {
+   "en": "rosette-forming glioneuronal tumor (RGNT)",
+   "vi": "u thần kinh đệm-thần kinh tạo hoa hồng (RGNT)",
+   "note": "",
+   "terms": [
+    "rosette-forming glioneuronal tumor",
+    "RGNT"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 430
+  },
+  {
+   "en": "papillary glioneuronal tumor (PGNT)",
+   "vi": "u thần kinh đệm-thần kinh dạng nhú (PGNT)",
+   "note": "",
+   "terms": [
+    "papillary glioneuronal tumor",
+    "PGNT"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 431
+  },
+  {
+   "en": "ganglioglioma / gangliocytoma",
+   "vi": "u hạch-thần kinh đệm / u tế bào hạch",
+   "note": "ganglion=hạch",
+   "terms": [
+    "ganglioglioma",
+    "gangliocytoma"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 432
+  },
+  {
+   "en": "subependymal giant cell astrocytoma (SEGA)",
+   "vi": "u sao bào tế bào khổng lồ dưới màng nội tủy (SEGA)",
+   "note": "",
+   "terms": [
+    "subependymal giant cell astrocytoma",
+    "SEGA"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 433
+  },
+  {
+   "en": "integrated diagnosis",
+   "vi": "chẩn đoán tích hợp",
+   "note": "kết hợp mô bệnh học + phân tử (WHO 2021)",
+   "terms": [
+    "integrated diagnosis"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 434
+  },
+  {
+   "en": "resource level (RL) / LMIC",
+   "vi": "mức nguồn lực (RL) / nước thu nhập thấp và trung bình (LMIC)",
+   "note": "giữ viết tắt RL I-V / LMIC/UMIC/HIC",
+   "terms": [
+    "resource level",
+    "RL",
+    "LMIC"
+   ],
+   "section": "Neuropath - u nen mang cung & CNS mo rong",
+   "domain": "pathology",
+   "id": 435
+  },
+  {
+   "en": "clear cell RCC (CCRCC)",
+   "vi": "ung thư biểu mô tế bào thận tế bào sáng",
+   "note": "Giữ CCRCC",
+   "terms": [
+    "clear cell RCC",
+    "CCRCC"
+   ],
+   "section": "Uropathology - u than",
+   "domain": "pathology",
+   "id": 436
+  },
+  {
+   "en": "papillary RCC (PRCC)",
+   "vi": "ung thư biểu mô tế bào thận dạng nhú",
+   "note": "Giữ PRCC",
+   "terms": [
+    "papillary RCC",
+    "PRCC"
+   ],
+   "section": "Uropathology - u than",
+   "domain": "pathology",
+   "id": 437
+  },
+  {
+   "en": "chromophobe RCC (ChRCC)",
+   "vi": "ung thư biểu mô tế bào thận kỵ màu",
+   "note": "\"kỵ màu\" (MSD VI/BV108). Giữ ChRCC",
+   "terms": [
+    "chromophobe RCC",
+    "ChRCC"
+   ],
+   "section": "Uropathology - u than",
+   "domain": "pathology",
+   "id": 438
+  },
+  {
+   "en": "renal oncocytoma (RO)",
+   "vi": "u tế bào ái toan ở thận",
+   "note": "nhất quán oncocytic=ái toan; biến thể \"u tế bào lớn ưa toan\"",
+   "terms": [
+    "renal oncocytoma",
+    "RO"
+   ],
+   "section": "Uropathology - u than",
+   "domain": "pathology",
+   "id": 439
+  },
+  {
+   "en": "angiomyolipoma (AML)",
+   "vi": "u cơ mỡ mạch",
+   "note": "áp đảo (medlatec); biến thể \"u mỡ cơ mạch\". Giữ AML",
+   "terms": [
+    "angiomyolipoma",
+    "AML"
+   ],
+   "section": "Uropathology - u than",
+   "domain": "pathology",
+   "id": 440
+  },
+  {
+   "en": "RCC with sarcomatoid features",
+   "vi": "ung thư biểu mô tế bào thận có đặc điểm dạng sarcôm",
+   "note": "sarcomatoid=dạng sarcôm",
+   "terms": [
+    "RCC with sarcomatoid features"
+   ],
+   "section": "Uropathology - u than",
+   "domain": "pathology",
+   "id": 441
+  },
+  {
+   "en": "MCNLMP",
+   "vi": "tân sinh thận dạng nang nhiều ngăn có tiềm năng ác tính thấp",
+   "note": "mô tả, chưa chuẩn VN. Giữ MCNLMP",
+   "terms": [
+    "MCNLMP"
+   ],
+   "section": "Uropathology - u than",
+   "domain": "pathology",
+   "id": 442
+  },
+  {
+   "en": "FH-/SDH-deficient RCC",
+   "vi": "UTBM tế bào thận thiếu hụt fumarate hydratase / succinate dehydrogenase",
+   "note": "thiếu hụt=deficient",
+   "terms": [
+    "FH-/SDH-deficient RCC"
+   ],
+   "section": "Uropathology - u than",
+   "domain": "pathology",
+   "id": 443
+  },
+  {
+   "en": "renal medullary carcinoma (RMC)",
+   "vi": "ung thư biểu mô tủy thận",
+   "note": "",
+   "terms": [
+    "renal medullary carcinoma",
+    "RMC"
+   ],
+   "section": "Uropathology - u than",
+   "domain": "pathology",
+   "id": 444
+  },
+  {
+   "en": "collecting duct carcinoma (CDC)",
+   "vi": "ung thư biểu mô ống góp",
+   "note": "",
+   "terms": [
+    "collecting duct carcinoma",
+    "CDC"
+   ],
+   "section": "Uropathology - u than",
+   "domain": "pathology",
+   "id": 445
+  },
+  {
+   "en": "TFE3-rearranged RCC",
+   "vi": "ung thư biểu mô tế bào thận tái sắp xếp TFE3",
+   "note": "",
+   "terms": [
+    "TFE3-rearranged RCC"
+   ],
+   "section": "Uropathology - u than",
+   "domain": "pathology",
+   "id": 446
+  },
+  {
+   "en": "CAIX box / cup staining",
+   "vi": "nhuộm CAIX dạng hộp / dạng cốc",
+   "note": "mô tả kiểu nhuộm màng, giữ gloss EN",
+   "terms": [
+    "CAIX box",
+    "cup staining"
+   ],
+   "section": "Uropathology - u than",
+   "domain": "pathology",
+   "id": 447
+  },
+  {
+   "en": "oncogene",
+   "vi": "gen sinh ung",
+   "note": "proto-oncogene=gen tiền ung thư",
+   "terms": [
+    "oncogene"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 448
+  },
+  {
+   "en": "tumor suppressor gene (TSG)",
+   "vi": "gen ức chế khối u",
+   "note": "",
+   "terms": [
+    "tumor suppressor gene",
+    "TSG"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 449
+  },
+  {
+   "en": "point mutation",
+   "vi": "đột biến điểm",
+   "note": "",
+   "terms": [
+    "point mutation"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 450
+  },
+  {
+   "en": "deletion / insertion",
+   "vi": "mất đoạn / chèn đoạn",
+   "note": "\"mất đoạn\" (KHÔNG \"xóa đoạn\")",
+   "terms": [
+    "deletion",
+    "insertion"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 451
+  },
+  {
+   "en": "gene amplification",
+   "vi": "khuếch đại gen",
+   "note": "",
+   "terms": [
+    "gene amplification"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 452
+  },
+  {
+   "en": "translocation",
+   "vi": "chuyển đoạn",
+   "note": "phân biệt rearrangement=tái sắp xếp",
+   "terms": [
+    "translocation"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 453
+  },
+  {
+   "en": "loss of heterozygosity (LOH)",
+   "vi": "mất dị hợp tử",
+   "note": "Giữ LOH",
+   "terms": [
+    "loss of heterozygosity",
+    "LOH"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 454
+  },
+  {
+   "en": "microsatellite",
+   "vi": "vi vệ tinh",
+   "note": "biến thể \"tiểu vệ tinh\"",
+   "terms": [
+    "microsatellite"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 455
+  },
+  {
+   "en": "methylation",
+   "vi": "methyl hóa",
+   "note": "methylation-specific PCR=PCR đặc hiệu methyl hóa",
+   "terms": [
+    "methylation"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 456
+  },
+  {
+   "en": "epigenetics",
+   "vi": "biểu sinh",
+   "note": "biến thể \"di truyền biểu sinh\"",
+   "terms": [
+    "epigenetics"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 457
+  },
+  {
+   "en": "germline / somatic",
+   "vi": "dòng mầm / sinh dưỡng",
+   "note": "",
+   "terms": [
+    "germline",
+    "somatic"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 458
+  },
+  {
+   "en": "allele / allele-specific PCR",
+   "vi": "allele / PCR đặc hiệu allele",
+   "note": "allele giữ EN",
+   "terms": [
+    "allele",
+    "allele-specific PCR"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 459
+  },
+  {
+   "en": "break-apart / fusion probe",
+   "vi": "đầu dò tách đôi / đầu dò dung hợp",
+   "note": "",
+   "terms": [
+    "break-apart",
+    "fusion probe"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 460
+  },
+  {
+   "en": "fusion partner",
+   "vi": "đối tác dung hợp",
+   "note": "",
+   "terms": [
+    "fusion partner"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 461
+  },
+  {
+   "en": "two-hit hypothesis",
+   "vi": "giả thuyết hai đòn (two-hit)",
+   "note": "Knudson; giữ gloss EN",
+   "terms": [
+    "two-hit hypothesis"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 462
+  },
+  {
+   "en": "wild type (WT)",
+   "vi": "kiểu hoang dã",
+   "note": "biến thể \"kiểu dại\". Giữ WT",
+   "terms": [
+    "wild type",
+    "WT"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 463
+  },
+  {
+   "en": "digital PCR / ddPCR",
+   "vi": "PCR kỹ thuật số / ddPCR",
+   "note": "",
+   "terms": [
+    "digital PCR",
+    "ddPCR"
+   ],
+   "section": "Molecular Dx",
+   "domain": "pathology",
+   "id": 464
+  },
+  {
+   "en": "mordant",
+   "vi": "chất cắn màu",
+   "note": "cầu nối gắn thuốc nhuộm (iod trong Gram)",
+   "terms": [
+    "mordant"
+   ],
+   "section": "Special stains / histotechnology",
+   "domain": "pathology",
+   "id": 465
+  },
+  {
+   "en": "counterstain",
+   "vi": "nhuộm nền",
+   "note": "biến thể \"nhuộm đối màu\"",
+   "terms": [
+    "counterstain"
+   ],
+   "section": "Special stains / histotechnology",
+   "domain": "pathology",
+   "id": 466
+  },
+  {
+   "en": "decolorize / decolorization",
+   "vi": "tẩy màu",
+   "note": "chuẩn nhuộm Gram",
+   "terms": [
+    "decolorize",
+    "decolorization"
+   ],
+   "section": "Special stains / histotechnology",
+   "domain": "pathology",
+   "id": 467
+  },
+  {
+   "en": "differentiation (staining)",
+   "vi": "tách màu",
+   "note": "ngữ cảnh: staining. phân biệt với \"tẩy màu\" (decolorize)",
+   "terms": [
+    "differentiation"
+   ],
+   "section": "Special stains / histotechnology",
+   "domain": "pathology",
+   "id": 468
+  },
+  {
+   "en": "reticulin fiber",
+   "vi": "sợi liên võng (reticulin)",
+   "note": "histotech chuẩn \"sợi liên võng\" (KHÔNG \"sợi lưới\")",
+   "terms": [
+    "reticulin fiber"
+   ],
+   "section": "Special stains / histotechnology",
+   "domain": "pathology",
+   "id": 469
+  },
+  {
+   "en": "basement membrane",
+   "vi": "màng đáy",
+   "note": "",
+   "terms": [
+    "basement membrane"
+   ],
+   "section": "Special stains / histotechnology",
+   "domain": "pathology",
+   "id": 470
+  },
+  {
+   "en": "silver impregnation",
+   "vi": "tẩm bạc",
+   "note": "muối bạc + chất khử -> bạc kim loại",
+   "terms": [
+    "silver impregnation"
+   ],
+   "section": "Special stains / histotechnology",
+   "domain": "pathology",
+   "id": 471
+  },
+  {
+   "en": "argyrophil / argentaffin",
+   "vi": "ưa bạc / bắt bạc",
+   "note": "giữ gloss EN",
+   "terms": [
+    "argyrophil",
+    "argentaffin"
+   ],
+   "section": "Special stains / histotechnology",
+   "domain": "pathology",
+   "id": 472
+  },
+  {
+   "en": "dye lake",
+   "vi": "phức màu không tan (dye lake)",
+   "note": "phức CV-iod. Giữ EN",
+   "terms": [
+    "dye lake"
+   ],
+   "section": "Special stains / histotechnology",
+   "domain": "pathology",
+   "id": 473
+  },
+  {
+   "en": "birefringence / apple-green birefringence",
+   "vi": "lưỡng chiết / lưỡng chiết xanh táo",
+   "note": "amyloid + đỏ Congo dưới ánh sáng phân cực",
+   "terms": [
+    "birefringence",
+    "apple-green birefringence"
+   ],
+   "section": "Special stains / histotechnology",
+   "domain": "pathology",
+   "id": 474
+  },
+  {
+   "en": "toning / toner (gold toning)",
+   "vi": "tạo tông màu / chuyển tông (toning)",
+   "note": "ngữ cảnh: gold toning. chưa chuẩn VN; non tông/quá tông (under/overtone)",
+   "terms": [
+    "toning",
+    "toner"
+   ],
+   "section": "Special stains / histotechnology",
+   "domain": "pathology",
+   "id": 475
+  },
+  {
+   "en": "GMS (Grocott methenamine silver)",
+   "vi": "nhuộm bạc methenamine Grocott (GMS)",
+   "note": "Giữ GMS",
+   "terms": [
+    "GMS",
+    "Grocott methenamine silver"
+   ],
+   "section": "Special stains / histotechnology",
+   "domain": "pathology",
+   "id": 476
+  },
+  {
+   "en": "quality management system (QMS)",
+   "vi": "hệ thống quản lý chất lượng (QMS)",
+   "note": "TCVN ISO 9001/15189. Giữ QMS",
+   "terms": [
+    "quality management system",
+    "QMS"
+   ],
+   "section": "Lab QA - bo sung",
+   "domain": "pathology",
+   "id": 477
+  },
+  {
+   "en": "proficiency testing (PT)",
+   "vi": "thử nghiệm thành thạo (PT)",
+   "note": "BoA, TCVN ISO/IEC 17043. Giữ PT",
+   "terms": [
+    "proficiency testing",
+    "PT"
+   ],
+   "section": "Lab QA - bo sung",
+   "domain": "pathology",
+   "id": 478
+  },
+  {
+   "en": "gap analysis",
+   "vi": "phân tích khoảng cách (gap analysis)",
+   "note": "biến thể \"phân tích lỗ hổng\"",
+   "terms": [
+    "gap analysis"
+   ],
+   "section": "Lab QA - bo sung",
+   "domain": "pathology",
+   "id": 479
+  },
+  {
+   "en": "root cause analysis (RCA)",
+   "vi": "phân tích nguyên nhân gốc (RCA)",
+   "note": "\"gốc rễ\" tần cao; giữ dạng ngắn. Giữ RCA",
+   "terms": [
+    "root cause analysis",
+    "RCA"
+   ],
+   "section": "Lab QA - bo sung",
+   "domain": "pathology",
+   "id": 480
+  },
+  {
+   "en": "FMEA",
+   "vi": "phân tích kiểu sai lỗi và tác động (FMEA)",
+   "note": "biến thể \"phương thức/hình thức sai lỗi\". Giữ FMEA",
+   "terms": [
+    "FMEA"
+   ],
+   "section": "Lab QA - bo sung",
+   "domain": "pathology",
+   "id": 481
+  },
+  {
+   "en": "competency assessment",
+   "vi": "đánh giá năng lực",
+   "note": "ISO 15189",
+   "terms": [
+    "competency assessment"
+   ],
+   "section": "Lab QA - bo sung",
+   "domain": "pathology",
+   "id": 482
+  },
+  {
+   "en": "standard operating procedure (SOP)",
+   "vi": "quy trình thao tác chuẩn (SOP)",
+   "note": "Giữ SOP",
+   "terms": [
+    "standard operating procedure",
+    "SOP"
+   ],
+   "section": "Lab QA - bo sung",
+   "domain": "pathology",
+   "id": 483
+  },
+  {
+   "en": "accreditation",
+   "vi": "công nhận",
+   "note": "PHÂN BIỆT certification=chứng nhận (ISO/IEC 17011)",
+   "terms": [
+    "accreditation"
+   ],
+   "section": "Lab QA - bo sung",
+   "domain": "pathology",
+   "id": 484
+  },
+  {
+   "en": "management review",
+   "vi": "xem xét của lãnh đạo",
+   "note": "ISO",
+   "terms": [
+    "management review"
+   ],
+   "section": "Lab QA - bo sung",
+   "domain": "pathology",
+   "id": 485
+  },
+  {
+   "en": "quality manual",
+   "vi": "sổ tay chất lượng",
+   "note": "ISO",
+   "terms": [
+    "quality manual"
+   ],
+   "section": "Lab QA - bo sung",
+   "domain": "pathology",
+   "id": 486
+  }
+ ]
+}
