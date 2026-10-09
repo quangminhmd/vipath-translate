@@ -52,8 +52,13 @@ struct LiveCaptionsView: View {
             }
             .pickerStyle(.segmented)
             Menu {
-                Button("PhoWhisper + Hunyuan-MT-7B (chất lượng)") { applySuggested(.hunyuanMT7b) }
+                if ModelChoice.hunyuanMT7b.deviceFit == .ok {
+                    Button("PhoWhisper + Hunyuan-MT-7B (chất lượng)") { applySuggested(.hunyuanMT7b) }
+                }
                 Button("PhoWhisper + TranslateGemma-4B (nhanh, nhẹ)") { applySuggested(.translateGemma4b) }
+                if ModelChoice.hunyuanMT7b.deviceFit != .ok {
+                    Text("Hunyuan-MT-7B quá nặng cho \(DeviceMemory.label) khi chạy cùng PhoWhisper")
+                }
             } label: {
                 Label("Cấu hình gợi ý Việt → Anh", systemImage: "wand.and.stars").font(.subheadline.bold())
             }

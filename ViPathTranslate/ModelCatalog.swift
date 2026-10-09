@@ -2,6 +2,15 @@ import Foundation
 
 /// Mô hình chạy được trên iPhone 18 Pro Max (12 GB RAM) qua mlx-swift-lm 2.31.x.
 /// Dung lượng = tổng file .safetensors trên Hugging Face (mlx-community).
+/// RAM của máy (iPhone 15/16 Pro Max: 8 GB · 17/18 Pro Max: 12 GB) → chọn mô hình và cách nạp phù hợp.
+nonisolated enum DeviceMemory {
+    /// GB thực tế iOS báo (máy 8 GB báo ~7,5; máy 12 GB báo ~11,x).
+    static let gb = Double(ProcessInfo.processInfo.physicalMemory) / 1_073_741_824
+    /// Máy ≤ 8 GB: nạp lần lượt, tránh mô hình lớn.
+    static var isLowRAM: Bool { gb < 10 }
+    static var label: String { "\(Int(gb.rounded())) GB RAM" }
+}
+
 enum ModelChoice: String, CaseIterable, Identifiable, Codable {
     case qwen35_4b       = "mlx-community/Qwen3.5-4B-4bit"
     case translateGemma4b = "mlx-community/translategemma-4b-it-4bit"
@@ -72,6 +81,32 @@ enum ModelChoice: String, CaseIterable, Identifiable, Codable {
         case .translateGemma12b: 7.1
         }
         return UInt64(gb * 1_073_741_824)
+    }
+
+    enum DeviceFit { case ok, tight, tooBig }
+
+    /// Mức phù hợp với RAM của máy này.
+    var deviceFit: DeviceFit {
+        let need = Double(requiredFreeBytes) / 1_073_741_824
+        let (okMax, tightMax): (Double, Double) =
+            DeviceMemory.gb >= 10 ? (99, 99)      // 12 GB: chạy được mọi mô hình trong danh mục
+            : DeviceMemory.gb >= 7 ? (3.6, 5.0)   // 8 GB: ≤ 4B thoải mái, 7B sát giới hạn, 9B/12B không
+            : (2.1, 2.8)                          // ≤ 6 GB: chỉ mô hình nhỏ
+        return need <= okMax ? .ok : need <= tightMax ? .tight : .tooBig
+    }
+
+    /// Ghi chú hiện trong danh sách chọn mô hình (nil = phù hợp).
+    var deviceFitNote: String? {
+        switch deviceFit {
+        case .ok: nil
+        case .tight: "Sát giới hạn \(DeviceMemory.label) — đóng các app khác trước khi nạp"
+        case .tooBig: "Không đủ RAM trên máy này (\(DeviceMemory.label))"
+        }
+    }
+
+    /// Mô hình dịch Việt → Anh nên dùng cho phụ đề trên máy này.
+    static var recommendedSubtitleModel: ModelChoice {
+        hunyuanMT7b.deviceFit == .ok ? .hunyuanMT7b : .translateGemma4b
     }
 
     /// Mô hình có kiến trúc mlx-swift-lm chưa hỗ trợ sẵn → app tự đăng ký.

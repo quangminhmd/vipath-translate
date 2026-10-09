@@ -505,6 +505,7 @@ private struct ModelPickerSheet: View {
                 }
                 Section {
                     ForEach(ModelChoice.allCases) { m in
+                        let tooBig = m.deviceFit == .tooBig
                         Button { vm.selectedModel = m } label: {
                             HStack(alignment: .top) {
                                 Image(systemName: vm.selectedModel == m ? "largecircle.fill.circle" : "circle")
@@ -518,11 +519,19 @@ private struct ModelPickerSheet: View {
                                         }
                                     }
                                     Text(m.summary).font(.caption).foregroundStyle(.secondary)
+                                    if let note = m.deviceFitNote {
+                                        Label(note, systemImage: tooBig ? "xmark.octagon" : "exclamationmark.triangle")
+                                            .font(.caption2.bold()).foregroundStyle(tooBig ? .red : .orange)
+                                    }
                                 }
                             }
+                            .opacity(tooBig ? 0.5 : 1)
                         }
                         .buttonStyle(.plain)
+                        .disabled(tooBig)
                     }
+                } header: {
+                    Text("Máy này: \(DeviceMemory.label)")
                 } footer: {
                     Text("Lần đầu cần Internet để tải mô hình (trừ khi đã đóng gói trong app). Sau đó dịch hoàn toàn offline, văn bản không rời khỏi máy.")
                 }

@@ -169,7 +169,7 @@ final class TranslatorViewModel {
     init() {
         glossary.load()
         if let raw = UserDefaults.standard.string(forKey: "model"),
-           let m = ModelChoice(rawValue: raw) { selectedModel = m }
+           let m = ModelChoice(rawValue: raw), m.deviceFit != .tooBig { selectedModel = m }
         if let raw = UserDefaults.standard.string(forKey: "directionMode"),
            let d = DirectionMode(rawValue: raw) { directionMode = d }
     }

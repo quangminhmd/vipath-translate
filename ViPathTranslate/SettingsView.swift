@@ -78,7 +78,8 @@ enum ModelLoader {
     /// Nạp song song khi Whisper chạy trên Neural Engine (khác phần cứng với mô hình dịch trên GPU)
     /// và mô hình dịch không quá lớn; mô hình ≥ 9B hoặc Whisper trên GPU → nạp lần lượt cho an toàn RAM/GPU.
     static func canParallel(vm: TranslatorViewModel, compute: WhisperRunner.Compute) -> Bool {
-        compute == .neuralEngine && vm.selectedModel.requiredFreeBytes < UInt64(6 * 1_073_741_824)
+        !DeviceMemory.isLowRAM      // máy 8 GB: luôn nạp lần lượt
+            && compute == .neuralEngine && vm.selectedModel.requiredFreeBytes < UInt64(6 * 1_073_741_824)
     }
 
     /// - first: tab đang mở → mô hình tab đó cần được nạp trước (khi phải nạp lần lượt).
@@ -86,6 +87,7 @@ enum ModelLoader {
                         compute: WhisperRunner.Compute, first: AppTab = .translate) async {
         let t0 = Date()
         let needTranslation = vm.loadedModel != vm.selectedModel && !vm.isLoading && !vm.isTranslating
+            && vm.selectedModel.deviceFit != .tooBig
         var whisper: WhisperModelChoice?
         if let wm = preferredWhisper(gross: gross), WhisperModelStore.shared.isReady(wm),
            !WhisperRunner.shared.isLoaded(wm, compute) { whisper = wm }
@@ -289,14 +291,19 @@ struct SettingsView: View {
                 } footer: {
                     Text(ModelLoader.canParallel(vm: vm, compute: tc.whisperCompute)
                          ? "Whisper chạy trên Neural Engine, mô hình dịch trên GPU → nạp song song. Khi tự nạp, mô hình của tab đang mở được ưu tiên."
-                         : "Đang nạp lần lượt (Whisper trên GPU hoặc mô hình dịch ≥ 9B) để an toàn RAM. Khi tự nạp, mô hình của tab đang mở được nạp trước.")
+                         : DeviceMemory.isLowRAM
+                            ? "Máy \(DeviceMemory.label): nạp lần lượt để an toàn RAM. Khi tự nạp, mô hình của tab đang mở được nạp trước."
+                            : "Đang nạp lần lượt (Whisper trên GPU hoặc mô hình dịch ≥ 9B) để an toàn RAM. Khi tự nạp, mô hình của tab đang mở được nạp trước.")
                 }
 
                 Section {
                     Picker("Mô hình dịch", selection: $vm.selectedModel) {
-                        ForEach(ModelChoice.allCases) { m in
-                            Text("\(m.shortName) · \(m.sizeLabel)").tag(m)
+                        ForEach(ModelChoice.allCases.filter { $0.deviceFit != .tooBig }) { m in
+                            Text("\(m.shortName) · \(m.sizeLabel)" + (m.deviceFit == .tight ? " ⚠︎" : "")).tag(m)
                         }
+                    }
+                    if let note = vm.selectedModel.deviceFitNote {
+                        Text(note).font(.caption).foregroundStyle(.orange)
                     }
                     TranslationModelStatusRow()
                     Text(vm.selectedModel.summary).font(.caption).foregroundStyle(.secondary)
