@@ -16,6 +16,7 @@ Bản trình duyệt của ViPath Translate, gói trong một tệp: `ViPath.htm
 |---|---|
 | Dịch Anh ↔ Việt + glossary Vitranslate (487 mục), dịch khi gõ | WebLLM: Qwen3.5 2B / 4B / 9B trên WebGPU, offline sau lần tải đầu |
 | Claude (tuỳ chọn) | API key của bạn, lưu trong trình duyệt. Che định danh và bắt buộc xác nhận trước khi gửi. Có vòng học thuật ngữ |
+| Đọc mô tả đại thể | Đọc khi cắt lọc: lệnh giọng nói (“cát xét A1”, “xuống dòng”, “xoá câu”, “tạm dừng”), tự chuẩn hoá số đo (4 x 3 x 2 cm, 2,5 cm), danh sách cát xét. Whisper offline hoặc nhận dạng của trình duyệt |
 | Phụ đề hai khung | Micro hoặc âm thanh tab (Zoom / Teams / Meet trên Chrome máy tính). Nhận dạng bằng trình duyệt hoặc Whisper offline |
 | ⚡ Dịch nhanh | Translator tích hợp trong Chrome 138+ (máy tính); bản chuẩn có glossary thay vào sau |
 | Chép lời tệp | Whisper large-v3 turbo / small / base (Transformers.js). Có timeline, xuất SRT / VTT / TXT |

@@ -18,6 +18,7 @@
   <nav class="rail" aria-label="Chức năng">
     <a class="brand" href="#translate" aria-label="ViPath"><img src="{{ICON}}" alt="" width="44" height="44" style="border-radius:11px"><b>ViPath</b></a>
     <button class="tab" data-tab="translate" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9M8.5 3v2M6 5c.5 3 2.5 5.5 5 7M11 5c-.8 3.5-3.5 6.5-7 8"/><path d="M13 20l4-9 4 9M14.5 17h5"/></svg>Dịch</button>
+    <button class="tab" data-tab="gross"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5l6-6"/><path d="M9.5 14.5l2-2c2.5-2.5 5.5-6 8.5-8.5-.8 3.4-3.6 7.6-6.6 9.6l-1.9 1.3z"/></svg>Đại thể</button>
     <button class="tab" data-tab="captions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 11h4M13 11h4M7 15h7"/></svg>Phụ đề</button>
     <button class="tab" data-tab="transcribe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 12v0M7 9v6M10 6v12M13 9v6M16 7v10M19 11v2"/></svg>Chép lời</button>
     <button class="tab" data-tab="image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M8 10h8M8 14h5"/></svg>Ảnh</button>
@@ -141,6 +142,43 @@
       </div>
     </section>
 
+    <!-- ===================== ĐẠI THỂ ===================== -->
+    <section class="view" id="view-gross" hidden>
+      <div class="card">
+        <div class="row">
+          <div class="stack" style="gap:4px">
+            <span class="tiny muted">Ngôn ngữ</span>
+            <div class="seg" id="gr-lang"><button data-v="vi" aria-pressed="true">Tiếng Việt</button><button data-v="en" aria-pressed="false">English</button></div>
+          </div>
+          <div class="stack" style="gap:4px">
+            <span class="tiny muted">Bộ nhận dạng</span>
+            <div class="seg" id="gr-asr"><button data-v="whisper" aria-pressed="true">Whisper (offline)</button><button data-v="web" aria-pressed="false">Trình duyệt</button></div>
+          </div>
+          <label class="stack" style="gap:4px"><span class="tiny muted">Loại bệnh phẩm</span><select id="gr-template"></select></label>
+          <label class="stack" style="gap:4px;flex:1;min-width:180px"><span class="tiny muted">Nhãn mẫu (tuỳ chọn, chỉ lưu trên máy)</span><input id="gr-label" placeholder="vd. mã bệnh phẩm"></label>
+        </div>
+        <div class="gr-chips" id="gr-checklist"></div>
+        <div class="tiny muted" id="gr-hint"></div>
+      </div>
+      <div class="gr-doc" id="gr-doc"></div>
+      <div class="gr-bar">
+        <button class="gr-ic" id="gr-undo" title="Hoàn tác (“xoá câu”)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>Hoàn tác</button>
+        <button class="gr-ic" id="gr-pause" title="Tạm dừng / tiếp tục" disabled><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg><span>Tạm dừng</span></button>
+        <button class="gr-mic" id="gr-mic" aria-label="Bắt đầu ghi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+        <button class="gr-ic" id="gr-next" title="Cát xét kế tiếp (“cát xét tiếp theo”)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/></svg>Cát xét +</button>
+        <button class="gr-ic" id="gr-to-body" title="Ghi vào phần mô tả (“quay lại mô tả”)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h10M4 18h12"/></svg>Mô tả</button>
+        <div class="gr-status stats" id="gr-status"></div>
+        <div class="row" style="gap:6px">
+          <button class="btn ghost" id="gr-copy">Chép</button>
+          <button class="btn ghost" id="gr-save">Lưu</button>
+          <button class="btn ghost" id="gr-translate">Dịch sang tiếng Anh</button>
+          <button class="btn ghost" id="gr-fix">Sửa lỗi nhận dạng</button>
+          <button class="btn ghost" id="gr-help">Lệnh giọng nói</button>
+          <button class="btn ghost" id="gr-clear">Xoá trang</button>
+        </div>
+      </div>
+    </section>
+
     <!-- ===================== CHÉP LỜI ===================== -->
     <section class="view" id="view-transcribe" hidden>
       <div class="card">
@@ -240,7 +278,7 @@
     <section class="view" id="view-saved" hidden>
       <div class="card">
         <div class="row"><input type="search" id="sv-search" placeholder="Tìm trong bản lưu" style="flex:1;min-width:200px">
-          <div class="seg" id="sv-filter"><button data-v="all" aria-pressed="true">Tất cả</button><button data-v="text" aria-pressed="false">Văn bản</button><button data-v="timed" aria-pressed="false">Phụ đề / chép lời</button></div></div>
+          <div class="seg" id="sv-filter"><button data-v="all" aria-pressed="true">Tất cả</button><button data-v="text" aria-pressed="false">Văn bản</button><button data-v="gross" aria-pressed="false">Đại thể</button><button data-v="timed" aria-pressed="false">Phụ đề / chép lời</button></div></div>
         <div class="list" id="sv-list"></div>
         <div class="note" id="sv-empty" hidden>Chưa lưu gì. Bấm Lưu ở tab Dịch, Phụ đề hoặc Chép lời. Bản lưu nằm trong trình duyệt này (IndexedDB), không gửi đi đâu.</div>
       </div>

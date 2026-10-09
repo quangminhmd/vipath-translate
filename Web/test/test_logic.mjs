@@ -56,5 +56,48 @@ ok(hy.length === 1 && hy[0].content === 'Translate the following segment into En
 const qw = L.localMessages('qwen3:32b', 'x', [], L.DIR.enToVi);
 ok(qw.length === 2 && qw[0].role === 'system', 'local chat');
 ok(L.cleanOutput('Carcinoma.<|eos|>') === 'Carcinoma.', 'clean hunyuan');
+// Đại thể — cùng bộ ca với Tools/test_gross.py (bản Swift)
+const NM = [
+  ['Bệnh phẩm kích thước bốn nhân ba nhân hai xăng ti mét, màu nâu', 'Bệnh phẩm kích thước 4 x 3 x 2 cm, màu nâu'],
+  ['gồm ba mảnh, kích thước từ hai đến năm mi li mét', 'gồm 3 mảnh, kích thước từ 2 đến 5 mm'],
+  ['u kích thước 4 nhân 3 nhân 2 cm', 'u kích thước 4 x 3 x 2 cm'],
+  ['hai phẩy năm phân', '2,5 cm'], ['hai xăng ti mét rưỡi', '2,5 cm'], ['một khối u', '1 khối u'],
+  ['nặng hai mươi lăm gam', 'nặng 25 g'], ['không có sỏi', 'không có sỏi'],
+  ['cách diện cắt không phẩy năm xăng ti mét', 'cách diện cắt 0,5 cm'], ['4x3x2cm', '4 x 3 x 2 cm'], ['2.5 cm', '2,5 cm'],
+  ['chiếm 30 phần trăm chu vi', 'chiếm 30% chu vi'], ['năm 2024 bệnh nhân', 'năm 2024 bệnh nhân'], ['mười hai hạch', '12 hạch'],
+  ['một trăm linh năm gam', '105 g'], ['một đoạn đại tràng', 'một đoạn đại tràng'], ['ba tư gam', '34 g'],
+  ['tumor measures 4 by 3 by 2 centimeters', 'tumor measures 4 x 3 x 2 cm'],
+];
+for (const [a, b] of NM) ok(L.normalizeMeasurements(a) === b, `measure "${a}" → "${L.normalizeMeasurements(a)}"`);
+const PD = [
+  ['Kích thước 4 cm. Xuống dòng.', 'text,newline'], ['Cát xét A1. Diện cắt gần.', 'cassette:A1,text'], ['cát xét a một mảnh u', 'cassette:A1,text'],
+  ['mẫu bê hai', 'cassette:B2'], ['khối tiếp theo', 'nextCassette'], ['u màu trắng dấu phẩy chắc dấu chấm', 'text,punct,text,punct'],
+  ['Xoá câu.', 'undo'], ['tạm dừng', 'pause'], ['Tiếp tục ghi.', 'resume'], ['cát xét số 3', 'cassette:3'], ['Cassette B12 tumor', 'cassette:B12,text'],
+  ['mẫu bệnh phẩm gồm hai mảnh', 'text'], ['dấu hai chấm', 'punct'], ['cát xét c mười hai', 'cassette:C12'],
+];
+for (const [a, b] of PD) {
+  const got = L.parseDictation(a).map((o) => (o.type === 'cassette' ? 'cassette:' + o.code : o.type)).join(',');
+  ok(got === b, `parse "${a}" → ${got}`);
+}
+{
+  const d = L.newGrossDoc();
+  const say = (t, o) => L.applyDictation(d, L.parseDictation(t), o);
+  say('Bệnh phẩm gồm một đoạn đại tràng dài hai mươi lăm xăng ti mét.');
+  say('U dạng sùi kích thước bốn nhân ba nhân hai xăng ti mét.');
+  say('Cách diện cắt xa năm xăng ti mét.');
+  say('xoá câu');
+  say('Cách diện cắt xa tám xăng ti mét. Xuống dòng.');
+  say('Cát xét A1. Diện cắt gần và xa.');
+  say('cát xét tiếp theo. U và thanh mạc sai rồi xoá câu');
+  say('U và thanh mạc.');
+  ok(JSON.stringify(say('tạm dừng')) === '["pause"]', 'pause signal');
+  ok(JSON.stringify(say('nói chuyện riêng', { paused: true })) === '[]', 'ignored while paused');
+  ok(JSON.stringify(say('tiếp tục ghi', { paused: true })) === '["resume"]', 'resume');
+  say('quay lại mô tả. Mạc treo có mười hai hạch.');
+  say('các xi nôm', { corrections: L.GROSS_DEFAULT_CORRECTIONS });
+  const rep = L.grossReportText(d);
+  const want = 'Bệnh phẩm gồm một đoạn đại tràng dài 25 cm. U dạng sùi kích thước 4 x 3 x 2 cm. Cách diện cắt xa 8 cm.\nMạc treo có 12 hạch. Carcinôm\n\nCẮT LỌC – CÁT XÉT:\nA1: Diện cắt gần và xa.\nA2: U và thanh mạc.';
+  ok(rep === want, 'gross doc:\n' + rep);
+}
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đạt');
 process.exit(fails ? 1 : 0);

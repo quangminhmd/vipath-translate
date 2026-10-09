@@ -196,6 +196,37 @@ td .user { color: var(--eosin); font-size: 11px; font-weight: 600; margin-left: 
 .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 30;
   padding: 10px 16px; border-radius: 999px; background: var(--ink); color: var(--bg); font-weight: 600; font-size: 14px; box-shadow: var(--shadow); }
 
+/* ---------- Đại thể ---------- */
+.gr-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.gr-chips span { padding: 4px 10px; border-radius: 999px; background: var(--eosin-soft); color: var(--eosin); font-size: 12.5px; }
+.gr-doc { display: grid; gap: 12px; min-width: 0; }
+.gr-block { padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 2px solid var(--line); display: grid; gap: 6px; }
+.gr-block.active { border-color: var(--eosin); }
+.gr-head { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
+.gr-block.active .gr-head { color: var(--eosin); }
+.gr-code { font: 600 15px/1 var(--font-mono); padding: 4px 8px; border-radius: 6px; background: var(--surface-2); color: var(--ink); letter-spacing: 0; }
+.gr-block.active .gr-code { background: var(--eosin); color: #fff; }
+.gr-head .grow { flex: 1; }
+.gr-head button { font-size: 12px; }
+.gr-block textarea { min-height: 0; border: 0; padding: 0; background: none; font-size: var(--gr-size, 19px); line-height: 1.5; resize: vertical; field-sizing: content; }
+.gr-block textarea:focus { outline: none; }
+.gr-vol { font-size: var(--gr-size, 19px); font-style: italic; color: var(--muted); }
+.gr-vol:empty { display: none; }
+.gr-live { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); animation: pulse .8s infinite alternate; }
+.gr-live.paused { background: var(--warn); animation: none; }
+.gr-bar { position: sticky; bottom: 0; z-index: 4; min-width: 0; max-width: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 14px;
+  padding: 10px 12px; border-radius: 16px; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(10px);
+  border: 1px solid var(--line); box-shadow: var(--shadow); }
+.gr-ic { display: grid; justify-items: center; gap: 2px; width: 64px; padding: 6px 2px; border: 0; border-radius: 12px; background: none;
+  color: var(--eosin); cursor: pointer; font-size: 11.5px; }
+.gr-ic svg { width: 24px; height: 24px; }
+.gr-ic:disabled { opacity: .35; cursor: default; }
+.gr-mic { width: 74px; height: 74px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer;
+  background: var(--eosin); color: #fff; box-shadow: var(--shadow); }
+.gr-mic svg { width: 32px; height: 32px; }
+.gr-mic.on { background: var(--danger); }
+.gr-status { flex-basis: 100%; text-align: center; min-height: 1.2em; }
+
 /* ---------- Điện thoại ---------- */
 @media (max-width: 760px) {
   .app { grid-template-columns: minmax(0, 1fr); }
@@ -208,5 +239,11 @@ td .user { color: var(--eosin); font-size: 11px; font-weight: 600; margin-left: 
   .topbar .grow { display: none; }
   .view { padding-inline: 16px; padding-block: 14px 110px; }
   .captions { height: 68vh; }
+  .gr-bar { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .gr-bar { gap: 4px 2px; padding: 8px 6px; }
+  .gr-ic { width: 54px; font-size: 10.5px; padding: 4px 0; }
+  .gr-mic { width: 62px; height: 62px; }
+  .gr-bar .row { flex: 1 1 100%; min-width: 0; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; scrollbar-width: none; }
+  .gr-bar .row .btn { padding: 6px 9px; font-size: 13px; white-space: nowrap; }
   .tl-row { grid-template-columns: 66px minmax(0, 1fr); }
 }

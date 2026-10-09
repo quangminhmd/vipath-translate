@@ -523,3 +523,317 @@ export function whisperChunksToSegments(chunks, offset, windowEnd) {
   }
   return out;
 }
+
+// ============================================================================
+// Đọc mô tả đại thể (phẫu tích – cắt lọc bệnh phẩm) bằng giọng nói
+// Bản Swift tương ứng: ViPathTranslate/GrossDictation.swift — giữ hai bản giống nhau.
+// ============================================================================
+const GW_L = '(?<![\\p{L}\\p{N}])', GW_R = '(?![\\p{L}\\p{N}])';
+
+/** Từ chỉ số đếm tiếng Việt (đọc số đo). */
+const VI_DIGIT = { 'không': 0, 'một': 1, 'mốt': 1, 'hai': 2, 'ba': 3, 'bốn': 4, 'tư': 4, 'năm': 5, 'lăm': 5, 'sáu': 6, 'bảy': 7, 'bẩy': 7, 'tám': 8, 'chín': 9 };
+const VI_NUMWORDS = new Set([...Object.keys(VI_DIGIT), 'mười', 'mươi', 'linh', 'lẻ', 'trăm', 'rưỡi']);
+/** Không thể đứng đầu một số. */
+const VI_NOT_FIRST = new Set(['mốt', 'lăm', 'tư', 'linh', 'lẻ', 'mươi', 'trăm', 'rưỡi']);
+
+/** "hai mươi lăm" → 25, "một trăm linh năm" → 105, "ba tư" → 34 (cách nói tắt). */
+export function viNumber(words) {
+  let group = 0, pending = null;
+  for (const w of words) {
+    if (w in VI_DIGIT) {
+      const d = VI_DIGIT[w];
+      if (pending !== null) { group += pending * 10 + d; pending = null; } else pending = d;
+    } else if (w === 'mười') { group += 10; pending = null; }
+    else if (w === 'mươi') { group += (pending ?? 1) * 10; pending = null; }
+    else if (w === 'trăm') { group += (pending ?? 1) * 100; pending = null; }
+  }
+  return group + (pending ?? 0);
+}
+
+/** Đơn vị đọc → ký hiệu. Thứ tự: cụm dài trước. */
+const GROSS_UNITS = [
+  [['xăng', 'ti', 'mét'], 'cm'], [['xen', 'ti', 'mét'], 'cm'], [['xăng', 'ti'], 'cm'], [['xen', 'ti'], 'cm'],
+  [['centimet'], 'cm'], [['centimét'], 'cm'], [['cm'], 'cm'], [['phân'], 'cm'],
+  [['centimeters'], 'cm'], [['centimeter'], 'cm'], [['millimeters'], 'mm'], [['millimeter'], 'mm'],
+  [['mi', 'li', 'mét'], 'mm'], [['mi', 'li', 'lít'], 'ml'], [['ki', 'lô', 'gam'], 'kg'],
+  [['milimet'], 'mm'], [['milimét'], 'mm'], [['mm'], 'mm'], [['mi', 'li'], 'mm'], [['li'], 'mm'], [['ly'], 'mm'],
+  [['kilôgam'], 'kg'], [['kg'], 'kg'], [['ký'], 'kg'], [['ki', 'lô'], 'kg'],
+  [['gờ', 'ram'], 'g'], [['gam'], 'g'], [['gram'], 'g'], [['grams'], 'g'], [['g'], 'g'],
+  [['ml'], 'ml'], [['phần', 'trăm'], '%'], [['%'], '%'], [['percent'], '%'],
+];
+/** Danh từ đếm: "ba mảnh" → "3 mảnh". */
+const GROSS_COUNT_NOUNS = new Set(['mảnh', 'hạch', 'lát', 'nốt', 'khối', 'polyp', 'sỏi', 'viên', 'pieces', 'fragments', 'nodes']);
+const GROSS_TIMES = new Set(['nhân', 'x', '×', 'by']);
+const GROSS_RANGE = new Set(['đến', 'tới', '-', '–', 'to']);
+
+const isDigitTok = (t) => /^\d+(?:[.,]\d+)?$/.test(t);
+function unitAt(lw, i) {
+  for (const [seq, sym] of GROSS_UNITS) {
+    if (seq.every((w, k) => lw[i + k] === w)) return { len: seq.length, sym };
+  }
+  return null;
+}
+function joinTokens(toks) {
+  let out = '';
+  for (const t of toks) {
+    if (!out) out = t;
+    else if (/^[.,;:!?)%]/.test(t) || out.endsWith('(')) out += t;
+    else out += ' ' + t;
+  }
+  return out;
+}
+
+/**
+ * Chuẩn hoá số đo trong một câu đọc: "bốn nhân ba nhân hai xăng ti mét" → "4 x 3 x 2 cm",
+ * "hai phẩy năm phân" → "2,5 cm", "ba mảnh" → "3 mảnh", "hai xăng ti mét rưỡi" → "2,5 cm".
+ * Chỉ đổi chữ số khi đứng cạnh đơn vị / "nhân" / danh từ đếm → "một khối u" vẫn giữ nguyên.
+ */
+export function normalizeMeasurements(input) {
+  let s = input.normalize('NFC')
+    .replace(/(xăng|xen|mi)-(ti|li)-(mét|lít)/giu, '$1 $2 $3').replace(/ki-lô-gam/giu, 'ki lô gam')
+    .replace(/×/g, ' x ')
+    .replace(/(\d)(?=(?:cm|mm|kg|ml|g)(?![\p{L}\p{N}]))/gu, '$1 ')
+    .replace(/(\d)\s*[xX](?=\s*\d)/g, '$1 x ');
+  const toks = s.match(/[\p{L}\p{M}]+|\d+(?:[.,]\d+)?|%|[^\s\p{L}\p{M}\d]/gu) || [];
+  const lw = toks.map((t) => t.toLowerCase());
+  const isNum = (i) => isDigitTok(lw[i]) || VI_NUMWORDS.has(lw[i]);
+
+  // 1) Tìm các cụm số
+  const spans = [];
+  for (let i = 0; i < toks.length;) {
+    if (!isNum(i) || VI_NOT_FIRST.has(lw[i])) { i++; continue; }
+    let j = i, comma = -1;
+    while (j < toks.length) {
+      if (isNum(j)) { j++; continue; }
+      if (lw[j] === 'phẩy' && comma < 0 && j + 1 < toks.length && isNum(j + 1) && !VI_NOT_FIRST.has(lw[j + 1])) { comma = j; j++; continue; }
+      break;
+    }
+    // "không" đứng một mình là phủ định, không phải số 0
+    if (!(j - i === 1 && lw[i] === 'không')) spans.push({ start: i, end: j, comma, conv: false });
+    i = j;
+  }
+  // 2) Đánh dấu cụm cần đổi
+  for (const sp of spans) {
+    const u = unitAt(lw, sp.end);
+    if (u) { sp.unit = u; sp.conv = true; } else if (GROSS_COUNT_NOUNS.has(lw[sp.end])) sp.conv = true;
+  }
+  for (let changed = true; changed;) {
+    changed = false;
+    for (let k = 0; k + 1 < spans.length; k++) {
+      const a = spans[k], b = spans[k + 1];
+      if (b.start !== a.end + 1) continue;
+      const link = lw[a.end];
+      const times = GROSS_TIMES.has(link), range = GROSS_RANGE.has(link);
+      if (!times && !range) continue;
+      // "nhân" giữa hai số luôn là phép nhân kích thước; "đến" chỉ khi một bên đã là số đo
+      const want = times ? true : (a.conv || b.conv);
+      if (want && (!a.conv || !b.conv)) { a.conv = b.conv = true; changed = true; }
+      if (times) a.times = true;
+    }
+  }
+  // 3) Dựng lại câu
+  const value = (words) => {
+    const half = words[words.length - 1] === 'rưỡi';
+    if (half) words = words.slice(0, -1);
+    const str = words.length === 1 && isDigitTok(words[0]) ? words[0].replace('.', ',') : String(viNumber(words));
+    return { str, half };
+  };
+  const out = [];
+  let i = 0;
+  for (const sp of spans) {
+    while (i < sp.start) out.push(toks[i++]);
+    if (!sp.conv) { while (i < sp.end) out.push(toks[i++]); continue; }
+    const intW = lw.slice(sp.start, sp.comma >= 0 ? sp.comma : sp.end);
+    const fracW = sp.comma >= 0 ? lw.slice(sp.comma + 1, sp.end) : null;
+    const iv = value(intW);
+    let num = iv.str;
+    if (fracW) num += ',' + value(fracW).str;
+    i = sp.end;
+    let unitSym = null;
+    if (sp.unit) { unitSym = sp.unit.sym; i += sp.unit.len; }
+    if ((iv.half || (unitSym && lw[i] === 'rưỡi')) && !num.includes(',')) { num += ',5'; if (lw[i] === 'rưỡi') i++; }
+    out.push(num);
+    if (unitSym) out.push(unitSym);
+    if (sp.times) { out.push('x'); i++; }
+  }
+  while (i < toks.length) out.push(toks[i++]);
+  return joinTokens(out);
+}
+
+/** Sửa lỗi nhận dạng theo danh sách {from, to} (không phân biệt hoa thường, nguyên cụm từ). */
+export function applyCorrections(text, list) {
+  let s = text.normalize('NFC');
+  for (const { from, to } of list || []) {
+    const f = String(from || '').trim();
+    if (!f) continue;
+    const rx = new RegExp(GW_L + f.normalize('NFC').split(/\s+/).map(escRe).join('\\s+') + GW_R, 'giu');
+    s = s.replace(rx, to);
+  }
+  return s;
+}
+
+/** Ví dụ sửa lỗi ban đầu — bác sĩ thêm / sửa theo lỗi gặp thực tế. */
+export const GROSS_DEFAULT_CORRECTIONS = [
+  { from: 'các xi nôm', to: 'carcinôm' }, { from: 'cát xi nôm', to: 'carcinôm' },
+  { from: 'xa côm', to: 'sarcôm' }, { from: 'lim phôm', to: 'lymphôm' },
+  { from: 'pô líp', to: 'polyp' }, { from: 'pô lyp', to: 'polyp' },
+];
+
+/** Từ vựng đại thể gợi ý cho bộ nhận dạng (contextual strings). */
+export const GROSS_VOCAB = [
+  'đại thể', 'cắt lọc', 'cát xét', 'bệnh phẩm', 'mảnh mô', 'mô mềm', 'mô mỡ', 'nhu mô', 'vỏ bao', 'thanh mạc', 'niêm mạc',
+  'dưới niêm mạc', 'lớp cơ', 'mạc treo', 'mạc nối', 'diện cắt', 'bờ phẫu thuật', 'diện cắt gần', 'diện cắt xa', 'diện cắt quanh',
+  'chấm mực', 'mực tàu', 'mực xanh', 'mực đen', 'mực đỏ', 'mặt cắt', 'mật độ', 'chắc', 'mềm', 'bở', 'dai', 'xơ', 'nhầy', 'dạng keo',
+  'dạng nang', 'dạng nhú', 'dạng sùi', 'loét', 'thâm nhiễm', 'xâm nhập', 'hoại tử', 'xuất huyết', 'vôi hoá', 'sỏi', 'giả mạc',
+  'hạch', 'hạch bạch huyết', 'polyp', 'cuống', 'không cuống', 'u', 'khối u', 'nốt', 'giới hạn rõ', 'giới hạn không rõ',
+  'màu trắng xám', 'màu vàng', 'màu nâu', 'màu đỏ sẫm', 'carcinôm', 'sarcôm', 'lymphôm', 'tuyến giáp', 'túi mật', 'ruột thừa',
+  'đại tràng', 'trực tràng', 'dạ dày', 'tử cung', 'cổ tử cung', 'nội mạc', 'buồng trứng', 'vòi trứng', 'tuyến vú', 'núm vú',
+  'hố nách', 'thận', 'tuyến tiền liệt', 'cố định formol', 'cắt lọc toàn bộ', 'đại diện', 'xăng ti mét', 'mi li mét', 'gam',
+];
+
+// ---------- Lệnh giọng nói ----------
+const GROSS_LETTER = {
+  'ép phờ': 'F', 'bê': 'B', 'bờ': 'B', 'xê': 'C', 'cê': 'C', 'cờ': 'C', 'đê': 'D', 'dê': 'D', 'đờ': 'D',
+  'giê': 'G', 'gờ': 'G', 'hát': 'H', 'ép': 'F', 'ca': 'K', 'a': 'A', 'b': 'B', 'c': 'C', 'd': 'D', 'e': 'E', 'ê': 'E',
+  'f': 'F', 'g': 'G', 'h': 'H', 'i': 'I', 'k': 'K',
+};
+const LET_RX = Object.keys(GROSS_LETTER).sort((a, b) => b.length - a.length).map((k) => k.replace(' ', '\\s+')).join('|');
+const NUMW_RX = '(?:một|mốt|hai|ba|bốn|tư|năm|lăm|sáu|bảy|bẩy|tám|chín|mười|mươi|linh|lẻ|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)';
+const NUM_RX = `(\\d{1,2}|${NUMW_RX}(?:\\s+${NUMW_RX})*)`;
+const EN_NUM = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12 };
+function cassetteNumber(s) {
+  const w = s.toLowerCase().trim().split(/\s+/);
+  if (/^\d+$/.test(w[0])) return parseInt(w[0], 10);
+  if (w.length === 1 && w[0] in EN_NUM) return EN_NUM[w[0]];
+  return viNumber(w);
+}
+const cmd = (src) => new RegExp(GW_L + src + GW_R, 'iu');
+/** Thứ tự quan trọng: cụm dài trước ("dấu hai chấm" trước "dấu chấm"). */
+const GROSS_COMMANDS = [
+  [cmd(`(?:cát\\s*-?\\s*xét|cassette|khối\\s+nến|khuôn\\s+nến|block)\\s+(?:số\\s+|number\\s+)?(?:(${LET_RX})\\s*)?${NUM_RX}`), (m) => ({ type: 'cassette', code: (m[1] ? GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] : '') + cassetteNumber(m[2]) })],
+  [cmd(`mẫu\\s+(${LET_RX})\\s*${NUM_RX}`), (m) => ({ type: 'cassette', code: GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] + cassetteNumber(m[2]) })],
+  [cmd('(?:cát\\s*-?\\s*xét|cassette|khối|mẫu|block)\\s+(?:tiếp(?:\\s+theo)?|kế\\s+tiếp|next)|next\\s+(?:cassette|block)'), () => ({ type: 'nextCassette' })],
+  [cmd('(?:quay\\s+(?:lại|về)|về|trở\\s+lại)\\s+(?:phần\\s+)?mô\\s+tả|phần\\s+mô\\s+tả|back\\s+to\\s+description'), () => ({ type: 'body' })],
+  [cmd('dấu\\s+chấm\\s+phẩy|semicolon'), () => ({ type: 'punct', text: ';' })],
+  [cmd('dấu\\s+hai\\s+chấm|colon'), () => ({ type: 'punct', text: ':' })],
+  [cmd('dấu\\s+chấm\\s+hỏi|question\\s+mark'), () => ({ type: 'punct', text: '?' })],
+  [cmd('dấu\\s+chấm|chấm\\s+câu|full\\s+stop|period'), () => ({ type: 'punct', text: '.' })],
+  [cmd('dấu\\s+phẩy|comma'), () => ({ type: 'punct', text: ',' })],
+  [cmd('mở\\s+ngoặc|open\\s+(?:paren|parenthesis|bracket)'), () => ({ type: 'punct', text: '(' })],
+  [cmd('đóng\\s+ngoặc|close\\s+(?:paren|parenthesis|bracket)'), () => ({ type: 'punct', text: ')' })],
+  [cmd('gạch\\s+đầu\\s+dòng|bullet'), () => ({ type: 'bullet' })],
+  [cmd('xuống\\s+dòng|new\\s+line'), () => ({ type: 'newline' })],
+  [cmd('đoạn\\s+mới|sang\\s+đoạn(?:\\s+mới)?|new\\s+paragraph'), () => ({ type: 'para' })],
+  [cmd('(?:xoá|xóa)\\s+câu(?:\\s+(?:cuối|vừa\\s+rồi|trước))?|hoàn\\s+tác|scratch\\s+that|undo\\s+that'), () => ({ type: 'undo' })],
+  [cmd('tạm\\s+dừng(?:\\s+ghi)?|pause\\s+dictation'), () => ({ type: 'pause' })],
+  [cmd('tiếp\\s+tục\\s+ghi|ghi\\s+tiếp|resume\\s+dictation'), () => ({ type: 'resume' })],
+  [cmd('(?:dừng|kết\\s+thúc)\\s+ghi(?:\\s+âm)?|stop\\s+dictation'), () => ({ type: 'stop' })],
+];
+
+/** Tách một câu đọc thành văn bản và lệnh. */
+export function parseDictation(input) {
+  const ops = [];
+  let rest = input.normalize('NFC');
+  for (;;) {
+    let best = null;
+    for (const [rx, make] of GROSS_COMMANDS) {
+      const m = rx.exec(rest);
+      if (m && (!best || m.index < best.m.index || (m.index === best.m.index && m[0].length > best.m[0].length))) best = { m, make };
+    }
+    if (!best) break;
+    const op = best.make(best.m);
+    let before = rest.slice(0, best.m.index);
+    // dấu câu tự thêm của bộ nhận dạng ngay trước lệnh dấu câu → bỏ (lệnh thay thế nó)
+    if (op.type === 'punct') before = before.replace(/[\s.,;:!?]+$/u, '');
+    if (before.trim()) ops.push({ type: 'text', text: before.trim() });
+    ops.push(op);
+    // dấu câu tự thêm ngay sau lệnh → bỏ
+    rest = rest.slice(best.m.index + best.m[0].length).replace(/^[\s.,;:!?]+/u, '');
+  }
+  if (rest.trim()) ops.push({ type: 'text', text: rest.trim() });
+  return ops;
+}
+
+// ---------- Văn bản đại thể ----------
+export function newGrossDoc() { return { body: '', cassettes: [], target: -1, history: [] }; }
+const grossSnapshot = (d) => ({ body: d.body, cassettes: d.cassettes.map((c) => ({ ...c })), target: d.target });
+const isSentenceEnd = (s) => /(^|[.!?:\n])\s*$/.test(s);
+function appendText(prev, piece) {
+  if (!piece) return prev;
+  let p = piece;
+  if (!prev.trim() || isSentenceEnd(prev)) p = p.charAt(0).toUpperCase() + p.slice(1);
+  else if (/^\p{Lu}\p{Ll}/u.test(p)) p = p.charAt(0).toLowerCase() + p.slice(1);   // bộ nhận dạng viết hoa đầu mỗi lượt
+  if (!prev) return p;
+  if (/[\s(]$/.test(prev) || /^[.,;:!?)%]/.test(p)) return prev + p;
+  return prev + ' ' + p;
+}
+function appendPunct(prev, mark) {
+  if (mark === '(') return prev.replace(/\s*$/, prev.trim() ? ' (' : '(');
+  const t = prev.replace(/[\s]+$/, '');
+  if (/[.,;:]$/.test(t) && mark !== ')') return t.slice(0, -1) + mark;
+  return t + mark;
+}
+function nextCode(doc) {
+  const last = doc.cassettes[doc.cassettes.length - 1]?.code;
+  if (!last) return 'A1';
+  const m = /^([A-Z]*)(\d+)$/.exec(last);
+  return m ? m[1] + (parseInt(m[2], 10) + 1) : last + '1';
+}
+
+/**
+ * Áp các lệnh của MỘT câu đọc vào văn bản. Trả về tín hiệu điều khiển ('pause' | 'resume' | 'stop').
+ * `paused`: đang tạm dừng → chỉ nhận lệnh "tiếp tục ghi".
+ */
+export function applyDictation(doc, ops, { paused = false, corrections = [] } = {}) {
+  const signals = [];
+  let snap = grossSnapshot(doc), pushed = false, textSnap = null;
+  const remember = () => { if (!pushed) { doc.history.push(snap); if (doc.history.length > 50) doc.history.shift(); pushed = true; } };
+  const get = () => (doc.target < 0 ? doc.body : doc.cassettes[doc.target].text);
+  const set = (v) => { if (doc.target < 0) doc.body = v; else doc.cassettes[doc.target].text = v; };
+  for (const op of ops) {
+    if (paused) { if (op.type === 'resume') { paused = false; signals.push('resume'); } continue; }
+    switch (op.type) {
+      case 'text': remember(); textSnap = grossSnapshot(doc); set(appendText(get(), normalizeMeasurements(applyCorrections(op.text, corrections)))); break;
+      case 'punct': remember(); set(appendPunct(get(), op.text)); break;
+      case 'newline': remember(); set(get().replace(/[ \t]+$/, '') + '\n'); break;
+      case 'para': remember(); set(get().replace(/\s+$/, '') + '\n\n'); break;
+      case 'bullet': remember(); set(get().replace(/[ \t]+$/, '').replace(/([^\n])$/, '$1\n') + '- '); break;
+      case 'cassette': {
+        remember();
+        const k = doc.cassettes.findIndex((c) => c.code === op.code);
+        if (k >= 0) doc.target = k; else { doc.cassettes.push({ code: op.code, text: '' }); doc.target = doc.cassettes.length - 1; }
+        break;
+      }
+      case 'nextCassette': remember(); doc.cassettes.push({ code: nextCode(doc), text: '' }); doc.target = doc.cassettes.length - 1; break;
+      case 'body': remember(); doc.target = -1; break;
+      case 'undo':
+        // có chữ đọc trước lệnh trong cùng câu → chỉ xoá đoạn chữ đó; lệnh đứng riêng → xoá câu đọc trước
+        if (textSnap) { Object.assign(doc, textSnap); textSnap = null; }
+        else { const prev = doc.history.pop(); if (prev) Object.assign(doc, prev); snap = grossSnapshot(doc); pushed = false; }
+        break;
+      case 'pause': paused = true; signals.push('pause'); break;
+      case 'resume': signals.push('resume'); break;
+      case 'stop': signals.push('stop'); break;
+    }
+  }
+  return signals;
+}
+
+export function grossReportText(doc, lang = 'vi') {
+  const body = doc.body.trim();
+  const cs = doc.cassettes;
+  if (!cs.length) return body;
+  const head = lang === 'en' ? 'SECTIONS / CASSETTES:' : 'CẮT LỌC – CÁT XÉT:';
+  return (body ? body + '\n\n' : '') + head + '\n' + cs.map((c) => `${c.code}: ${c.text.trim()}`).join('\n');
+}
+
+/** Gợi ý cấu trúc mô tả theo loại bệnh phẩm (hiển thị khi đọc, không tự chèn). */
+export const GROSS_TEMPLATES = [
+  { id: 'biopsy', name: 'Sinh thiết nhỏ', items: ['Số mảnh', 'Kích thước (mảnh lớn nhất / gộp)', 'Màu sắc, mật độ', 'Cắt lọc toàn bộ / số cát xét'] },
+  { id: 'gallbladder', name: 'Túi mật', items: ['Kích thước', 'Thanh mạc', 'Độ dày thành', 'Niêm mạc', 'Sỏi: số lượng, kích thước, màu', 'Ống túi mật, hạch cổ túi mật', 'Cát xét'] },
+  { id: 'appendix', name: 'Ruột thừa', items: ['Chiều dài × đường kính', 'Thanh mạc (giả mạc, thủng)', 'Lòng (sỏi phân, mủ)', 'Đầu tận', 'Diện cắt', 'Cát xét'] },
+  { id: 'thyroid', name: 'Tuyến giáp', items: ['Thuỳ / eo, trọng lượng', 'Kích thước', 'Vỏ bao', 'Nốt: số lượng, vị trí, kích thước, vỏ bao, mặt cắt', 'Khoảng cách tới bờ (chấm mực)', 'Tuyến cận giáp, hạch', 'Cát xét'] },
+  { id: 'breast', name: 'Vú', items: ['Định hướng (chỉ khâu)', 'Kích thước, da, núm vú', 'U: vị trí, 3 chiều, bờ, mặt cắt', 'Khoảng cách tới từng diện cắt (màu mực)', 'Clip / dấu định vị', 'Hạch nách: số lượng', 'Cát xét'] },
+  { id: 'colon', name: 'Đại – trực tràng', items: ['Đoạn ruột, chiều dài', 'U: kích thước, dạng, % chu vi, mức xâm nhập', 'Khoảng cách tới diện cắt gần / xa / quanh (CRM)', 'Mạc treo, hạch (số lượng)', 'Polyp / tổn thương khác', 'Cát xét'] },
+  { id: 'uterus', name: 'Tử cung', items: ['Trọng lượng', 'Kích thước thân / cổ', 'Nội mạc: độ dày, tổn thương', 'Cơ tử cung: u xơ (số lượng, kích thước)', 'Cổ tử cung', 'Phần phụ', 'Cát xét'] },
+];

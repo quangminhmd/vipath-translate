@@ -8,7 +8,7 @@ struct SavedListView: View {
     private var store: SavedStore { SavedStore.shared }
 
     enum Filter: String, CaseIterable, Identifiable {
-        case all = "Tất cả", text = "Văn bản", captions = "Phụ đề"
+        case all = "Tất cả", text = "Văn bản", captions = "Phụ đề", gross = "Đại thể"
         var id: String { rawValue }
     }
 
@@ -18,6 +18,7 @@ struct SavedListView: View {
             case .all: true
             case .text: item.kind == .text
             case .captions: item.kind == .captions || item.kind == .transcript
+            case .gross: item.kind == .gross
             }
         }
         .filter { item in
@@ -76,7 +77,7 @@ private struct SavedRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
-                Image(systemName: item.kind == .captions ? "captions.bubble" : item.kind == .transcript ? "waveform" : "doc.text")
+                Image(systemName: item.kind == .captions ? "captions.bubble" : item.kind == .transcript ? "waveform" : item.kind == .gross ? "scissors" : "doc.text")
                     .foregroundStyle(.secondary)
                 Text(item.title).font(.body.weight(.medium)).lineLimit(1)
             }
@@ -85,7 +86,7 @@ private struct SavedRow: View {
                 Text("·")
                 Text(item.direction.label)
                 if item.claudeTranslation != nil { Image(systemName: "sparkles") }
-                if item.kind != .text, let n = item.pairs?.count { Text("· \(n) đoạn") }
+                if item.kind == .captions || item.kind == .transcript, let n = item.pairs?.count { Text("· \(n) đoạn") }
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -117,6 +118,9 @@ struct SavedDetailView: View {
             }
 
             switch item.kind {
+            case .gross:
+                textSection("Mô tả đại thể", item.source, speak: true)
+                if !item.translation.isEmpty { textSection(item.direction.targetName, item.translation) }
             case .text:
                 textSection(item.direction.sourceName, item.source)
                 if !item.translation.isEmpty {
@@ -145,7 +149,7 @@ struct SavedDetailView: View {
                 }
             }
         }
-        .navigationTitle(item.kind == .captions ? "Phụ đề" : item.kind == .transcript ? "Chép lời" : "Bản dịch")
+        .navigationTitle(item.kind == .captions ? "Phụ đề" : item.kind == .transcript ? "Chép lời" : item.kind == .gross ? "Đại thể" : "Bản dịch")
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear { if title != item.title { store.rename(item, to: title) } }
         .toolbar {
@@ -158,7 +162,7 @@ struct SavedDetailView: View {
                     Button("Chép bản dịch", systemImage: "doc.on.clipboard") {
                         UIPasteboard.general.string = item.translationOnly
                     }
-                    if item.kind != .text {
+                    if item.kind == .captions || item.kind == .transcript {
                         Section("Xuất phụ đề") {
                             ForEach(SubtitleContent.allCases) { c in
                                 ShareLink(item: SubtitleFile(fileName: "\(item.title.prefix(40)).\(c.rawValue).srt",

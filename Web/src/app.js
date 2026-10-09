@@ -453,7 +453,7 @@ const tts = {
 // ============================================================================
 // Khung ứng dụng: tab, chip trạng thái
 // ============================================================================
-const TITLES = { translate: 'Dịch', captions: 'Phụ đề trực tiếp', transcribe: 'Chép lời từ tệp', image: 'Chữ trong ảnh', glossary: 'Thuật ngữ', saved: 'Đã lưu' };
+const TITLES = { translate: 'Dịch', gross: 'Đọc mô tả đại thể', captions: 'Phụ đề trực tiếp', transcribe: 'Chép lời từ tệp', image: 'Chữ trong ảnh', glossary: 'Thuật ngữ', saved: 'Đã lưu' };
 let currentTab = 'translate';
 function showTab(name) {
   if (!TITLES[name]) name = 'translate';
@@ -464,6 +464,7 @@ function showTab(name) {
   if (name === 'glossary') renderGlossary();
   if (name === 'saved') renderSaved();
   if (name === 'captions') updateCapHint();
+  if (name === 'gross') { updateGrossHint(); renderGross(); }
   try { history.replaceState(null, '', '#' + name); } catch { /* */ }
 }
 $$('.tab[data-tab]').forEach((t) => t.addEventListener('click', () => showTab(t.dataset.tab)));
@@ -1016,6 +1017,241 @@ async function saveCaptions() {
 }
 
 // ============================================================================
+// Tab ĐẠI THỂ — đọc mô tả khi phẫu tích, cắt lọc bệnh phẩm (lệnh giọng nói rảnh tay)
+// ============================================================================
+const G = {
+  doc: newGrossDoc(), lang: store.get('grLang', 'vi'), asrMode: store.get('grAsr', 'whisper'),
+  running: false, paused: false, volatile: '', rec: null, capture: null,
+  chunk: [], chunkLen: 0, silence: 0, speech: 0, queue: [], busy: false, savedId: null, engine: '',
+  corrections: store.get('grCorrections', null) || GROSS_DEFAULT_CORRECTIONS,
+};
+if (!SR && G.asrMode === 'web') G.asrMode = 'whisper';
+setPressed($('#gr-lang'), G.lang); setPressed($('#gr-asr'), G.asrMode);
+$('#gr-template').innerHTML = GROSS_TEMPLATES.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
+$('#gr-template').value = store.get('grTemplate', 'biopsy');
+function renderGrossChecklist() {
+  const t = GROSS_TEMPLATES.find((x) => x.id === $('#gr-template').value);
+  $('#gr-checklist').innerHTML = (t?.items || []).map((i) => `<span>${esc(i)}</span>`).join('');
+}
+renderGrossChecklist();
+$('#gr-template').addEventListener('change', (e) => { store.set('grTemplate', e.target.value); renderGrossChecklist(); });
+onSeg($('#gr-lang'), (v) => { G.lang = v; store.set('grLang', v); updateGrossHint(); $('#gr-translate').textContent = v === 'vi' ? 'Dịch sang tiếng Anh' : 'Dịch sang tiếng Việt'; });
+onSeg($('#gr-asr'), (v) => { G.asrMode = v; store.set('grAsr', v); updateGrossHint(); });
+const grWhisperId = () => store.get('grWhisper', device.webgpu ? 'onnx-community/whisper-large-v3-turbo' : 'onnx-community/whisper-small');
+function updateGrossHint() {
+  const w = WHISPER_MODELS.find((m) => m.id === grWhisperId()) || WHISPER_MODELS[1];
+  $('#gr-hint').textContent = G.asrMode === 'web'
+    ? (SR ? 'Bộ nhận dạng của trình duyệt: nhanh, nhưng Chrome gửi âm thanh lên máy chủ Google. Không đọc thông tin định danh người bệnh.' : 'Trình duyệt này không có nhận dạng giọng nói — dùng Whisper.')
+    : `Whisper chạy trên máy (${w.name}) — không gửi âm thanh đi đâu; mỗi câu hiện ra sau khi bạn ngừng nói ~0,6 giây. Nói “cát xét A1”, “xuống dòng”, “xoá câu”… — bấm “Lệnh giọng nói” để xem đủ.`;
+}
+const grTargetLabel = () => (G.doc.target < 0 ? 'Mô tả' : 'Cát xét ' + G.doc.cassettes[G.doc.target].code);
+const setGrStatus = (t) => { $('#gr-status').textContent = t; };
+function grListening() { setGrStatus(G.paused ? 'Tạm dừng — nói “tiếp tục ghi” hoặc bấm ▶' : `Đang nghe · ${grTargetLabel()}`); }
+
+function renderGross() {
+  const d = G.doc;
+  const live = (i) => (G.running && d.target === i ? `<span class="gr-live${G.paused ? ' paused' : ''}"></span>` : '');
+  const vol = (i) => (d.target === i && !G.paused ? esc(G.volatile) : '');
+  const block = (i, head, text, ph) => `<div class="gr-block${d.target === i ? ' active' : ''}" data-gi="${i}">
+    <div class="gr-head">${head}${live(i)}<span class="grow"></span>${d.target === i ? '' : '<button class="btn ghost tiny" data-gr-target>Ghi vào đây</button>'}${i >= 0 ? '<button class="btn ghost tiny" data-gr-del title="Xoá cát xét">✕</button>' : ''}</div>
+    <textarea rows="${i < 0 ? 4 : 2}" placeholder="${ph}" data-gr-text>${esc(text)}</textarea><div class="gr-vol">${vol(i)}</div></div>`;
+  $('#gr-doc').innerHTML = block(-1, 'MÔ TẢ ĐẠI THỂ', d.body, 'Bấm micro rồi đọc: “Bệnh phẩm gồm ba mảnh, kích thước…”')
+    + d.cassettes.map((c, i) => block(i, `<span class="gr-code">${esc(c.code)}</span>`, c.text, 'Vị trí lấy mẫu…')).join('')
+    + (d.cassettes.length ? '' : '<div class="note">Cát xét: nói “cát xét A1”, “cát xét tiếp theo”… hoặc bấm Cát xét +. Danh sách cát xét được ghép vào cuối mô tả.</div>');
+  $('#gr-undo').disabled = !d.history.length;
+  const act = $('#gr-doc .gr-block.active');
+  if (act && G.running) act.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+function renderGrossVolatile() {
+  const el = $(`#gr-doc .gr-block[data-gi="${G.doc.target}"] .gr-vol`);
+  if (el) el.textContent = G.paused ? '' : G.volatile;
+}
+$('#gr-doc').addEventListener('input', (e) => {
+  const ta = e.target.closest('[data-gr-text]'); if (!ta) return;
+  const i = +ta.closest('[data-gi]').dataset.gi;
+  if (i < 0) G.doc.body = ta.value; else G.doc.cassettes[i].text = ta.value;
+});
+$('#gr-doc').addEventListener('click', (e) => {
+  const blk = e.target.closest('[data-gi]'); if (!blk) return;
+  const i = +blk.dataset.gi;
+  if (e.target.closest('[data-gr-target]')) { G.doc.target = i; renderGross(); if (G.running) grListening(); }
+  if (e.target.closest('[data-gr-del]')) {
+    G.doc.history.push({ body: G.doc.body, cassettes: G.doc.cassettes.map((c) => ({ ...c })), target: G.doc.target });
+    G.doc.cassettes.splice(i, 1);
+    if (G.doc.target >= G.doc.cassettes.length || G.doc.target === i) G.doc.target = -1; else if (G.doc.target > i) G.doc.target--;
+    renderGross();
+  }
+});
+$('#gr-undo').addEventListener('click', () => { applyDictation(G.doc, [{ type: 'undo' }]); renderGross(); });
+$('#gr-next').addEventListener('click', () => { applyDictation(G.doc, [{ type: 'nextCassette' }]); renderGross(); if (G.running) grListening(); });
+$('#gr-to-body').addEventListener('click', () => { G.doc.target = -1; renderGross(); if (G.running) grListening(); });
+$('#gr-pause').addEventListener('click', () => { if (!G.running) return; G.paused = !G.paused; G.volatile = ''; grPauseUI(); renderGross(); grListening(); });
+function grPauseUI() {
+  $('#gr-pause').disabled = !G.running;
+  $('#gr-pause span').textContent = G.paused ? 'Tiếp tục' : 'Tạm dừng';
+}
+$('#gr-mic').addEventListener('click', () => (G.running ? stopGross() : startGross()));
+
+/** Một câu đọc đã chốt từ bộ nhận dạng. */
+function grossFinal(text) {
+  const t = (text || '').replace(/\[[^\]]*\]|\([^)]*\)/g, ' ').trim();   // Whisper: bỏ [Music]…
+  if (!t) return;
+  const signals = applyDictation(G.doc, parseDictation(t), { paused: G.paused, corrections: G.corrections });
+  for (const s of signals) { if (s === 'pause') G.paused = true; if (s === 'resume') G.paused = false; }
+  G.volatile = '';
+  grPauseUI(); renderGross();
+  if (signals.includes('stop')) stopGross(); else if (G.running) grListening();
+}
+
+async function startGross() {
+  if (G.running) return;
+  G.running = true; G.paused = false; G.volatile = ''; G.queue = [];
+  $('#gr-mic').classList.add('on'); $('#gr-mic').setAttribute('aria-label', 'Dừng ghi'); grPauseUI();
+  try { G.wake = await navigator.wakeLock?.request('screen'); } catch { /* không bắt buộc */ }
+  try {
+    if (G.asrMode === 'web') {
+      if (!SR) throw new Error('Trình duyệt này không có nhận dạng giọng nói — chọn Whisper.');
+      const rec = new SR();
+      rec.lang = G.lang === 'vi' ? 'vi-VN' : 'en-US'; rec.continuous = true; rec.interimResults = true;
+      rec.onresult = (e) => {
+        let interim = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const r = e.results[i];
+          if (r.isFinal) grossFinal(r[0].transcript); else interim += r[0].transcript;
+        }
+        G.volatile = interim; renderGrossVolatile();
+      };
+      rec.onerror = (e) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { setGrStatus('Chưa cấp quyền micro / nhận dạng giọng nói'); stopGross(); } };
+      rec.onend = () => { if (G.running && G.rec === rec) { try { rec.start(); } catch { /* */ } } };
+      G.rec = rec; rec.start();
+      G.engine = 'Nhận dạng của trình duyệt';
+    } else {
+      setGrStatus('Đang nạp Whisper…');
+      await getASR(grWhisperId(), (p, t) => setGrStatus(`Nạp Whisper ${Math.round(p * 100)}% · ${t}`));
+      if (!G.running) return;
+      G.chunk = []; G.chunkLen = 0; G.silence = 0; G.speech = 0;
+      G.capture = await startCapture('mic', onGrossSamples);
+      G.engine = (WHISPER_MODELS.find((m) => m.id === grWhisperId()) || {}).name || 'Whisper';
+    }
+    grListening(); renderGross();
+  } catch (e) {
+    setGrStatus(e.message || String(e));
+    G.running = false; $('#gr-mic').classList.remove('on'); grPauseUI();
+  }
+}
+async function stopGross() {
+  if (!G.running) return;
+  G.running = false;
+  try { G.rec?.stop(); } catch { /* */ }
+  G.rec = null;
+  G.capture?.stop(); G.capture = null;
+  if (G.chunkLen > 16000) pushGrossChunk();
+  try { await G.wake?.release(); } catch { /* */ }
+  G.volatile = ''; G.paused = false;
+  $('#gr-mic').classList.remove('on'); $('#gr-mic').setAttribute('aria-label', 'Bắt đầu ghi'); grPauseUI();
+  setGrStatus(G.queue.length || G.busy ? 'Đang nhận dạng nốt…' : 'Đã dừng');
+  renderGross();
+}
+// Whisper: cắt câu khi ngừng nói ≥ 0,6 s (giống tab Phụ đề), câu dài tối đa 12 s
+function onGrossSamples(y) {
+  if (!G.running) return;
+  G.chunk.push(y); G.chunkLen += y.length;
+  const loud = rms(y) > 0.012;
+  if (loud) { G.speech += y.length; G.silence = 0; } else G.silence += y.length;
+  if ((G.silence > 9600 && G.chunkLen > 16000 && G.speech > 3200) || G.chunkLen > 16000 * 12) pushGrossChunk();
+  else if (G.silence > 16000 * 2 && G.speech < 3200) { G.chunk = []; G.chunkLen = 0; G.speech = 0; }
+  G.volatile = G.speech > 3200 && !G.paused ? '🎙 …' : G.volatile;
+}
+function pushGrossChunk() {
+  const a = new Float32Array(G.chunkLen);
+  let o = 0; for (const c of G.chunk) { a.set(c, o); o += c.length; }
+  G.chunk = []; G.chunkLen = 0; G.silence = 0; G.speech = 0;
+  G.queue.push(a); runGrossQueue();
+}
+async function runGrossQueue() {
+  if (G.busy) return;
+  G.busy = true;
+  while (G.queue.length) {
+    const a = G.queue.shift();
+    G.volatile = G.paused ? '' : '…đang nhận dạng'; renderGrossVolatile();
+    try {
+      const out = await asr.pipe(a, { language: whisperLang(G.lang), task: 'transcribe' });
+      grossFinal(out.text || '');
+    } catch (e) { setGrStatus('Lỗi Whisper: ' + (e.message || e)); }
+    G.volatile = ''; renderGrossVolatile();
+  }
+  G.busy = false;
+  if (!G.running) setGrStatus('Đã dừng');
+}
+
+const grossReport = () => grossReportText(G.doc, G.lang);
+$('#gr-copy').addEventListener('click', () => copyText(grossReport()));
+$('#gr-save').addEventListener('click', saveGross);
+async function saveGross() {
+  const text = grossReport();
+  if (!text) { toast('Chưa có nội dung'); return; }
+  const label = $('#gr-label').value.trim();
+  const item = { id: G.savedId || 'g' + Date.now(), kind: 'gross', createdAt: Date.now(),
+    title: 'Đại thể · ' + (label || autoTitle(G.doc.body || text)), dir: G.lang === 'vi' ? 'viToEn' : 'enToVi', engine: G.engine || 'Đọc chính tả',
+    source: text, translation: '' };
+  G.savedId = item.id;
+  if (await idb.put('saved', item)) toast('Đã lưu vào tab Đã lưu');
+}
+$('#gr-translate').addEventListener('click', () => {
+  const text = grossReport();
+  if (!text) return;
+  const dir = G.lang === 'vi' ? 'viToEn' : 'enToVi';
+  T.dirMode = dir; store.set('dirMode', dir); setPressed($('#dir-mode'), dir);
+  input.value = text; input.dispatchEvent(new Event('input'));
+  showTab('translate');
+  if (llm.engine) translateInput(); else toast('Nạp mô hình dịch trong Cài đặt rồi bấm Dịch');
+});
+$('#gr-clear').addEventListener('click', (e) => {
+  if (G.running) return;
+  const b = e.currentTarget;
+  if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Bấm lần nữa để xoá'; setTimeout(() => { b.dataset.confirm = ''; b.textContent = 'Xoá trang'; }, 3000); return; }
+  b.dataset.confirm = ''; b.textContent = 'Xoá trang';
+  G.doc = newGrossDoc(); G.savedId = null; $('#gr-label').value = ''; renderGross(); setGrStatus('');
+});
+$('#gr-help').addEventListener('click', () => modal(`<h3>Lệnh giọng nói</h3>
+  <div class="kv small">
+    <span>“cát xét A1”, “mẫu bê hai”, “cát xét số 3”</span><span>Mở cát xét — các câu sau ghi vào đó</span>
+    <span>“cát xét tiếp theo”, “khối tiếp”</span><span>Cát xét kế tiếp (A1 → A2)</span>
+    <span>“quay lại mô tả”</span><span>Ghi tiếp vào phần mô tả</span>
+    <span>“xuống dòng”, “đoạn mới”, “gạch đầu dòng”</span><span>Định dạng</span>
+    <span>“dấu chấm”, “dấu phẩy”, “dấu hai chấm”, “mở / đóng ngoặc”</span><span>Dấu câu</span>
+    <span>“xoá câu”, “hoàn tác”</span><span>Bỏ câu vừa đọc</span>
+    <span>“tạm dừng” / “tiếp tục ghi”</span><span>Ngừng nghe khi trao đổi với KTV</span>
+    <span>“dừng ghi”</span><span>Kết thúc</span>
+  </div>
+  <h3 style="margin-top:14px">Số đo tự chuẩn hoá</h3>
+  <div class="kv small">
+    <span>bốn nhân ba nhân hai xăng ti mét</span><span class="mono">4 x 3 x 2 cm</span>
+    <span>hai phẩy năm phân / hai phân rưỡi</span><span class="mono">2,5 cm</span>
+    <span>từ hai đến năm mi li mét</span><span class="mono">từ 2 đến 5 mm</span>
+    <span>nặng hai mươi lăm gam</span><span class="mono">nặng 25 g</span>
+    <span>ba mảnh, mười hai hạch</span><span class="mono">3 mảnh, 12 hạch</span>
+  </div>
+  <div class="note" style="margin-top:12px">Chỉ đổi chữ số khi đứng cạnh đơn vị, “nhân” hoặc danh từ đếm — “một đoạn đại tràng” giữ nguyên. Đeo tai nghe Bluetooth để đứng xa máy; màn hình được giữ sáng khi đang ghi.</div>
+  <div class="foot"><button class="btn primary" data-close>Đóng</button></div>`));
+$('#gr-fix').addEventListener('click', () => {
+  const row = (c, k) => `<div class="row" data-k="${k}"><input value="${esc(c.from)}" data-f style="flex:1;min-width:120px"><span class="muted">→</span><input value="${esc(c.to)}" data-t style="flex:1;min-width:120px"><button class="btn ghost" data-x>✕</button></div>`;
+  const m = modal(`<h3>Sửa lỗi nhận dạng</h3><div class="small muted">Máy nghe thành → sửa thành. Áp dụng cho các câu đọc sau.</div>
+    <div class="stack" id="gf-list">${G.corrections.map(row).join('')}</div>
+    <div class="row"><button class="btn" id="gf-add">Thêm dòng</button><button class="btn ghost" id="gf-reset">Khôi phục mặc định</button></div>
+    <div class="foot"><button class="btn primary" id="gf-save">Lưu</button></div>`);
+  const list = $('#gf-list', m.el);
+  $('#gf-add', m.el).addEventListener('click', () => list.insertAdjacentHTML('afterbegin', row({ from: '', to: '' }, Date.now())));
+  $('#gf-reset', m.el).addEventListener('click', () => { list.innerHTML = GROSS_DEFAULT_CORRECTIONS.map(row).join(''); });
+  list.addEventListener('click', (e) => { if (e.target.closest('[data-x]')) e.target.closest('[data-k]').remove(); });
+  $('#gf-save', m.el).addEventListener('click', () => {
+    G.corrections = $$('[data-k]', list).map((r) => ({ from: $('[data-f]', r).value.trim(), to: $('[data-t]', r).value.trim() })).filter((c) => c.from && c.to);
+    store.set('grCorrections', G.corrections); m.close(); toast('Đã lưu');
+  });
+});
+updateGrossHint();
+
+// ============================================================================
 // Tab CHÉP LỜI
 // ============================================================================
 const R = { lang: store.get('trLang', 'en'), display: 'source', segs: [], file: null, url: null, run: 0, busy: false, translating: false, trRun: 0, duration: 0, elapsed: 0, savedId: null };
@@ -1379,16 +1615,19 @@ $('#sv-search').addEventListener('input', renderSaved);
 async function renderSaved() {
   const q = $('#sv-search').value.trim().toLowerCase();
   const items = (await idb.all('saved')).sort((a, b) => b.createdAt - a.createdAt)
-    .filter((i) => svFilter === 'all' || (svFilter === 'text' ? i.kind === 'text' : i.kind !== 'text'))
+    .filter((i) => svFilter === 'all' || (svFilter === 'text' ? i.kind === 'text' : svFilter === 'gross' ? i.kind === 'gross' : !!i.pairs))
     .filter((i) => !q || JSON.stringify(i).toLowerCase().includes(q));
   $('#sv-empty').hidden = items.length > 0;
   $('#sv-list').innerHTML = items.map((i) => `<button class="item" data-sv="${i.id}"><span class="t">${esc(i.title)}</span>
-    <span class="small muted">${new Date(i.createdAt).toLocaleString('vi-VN')} · ${i.kind === 'text' ? 'Văn bản' : i.kind === 'captions' ? 'Phụ đề' : 'Chép lời'} · ${esc(DIR[i.dir]?.label || '')}${i.pairs ? ' · ' + i.pairs.length + ' đoạn' : ''}${i.claude ? ' · Claude' : ''}</span></button>`).join('');
+    <span class="small muted">${new Date(i.createdAt).toLocaleString('vi-VN')} · ${i.kind === 'text' ? 'Văn bản' : i.kind === 'gross' ? 'Đại thể' : i.kind === 'captions' ? 'Phụ đề' : 'Chép lời'} · ${esc(DIR[i.dir]?.label || '')}${i.pairs ? ' · ' + i.pairs.length + ' đoạn' : ''}${i.claude ? ' · Claude' : ''}</span></button>`).join('');
 }
 function savedExport(i) {
   const d = DIR[i.dir] || DIR.enToVi;
   let out = `${i.title}\n${new Date(i.createdAt).toLocaleString('vi-VN')} · ${d.label} · ${i.engine}\n`;
-  if (i.kind === 'text') {
+  if (i.kind === 'gross') {
+    out += `\n— Mô tả đại thể —\n${i.source}\n`;
+    if (i.translation) out += `\n— ${d.target} —\n${i.translation}\n`;
+  } else if (i.kind === 'text') {
     out += `\n— ${d.source} —\n${i.source}\n\n— ${d.target} (offline) —\n${i.translation}\n`;
     if (i.claude) out += `\n— ${d.target} (${i.claudeModel || 'Claude'}) —\n${i.claude}\n`;
   } else for (const p of i.pairs) out += `\n[${clock(p.start)}]\n${p.source}\n${p.translation}\n`;
@@ -1401,14 +1640,16 @@ $('#sv-list').addEventListener('click', async (e) => {
   const i = (await idb.all('saved')).find((x) => x.id === b.dataset.sv);
   if (!i) return;
   const d = DIR[i.dir] || DIR.enToVi;
-  const body = i.kind === 'text'
+  const body = i.kind === 'gross'
+    ? `<div class="preview" style="white-space:pre-wrap">${esc(i.source)}</div>`
+    : i.kind === 'text'
     ? `<div class="stack"><div class="tiny muted">${d.source}</div><div class="preview">${esc(i.source)}</div>
        ${i.translation ? `<div class="tiny muted">${d.target} · offline</div><div class="preview">${esc(i.translation)}</div>` : ''}
        ${i.claude ? `<div class="tiny muted">${d.target} · ${esc(i.claudeModel || 'Claude')}</div><div class="preview">${esc(i.claude)}</div>` : ''}</div>`
     : `<div class="preview" style="max-height:420px">${i.pairs.map((p) => `<div style="margin-bottom:10px"><span class="mono" style="color:var(--eosin)">${clock(p.start)}</span><br>${esc(p.source)}<br><b>${esc(p.translation)}</b></div>`).join('')}</div>`;
   const m = modal(`<h3>${esc(i.title)}</h3><div class="small muted">${new Date(i.createdAt).toLocaleString('vi-VN')} · ${d.label} · ${esc(i.engine)}</div>${body}
     <div class="foot"><button class="btn danger" id="sv-del">Xoá</button><div style="flex:1"></div>
-    ${i.kind !== 'text' ? '<button class="btn" id="sv-srt">Tải SRT song ngữ</button>' : ''}
+    ${i.pairs ? '<button class="btn" id="sv-srt">Tải SRT song ngữ</button>' : ''}
     <button class="btn" id="sv-dl">Tải .txt</button><button class="btn" id="sv-copy">Chép tất cả</button><button class="btn primary" data-close>Đóng</button></div>`);
   $('#sv-copy', m.el).addEventListener('click', () => copyText(savedExport(i)));
   $('#sv-dl', m.el).addEventListener('click', () => downloadText(i.title + '.txt', savedExport(i)));

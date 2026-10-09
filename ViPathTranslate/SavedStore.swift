@@ -3,7 +3,7 @@ import Observation
 
 /// Một bản dịch hoặc một phiên phụ đề đã lưu trên máy.
 struct SavedItem: Codable, Identifiable, Hashable, Sendable {
-    enum Kind: String, Codable, Sendable { case text, captions, transcript }
+    enum Kind: String, Codable, Sendable { case text, captions, transcript, gross }
 
     struct Pair: Codable, Hashable, Sendable {
         var source: String
@@ -44,6 +44,9 @@ struct SavedItem: Codable, Identifiable, Hashable, Sendable {
             if let c = claudeTranslation, !c.isEmpty {
                 out += "\n— \(direction.targetName) (\(claudeModel ?? "Claude")) —\n\(c)\n"
             }
+        case .gross:
+            out += "\n— Mô tả đại thể —\n\(source)\n"
+            if !translation.isEmpty { out += "\n— \(direction.targetName) —\n\(translation)\n" }
         case .captions, .transcript:
             for p in pairs ?? [] {
                 out += "\n[\(Self.timestamp(p.offset))]\n\(p.source)\n\(p.translation)\n"
@@ -57,6 +60,7 @@ struct SavedItem: Codable, Identifiable, Hashable, Sendable {
         switch kind {
         case .text: claudeTranslation?.isEmpty == false ? claudeTranslation! : translation
         case .captions, .transcript: (pairs ?? []).map(\.translation).joined(separator: "\n")
+        case .gross: translation.isEmpty ? source : translation
         }
     }
 

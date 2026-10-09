@@ -1,9 +1,5 @@
 # ViPath Translate — dịch y học / giải phẫu bệnh offline trên iPhone
 
-> **Bản web:** https://quangminhmd.github.io/vipath-translate/ — mở bằng Chrome / Edge trên máy tính hoặc Safari iOS 26+ (cần WebGPU). Mã nguồn bản web trong `Web/`.
->
-> **Build app iOS từ repo:** repo không kèm thư viện VieNeu-TTS đã build và tệp mô hình (~1 GB). Chạy `bash Tools/build_vieneu_ios.sh` trên Mac để tạo `Frameworks/*.xcframework` và tải mô hình vào `ViPathTranslate/Resources/VieNeu/`, rồi mở `ViPathTranslate.xcodeproj` và chọn Team của bạn ở *Signing & Capabilities*.
-
 Ứng dụng SwiftUI dịch **Anh → Việt** chạy hoàn toàn trên iPhone 18 Pro Max bằng MLX, dựa trên glossary và hồ sơ ngành của dự án [Vitranslate](https://github.com/cloud1710/Vitranslate). Có ba chế độ: dán văn bản, dịch khi gõ, và phụ đề trực tiếp từ lời nói (giảng đường, hội thảo, Zoom/Teams). Với mỗi đoạn, app chỉ chèn những thuật ngữ glossary thực sự xuất hiện vào prompt, rồi kiểm tra lại bản dịch.
 
 ## Cách hoạt động
@@ -181,6 +177,17 @@ Văn bản ─► GPBSpeechNormalizer (1p/19q, pT1aN1b, p.R132H…) ─► sea-g
    - Chép văn bản gốc, bản dịch hoặc song ngữ, có hoặc không kèm mốc giờ.
    - Xuất **SRT / VTT / TXT**.
    - Bấm **Lưu** để đưa vào tab Đã lưu, nơi cũng xuất được SRT.
+
+### Đọc mô tả đại thể khi phẫu tích – cắt lọc (tab Đại thể)
+
+- Bấm micro rồi đọc như đọc cho người ghi chép; nhận dạng tiếng Việt / tiếng Anh **trên máy** (Apple Speech, kèm từ vựng đại thể gợi ý).
+- Lệnh rảnh tay: “cát xét A1”, “mẫu bê hai”, “cát xét tiếp theo”, “quay lại mô tả”, “xuống dòng”, “dấu phẩy”, “xoá câu”, “tạm dừng” / “tiếp tục ghi”, “dừng ghi”.
+- Số đo tự chuẩn hoá: “bốn nhân ba nhân hai xăng ti mét” → 4 x 3 x 2 cm; “hai phân rưỡi” → 2,5 cm; “mười hai hạch” → 12 hạch. Chữ số chỉ được đổi khi đứng cạnh đơn vị, “nhân” hoặc danh từ đếm.
+- Danh sách cát xét ghép vào cuối: `CẮT LỌC – CÁT XÉT: A1: …`. Gợi ý cấu trúc mô tả theo loại bệnh phẩm (sinh thiết, túi mật, ruột thừa, tuyến giáp, vú, đại – trực tràng, tử cung).
+- Dùng được AirPods / tai nghe Bluetooth; màn hình không tự khoá khi đang ghi. Danh sách “Sửa lỗi nhận dạng” do bác sĩ tự thêm (vd. “các xi nôm” → carcinôm).
+- ⋯ → **Chép lại bằng PhoWhisper**: nhận dạng lại toàn bộ bản ghi của phiên bằng PhoWhisper-medium (tiếng Việt) để chính xác hơn; bản cũ vẫn khôi phục được bằng Hoàn tác.
+- Lưu vào tab Đã lưu (loại Đại thể), chép, chia sẻ, hoặc **Dịch sang tiếng Anh** bằng mô hình offline + glossary.
+- Logic phân tích lệnh nằm ở `GrossDictation.swift`, bản JavaScript tương ứng ở `Web/src/logic.js`; bộ ca kiểm thử chung: `node Web/test/test_logic.mjs`.
 
 ### Chữ trong ảnh (nút **Ảnh** ở tab Dịch)
 - **Nguồn ảnh:**

@@ -1,11 +1,22 @@
 import SwiftUI
 
+enum AppTab: Hashable { case translate, gross, captions, transcribe, glossary, saved }
+
+/// Chuyển tab từ trong app (vd. Đại thể → Dịch sang tiếng Anh).
+@MainActor
+@Observable
+final class AppRouter {
+    var tab: AppTab = .translate
+}
+
 @main
 struct ViPathTranslateApp: App {
     @State private var viewModel: TranslatorViewModel
     @State private var typing: LiveTypingTranslator
     @State private var captions: LiveCaptionsController
     @State private var transcribe: TranscribeController
+    @State private var gross = GrossDictationController()
+    @State private var router = AppRouter()
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -18,18 +29,21 @@ struct ViPathTranslateApp: App {
 
     var body: some Scene {
         WindowGroup {
-            TabView {
-                Tab("Dịch", systemImage: "character.book.closed") { TranslatorView() }
-                Tab("Phụ đề", systemImage: "captions.bubble") { LiveCaptionsView() }
-                Tab("Chép lời", systemImage: "waveform") { TranscribeView() }
-                Tab("Thuật ngữ", systemImage: "text.book.closed") { GlossaryView() }
+            TabView(selection: $router.tab) {
+                Tab("Dịch", systemImage: "character.book.closed", value: AppTab.translate) { TranslatorView() }
+                Tab("Đại thể", systemImage: "scissors", value: AppTab.gross) { GrossDictationView() }
+                Tab("Phụ đề", systemImage: "captions.bubble", value: AppTab.captions) { LiveCaptionsView() }
+                Tab("Chép lời", systemImage: "waveform", value: AppTab.transcribe) { TranscribeView() }
+                Tab("Thuật ngữ", systemImage: "text.book.closed", value: AppTab.glossary) { GlossaryView() }
                     .badge(TermSuggestionStore.shared.pending.count)
-                Tab("Đã lưu", systemImage: "tray.full") { SavedListView() }
+                Tab("Đã lưu", systemImage: "tray.full", value: AppTab.saved) { SavedListView() }
             }
             .environment(viewModel)
             .environment(typing)
             .environment(captions)
             .environment(transcribe)
+            .environment(gross)
+            .environment(router)
         }
         .onChange(of: scenePhase) { _, phase in
             let active = (phase == .active)

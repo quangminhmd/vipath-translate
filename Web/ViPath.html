@@ -208,6 +208,37 @@ td .user { color: var(--eosin); font-size: 11px; font-weight: 600; margin-left: 
 .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 30;
   padding: 10px 16px; border-radius: 999px; background: var(--ink); color: var(--bg); font-weight: 600; font-size: 14px; box-shadow: var(--shadow); }
 
+/* ---------- Đại thể ---------- */
+.gr-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.gr-chips span { padding: 4px 10px; border-radius: 999px; background: var(--eosin-soft); color: var(--eosin); font-size: 12.5px; }
+.gr-doc { display: grid; gap: 12px; min-width: 0; }
+.gr-block { padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 2px solid var(--line); display: grid; gap: 6px; }
+.gr-block.active { border-color: var(--eosin); }
+.gr-head { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .04em; color: var(--muted); }
+.gr-block.active .gr-head { color: var(--eosin); }
+.gr-code { font: 600 15px/1 var(--font-mono); padding: 4px 8px; border-radius: 6px; background: var(--surface-2); color: var(--ink); letter-spacing: 0; }
+.gr-block.active .gr-code { background: var(--eosin); color: #fff; }
+.gr-head .grow { flex: 1; }
+.gr-head button { font-size: 12px; }
+.gr-block textarea { min-height: 0; border: 0; padding: 0; background: none; font-size: var(--gr-size, 19px); line-height: 1.5; resize: vertical; field-sizing: content; }
+.gr-block textarea:focus { outline: none; }
+.gr-vol { font-size: var(--gr-size, 19px); font-style: italic; color: var(--muted); }
+.gr-vol:empty { display: none; }
+.gr-live { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); animation: pulse .8s infinite alternate; }
+.gr-live.paused { background: var(--warn); animation: none; }
+.gr-bar { position: sticky; bottom: 0; z-index: 4; min-width: 0; max-width: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 14px;
+  padding: 10px 12px; border-radius: 16px; background: color-mix(in srgb, var(--surface) 92%, transparent); backdrop-filter: blur(10px);
+  border: 1px solid var(--line); box-shadow: var(--shadow); }
+.gr-ic { display: grid; justify-items: center; gap: 2px; width: 64px; padding: 6px 2px; border: 0; border-radius: 12px; background: none;
+  color: var(--eosin); cursor: pointer; font-size: 11.5px; }
+.gr-ic svg { width: 24px; height: 24px; }
+.gr-ic:disabled { opacity: .35; cursor: default; }
+.gr-mic { width: 74px; height: 74px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer;
+  background: var(--eosin); color: #fff; box-shadow: var(--shadow); }
+.gr-mic svg { width: 32px; height: 32px; }
+.gr-mic.on { background: var(--danger); }
+.gr-status { flex-basis: 100%; text-align: center; min-height: 1.2em; }
+
 /* ---------- Điện thoại ---------- */
 @media (max-width: 760px) {
   .app { grid-template-columns: minmax(0, 1fr); }
@@ -220,6 +251,12 @@ td .user { color: var(--eosin); font-size: 11px; font-weight: 600; margin-left: 
   .topbar .grow { display: none; }
   .view { padding-inline: 16px; padding-block: 14px 110px; }
   .captions { height: 68vh; }
+  .gr-bar { bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .gr-bar { gap: 4px 2px; padding: 8px 6px; }
+  .gr-ic { width: 54px; font-size: 10.5px; padding: 4px 0; }
+  .gr-mic { width: 62px; height: 62px; }
+  .gr-bar .row { flex: 1 1 100%; min-width: 0; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; scrollbar-width: none; }
+  .gr-bar .row .btn { padding: 6px 9px; font-size: 13px; white-space: nowrap; }
   .tl-row { grid-template-columns: 66px minmax(0, 1fr); }
 }
 
@@ -230,6 +267,7 @@ td .user { color: var(--eosin); font-size: 11px; font-weight: 600; margin-left: 
   <nav class="rail" aria-label="Chức năng">
     <a class="brand" href="#translate" aria-label="ViPath"><img src="data:image/png;base64,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" alt="" width="44" height="44" style="border-radius:11px"><b>ViPath</b></a>
     <button class="tab" data-tab="translate" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9M8.5 3v2M6 5c.5 3 2.5 5.5 5 7M11 5c-.8 3.5-3.5 6.5-7 8"/><path d="M13 20l4-9 4 9M14.5 17h5"/></svg>Dịch</button>
+    <button class="tab" data-tab="gross"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5l6-6"/><path d="M9.5 14.5l2-2c2.5-2.5 5.5-6 8.5-8.5-.8 3.4-3.6 7.6-6.6 9.6l-1.9 1.3z"/></svg>Đại thể</button>
     <button class="tab" data-tab="captions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 11h4M13 11h4M7 15h7"/></svg>Phụ đề</button>
     <button class="tab" data-tab="transcribe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 12v0M7 9v6M10 6v12M13 9v6M16 7v10M19 11v2"/></svg>Chép lời</button>
     <button class="tab" data-tab="image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M8 10h8M8 14h5"/></svg>Ảnh</button>
@@ -353,6 +391,43 @@ td .user { color: var(--eosin); font-size: 11px; font-weight: 600; margin-left: 
       </div>
     </section>
 
+    <!-- ===================== ĐẠI THỂ ===================== -->
+    <section class="view" id="view-gross" hidden>
+      <div class="card">
+        <div class="row">
+          <div class="stack" style="gap:4px">
+            <span class="tiny muted">Ngôn ngữ</span>
+            <div class="seg" id="gr-lang"><button data-v="vi" aria-pressed="true">Tiếng Việt</button><button data-v="en" aria-pressed="false">English</button></div>
+          </div>
+          <div class="stack" style="gap:4px">
+            <span class="tiny muted">Bộ nhận dạng</span>
+            <div class="seg" id="gr-asr"><button data-v="whisper" aria-pressed="true">Whisper (offline)</button><button data-v="web" aria-pressed="false">Trình duyệt</button></div>
+          </div>
+          <label class="stack" style="gap:4px"><span class="tiny muted">Loại bệnh phẩm</span><select id="gr-template"></select></label>
+          <label class="stack" style="gap:4px;flex:1;min-width:180px"><span class="tiny muted">Nhãn mẫu (tuỳ chọn, chỉ lưu trên máy)</span><input id="gr-label" placeholder="vd. mã bệnh phẩm"></label>
+        </div>
+        <div class="gr-chips" id="gr-checklist"></div>
+        <div class="tiny muted" id="gr-hint"></div>
+      </div>
+      <div class="gr-doc" id="gr-doc"></div>
+      <div class="gr-bar">
+        <button class="gr-ic" id="gr-undo" title="Hoàn tác (“xoá câu”)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>Hoàn tác</button>
+        <button class="gr-ic" id="gr-pause" title="Tạm dừng / tiếp tục" disabled><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg><span>Tạm dừng</span></button>
+        <button class="gr-mic" id="gr-mic" aria-label="Bắt đầu ghi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+        <button class="gr-ic" id="gr-next" title="Cát xét kế tiếp (“cát xét tiếp theo”)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/></svg>Cát xét +</button>
+        <button class="gr-ic" id="gr-to-body" title="Ghi vào phần mô tả (“quay lại mô tả”)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 6h16M4 10h16M4 14h10M4 18h12"/></svg>Mô tả</button>
+        <div class="gr-status stats" id="gr-status"></div>
+        <div class="row" style="gap:6px">
+          <button class="btn ghost" id="gr-copy">Chép</button>
+          <button class="btn ghost" id="gr-save">Lưu</button>
+          <button class="btn ghost" id="gr-translate">Dịch sang tiếng Anh</button>
+          <button class="btn ghost" id="gr-fix">Sửa lỗi nhận dạng</button>
+          <button class="btn ghost" id="gr-help">Lệnh giọng nói</button>
+          <button class="btn ghost" id="gr-clear">Xoá trang</button>
+        </div>
+      </div>
+    </section>
+
     <!-- ===================== CHÉP LỜI ===================== -->
     <section class="view" id="view-transcribe" hidden>
       <div class="card">
@@ -452,7 +527,7 @@ td .user { color: var(--eosin); font-size: 11px; font-weight: 600; margin-left: 
     <section class="view" id="view-saved" hidden>
       <div class="card">
         <div class="row"><input type="search" id="sv-search" placeholder="Tìm trong bản lưu" style="flex:1;min-width:200px">
-          <div class="seg" id="sv-filter"><button data-v="all" aria-pressed="true">Tất cả</button><button data-v="text" aria-pressed="false">Văn bản</button><button data-v="timed" aria-pressed="false">Phụ đề / chép lời</button></div></div>
+          <div class="seg" id="sv-filter"><button data-v="all" aria-pressed="true">Tất cả</button><button data-v="text" aria-pressed="false">Văn bản</button><button data-v="gross" aria-pressed="false">Đại thể</button><button data-v="timed" aria-pressed="false">Phụ đề / chép lời</button></div></div>
         <div class="list" id="sv-list"></div>
         <div class="note" id="sv-empty" hidden>Chưa lưu gì. Bấm Lưu ở tab Dịch, Phụ đề hoặc Chép lời. Bản lưu nằm trong trình duyệt này (IndexedDB), không gửi đi đâu.</div>
       </div>
@@ -989,6 +1064,320 @@ function whisperChunksToSegments(chunks, offset, windowEnd) {
   return out;
 }
 
+// ============================================================================
+// Đọc mô tả đại thể (phẫu tích – cắt lọc bệnh phẩm) bằng giọng nói
+// Bản Swift tương ứng: ViPathTranslate/GrossDictation.swift — giữ hai bản giống nhau.
+// ============================================================================
+const GW_L = '(?<![\\p{L}\\p{N}])', GW_R = '(?![\\p{L}\\p{N}])';
+
+/** Từ chỉ số đếm tiếng Việt (đọc số đo). */
+const VI_DIGIT = { 'không': 0, 'một': 1, 'mốt': 1, 'hai': 2, 'ba': 3, 'bốn': 4, 'tư': 4, 'năm': 5, 'lăm': 5, 'sáu': 6, 'bảy': 7, 'bẩy': 7, 'tám': 8, 'chín': 9 };
+const VI_NUMWORDS = new Set([...Object.keys(VI_DIGIT), 'mười', 'mươi', 'linh', 'lẻ', 'trăm', 'rưỡi']);
+/** Không thể đứng đầu một số. */
+const VI_NOT_FIRST = new Set(['mốt', 'lăm', 'tư', 'linh', 'lẻ', 'mươi', 'trăm', 'rưỡi']);
+
+/** "hai mươi lăm" → 25, "một trăm linh năm" → 105, "ba tư" → 34 (cách nói tắt). */
+function viNumber(words) {
+  let group = 0, pending = null;
+  for (const w of words) {
+    if (w in VI_DIGIT) {
+      const d = VI_DIGIT[w];
+      if (pending !== null) { group += pending * 10 + d; pending = null; } else pending = d;
+    } else if (w === 'mười') { group += 10; pending = null; }
+    else if (w === 'mươi') { group += (pending ?? 1) * 10; pending = null; }
+    else if (w === 'trăm') { group += (pending ?? 1) * 100; pending = null; }
+  }
+  return group + (pending ?? 0);
+}
+
+/** Đơn vị đọc → ký hiệu. Thứ tự: cụm dài trước. */
+const GROSS_UNITS = [
+  [['xăng', 'ti', 'mét'], 'cm'], [['xen', 'ti', 'mét'], 'cm'], [['xăng', 'ti'], 'cm'], [['xen', 'ti'], 'cm'],
+  [['centimet'], 'cm'], [['centimét'], 'cm'], [['cm'], 'cm'], [['phân'], 'cm'],
+  [['centimeters'], 'cm'], [['centimeter'], 'cm'], [['millimeters'], 'mm'], [['millimeter'], 'mm'],
+  [['mi', 'li', 'mét'], 'mm'], [['mi', 'li', 'lít'], 'ml'], [['ki', 'lô', 'gam'], 'kg'],
+  [['milimet'], 'mm'], [['milimét'], 'mm'], [['mm'], 'mm'], [['mi', 'li'], 'mm'], [['li'], 'mm'], [['ly'], 'mm'],
+  [['kilôgam'], 'kg'], [['kg'], 'kg'], [['ký'], 'kg'], [['ki', 'lô'], 'kg'],
+  [['gờ', 'ram'], 'g'], [['gam'], 'g'], [['gram'], 'g'], [['grams'], 'g'], [['g'], 'g'],
+  [['ml'], 'ml'], [['phần', 'trăm'], '%'], [['%'], '%'], [['percent'], '%'],
+];
+/** Danh từ đếm: "ba mảnh" → "3 mảnh". */
+const GROSS_COUNT_NOUNS = new Set(['mảnh', 'hạch', 'lát', 'nốt', 'khối', 'polyp', 'sỏi', 'viên', 'pieces', 'fragments', 'nodes']);
+const GROSS_TIMES = new Set(['nhân', 'x', '×', 'by']);
+const GROSS_RANGE = new Set(['đến', 'tới', '-', '–', 'to']);
+
+const isDigitTok = (t) => /^\d+(?:[.,]\d+)?$/.test(t);
+function unitAt(lw, i) {
+  for (const [seq, sym] of GROSS_UNITS) {
+    if (seq.every((w, k) => lw[i + k] === w)) return { len: seq.length, sym };
+  }
+  return null;
+}
+function joinTokens(toks) {
+  let out = '';
+  for (const t of toks) {
+    if (!out) out = t;
+    else if (/^[.,;:!?)%]/.test(t) || out.endsWith('(')) out += t;
+    else out += ' ' + t;
+  }
+  return out;
+}
+
+/**
+ * Chuẩn hoá số đo trong một câu đọc: "bốn nhân ba nhân hai xăng ti mét" → "4 x 3 x 2 cm",
+ * "hai phẩy năm phân" → "2,5 cm", "ba mảnh" → "3 mảnh", "hai xăng ti mét rưỡi" → "2,5 cm".
+ * Chỉ đổi chữ số khi đứng cạnh đơn vị / "nhân" / danh từ đếm → "một khối u" vẫn giữ nguyên.
+ */
+function normalizeMeasurements(input) {
+  let s = input.normalize('NFC')
+    .replace(/(xăng|xen|mi)-(ti|li)-(mét|lít)/giu, '$1 $2 $3').replace(/ki-lô-gam/giu, 'ki lô gam')
+    .replace(/×/g, ' x ')
+    .replace(/(\d)(?=(?:cm|mm|kg|ml|g)(?![\p{L}\p{N}]))/gu, '$1 ')
+    .replace(/(\d)\s*[xX](?=\s*\d)/g, '$1 x ');
+  const toks = s.match(/[\p{L}\p{M}]+|\d+(?:[.,]\d+)?|%|[^\s\p{L}\p{M}\d]/gu) || [];
+  const lw = toks.map((t) => t.toLowerCase());
+  const isNum = (i) => isDigitTok(lw[i]) || VI_NUMWORDS.has(lw[i]);
+
+  // 1) Tìm các cụm số
+  const spans = [];
+  for (let i = 0; i < toks.length;) {
+    if (!isNum(i) || VI_NOT_FIRST.has(lw[i])) { i++; continue; }
+    let j = i, comma = -1;
+    while (j < toks.length) {
+      if (isNum(j)) { j++; continue; }
+      if (lw[j] === 'phẩy' && comma < 0 && j + 1 < toks.length && isNum(j + 1) && !VI_NOT_FIRST.has(lw[j + 1])) { comma = j; j++; continue; }
+      break;
+    }
+    // "không" đứng một mình là phủ định, không phải số 0
+    if (!(j - i === 1 && lw[i] === 'không')) spans.push({ start: i, end: j, comma, conv: false });
+    i = j;
+  }
+  // 2) Đánh dấu cụm cần đổi
+  for (const sp of spans) {
+    const u = unitAt(lw, sp.end);
+    if (u) { sp.unit = u; sp.conv = true; } else if (GROSS_COUNT_NOUNS.has(lw[sp.end])) sp.conv = true;
+  }
+  for (let changed = true; changed;) {
+    changed = false;
+    for (let k = 0; k + 1 < spans.length; k++) {
+      const a = spans[k], b = spans[k + 1];
+      if (b.start !== a.end + 1) continue;
+      const link = lw[a.end];
+      const times = GROSS_TIMES.has(link), range = GROSS_RANGE.has(link);
+      if (!times && !range) continue;
+      // "nhân" giữa hai số luôn là phép nhân kích thước; "đến" chỉ khi một bên đã là số đo
+      const want = times ? true : (a.conv || b.conv);
+      if (want && (!a.conv || !b.conv)) { a.conv = b.conv = true; changed = true; }
+      if (times) a.times = true;
+    }
+  }
+  // 3) Dựng lại câu
+  const value = (words) => {
+    const half = words[words.length - 1] === 'rưỡi';
+    if (half) words = words.slice(0, -1);
+    const str = words.length === 1 && isDigitTok(words[0]) ? words[0].replace('.', ',') : String(viNumber(words));
+    return { str, half };
+  };
+  const out = [];
+  let i = 0;
+  for (const sp of spans) {
+    while (i < sp.start) out.push(toks[i++]);
+    if (!sp.conv) { while (i < sp.end) out.push(toks[i++]); continue; }
+    const intW = lw.slice(sp.start, sp.comma >= 0 ? sp.comma : sp.end);
+    const fracW = sp.comma >= 0 ? lw.slice(sp.comma + 1, sp.end) : null;
+    const iv = value(intW);
+    let num = iv.str;
+    if (fracW) num += ',' + value(fracW).str;
+    i = sp.end;
+    let unitSym = null;
+    if (sp.unit) { unitSym = sp.unit.sym; i += sp.unit.len; }
+    if ((iv.half || (unitSym && lw[i] === 'rưỡi')) && !num.includes(',')) { num += ',5'; if (lw[i] === 'rưỡi') i++; }
+    out.push(num);
+    if (unitSym) out.push(unitSym);
+    if (sp.times) { out.push('x'); i++; }
+  }
+  while (i < toks.length) out.push(toks[i++]);
+  return joinTokens(out);
+}
+
+/** Sửa lỗi nhận dạng theo danh sách {from, to} (không phân biệt hoa thường, nguyên cụm từ). */
+function applyCorrections(text, list) {
+  let s = text.normalize('NFC');
+  for (const { from, to } of list || []) {
+    const f = String(from || '').trim();
+    if (!f) continue;
+    const rx = new RegExp(GW_L + f.normalize('NFC').split(/\s+/).map(escRe).join('\\s+') + GW_R, 'giu');
+    s = s.replace(rx, to);
+  }
+  return s;
+}
+
+/** Ví dụ sửa lỗi ban đầu — bác sĩ thêm / sửa theo lỗi gặp thực tế. */
+const GROSS_DEFAULT_CORRECTIONS = [
+  { from: 'các xi nôm', to: 'carcinôm' }, { from: 'cát xi nôm', to: 'carcinôm' },
+  { from: 'xa côm', to: 'sarcôm' }, { from: 'lim phôm', to: 'lymphôm' },
+  { from: 'pô líp', to: 'polyp' }, { from: 'pô lyp', to: 'polyp' },
+];
+
+/** Từ vựng đại thể gợi ý cho bộ nhận dạng (contextual strings). */
+const GROSS_VOCAB = [
+  'đại thể', 'cắt lọc', 'cát xét', 'bệnh phẩm', 'mảnh mô', 'mô mềm', 'mô mỡ', 'nhu mô', 'vỏ bao', 'thanh mạc', 'niêm mạc',
+  'dưới niêm mạc', 'lớp cơ', 'mạc treo', 'mạc nối', 'diện cắt', 'bờ phẫu thuật', 'diện cắt gần', 'diện cắt xa', 'diện cắt quanh',
+  'chấm mực', 'mực tàu', 'mực xanh', 'mực đen', 'mực đỏ', 'mặt cắt', 'mật độ', 'chắc', 'mềm', 'bở', 'dai', 'xơ', 'nhầy', 'dạng keo',
+  'dạng nang', 'dạng nhú', 'dạng sùi', 'loét', 'thâm nhiễm', 'xâm nhập', 'hoại tử', 'xuất huyết', 'vôi hoá', 'sỏi', 'giả mạc',
+  'hạch', 'hạch bạch huyết', 'polyp', 'cuống', 'không cuống', 'u', 'khối u', 'nốt', 'giới hạn rõ', 'giới hạn không rõ',
+  'màu trắng xám', 'màu vàng', 'màu nâu', 'màu đỏ sẫm', 'carcinôm', 'sarcôm', 'lymphôm', 'tuyến giáp', 'túi mật', 'ruột thừa',
+  'đại tràng', 'trực tràng', 'dạ dày', 'tử cung', 'cổ tử cung', 'nội mạc', 'buồng trứng', 'vòi trứng', 'tuyến vú', 'núm vú',
+  'hố nách', 'thận', 'tuyến tiền liệt', 'cố định formol', 'cắt lọc toàn bộ', 'đại diện', 'xăng ti mét', 'mi li mét', 'gam',
+];
+
+// ---------- Lệnh giọng nói ----------
+const GROSS_LETTER = {
+  'ép phờ': 'F', 'bê': 'B', 'bờ': 'B', 'xê': 'C', 'cê': 'C', 'cờ': 'C', 'đê': 'D', 'dê': 'D', 'đờ': 'D',
+  'giê': 'G', 'gờ': 'G', 'hát': 'H', 'ép': 'F', 'ca': 'K', 'a': 'A', 'b': 'B', 'c': 'C', 'd': 'D', 'e': 'E', 'ê': 'E',
+  'f': 'F', 'g': 'G', 'h': 'H', 'i': 'I', 'k': 'K',
+};
+const LET_RX = Object.keys(GROSS_LETTER).sort((a, b) => b.length - a.length).map((k) => k.replace(' ', '\\s+')).join('|');
+const NUMW_RX = '(?:một|mốt|hai|ba|bốn|tư|năm|lăm|sáu|bảy|bẩy|tám|chín|mười|mươi|linh|lẻ|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)';
+const NUM_RX = `(\\d{1,2}|${NUMW_RX}(?:\\s+${NUMW_RX})*)`;
+const EN_NUM = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12 };
+function cassetteNumber(s) {
+  const w = s.toLowerCase().trim().split(/\s+/);
+  if (/^\d+$/.test(w[0])) return parseInt(w[0], 10);
+  if (w.length === 1 && w[0] in EN_NUM) return EN_NUM[w[0]];
+  return viNumber(w);
+}
+const cmd = (src) => new RegExp(GW_L + src + GW_R, 'iu');
+/** Thứ tự quan trọng: cụm dài trước ("dấu hai chấm" trước "dấu chấm"). */
+const GROSS_COMMANDS = [
+  [cmd(`(?:cát\\s*-?\\s*xét|cassette|khối\\s+nến|khuôn\\s+nến|block)\\s+(?:số\\s+|number\\s+)?(?:(${LET_RX})\\s*)?${NUM_RX}`), (m) => ({ type: 'cassette', code: (m[1] ? GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] : '') + cassetteNumber(m[2]) })],
+  [cmd(`mẫu\\s+(${LET_RX})\\s*${NUM_RX}`), (m) => ({ type: 'cassette', code: GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] + cassetteNumber(m[2]) })],
+  [cmd('(?:cát\\s*-?\\s*xét|cassette|khối|mẫu|block)\\s+(?:tiếp(?:\\s+theo)?|kế\\s+tiếp|next)|next\\s+(?:cassette|block)'), () => ({ type: 'nextCassette' })],
+  [cmd('(?:quay\\s+(?:lại|về)|về|trở\\s+lại)\\s+(?:phần\\s+)?mô\\s+tả|phần\\s+mô\\s+tả|back\\s+to\\s+description'), () => ({ type: 'body' })],
+  [cmd('dấu\\s+chấm\\s+phẩy|semicolon'), () => ({ type: 'punct', text: ';' })],
+  [cmd('dấu\\s+hai\\s+chấm|colon'), () => ({ type: 'punct', text: ':' })],
+  [cmd('dấu\\s+chấm\\s+hỏi|question\\s+mark'), () => ({ type: 'punct', text: '?' })],
+  [cmd('dấu\\s+chấm|chấm\\s+câu|full\\s+stop|period'), () => ({ type: 'punct', text: '.' })],
+  [cmd('dấu\\s+phẩy|comma'), () => ({ type: 'punct', text: ',' })],
+  [cmd('mở\\s+ngoặc|open\\s+(?:paren|parenthesis|bracket)'), () => ({ type: 'punct', text: '(' })],
+  [cmd('đóng\\s+ngoặc|close\\s+(?:paren|parenthesis|bracket)'), () => ({ type: 'punct', text: ')' })],
+  [cmd('gạch\\s+đầu\\s+dòng|bullet'), () => ({ type: 'bullet' })],
+  [cmd('xuống\\s+dòng|new\\s+line'), () => ({ type: 'newline' })],
+  [cmd('đoạn\\s+mới|sang\\s+đoạn(?:\\s+mới)?|new\\s+paragraph'), () => ({ type: 'para' })],
+  [cmd('(?:xoá|xóa)\\s+câu(?:\\s+(?:cuối|vừa\\s+rồi|trước))?|hoàn\\s+tác|scratch\\s+that|undo\\s+that'), () => ({ type: 'undo' })],
+  [cmd('tạm\\s+dừng(?:\\s+ghi)?|pause\\s+dictation'), () => ({ type: 'pause' })],
+  [cmd('tiếp\\s+tục\\s+ghi|ghi\\s+tiếp|resume\\s+dictation'), () => ({ type: 'resume' })],
+  [cmd('(?:dừng|kết\\s+thúc)\\s+ghi(?:\\s+âm)?|stop\\s+dictation'), () => ({ type: 'stop' })],
+];
+
+/** Tách một câu đọc thành văn bản và lệnh. */
+function parseDictation(input) {
+  const ops = [];
+  let rest = input.normalize('NFC');
+  for (;;) {
+    let best = null;
+    for (const [rx, make] of GROSS_COMMANDS) {
+      const m = rx.exec(rest);
+      if (m && (!best || m.index < best.m.index || (m.index === best.m.index && m[0].length > best.m[0].length))) best = { m, make };
+    }
+    if (!best) break;
+    const op = best.make(best.m);
+    let before = rest.slice(0, best.m.index);
+    // dấu câu tự thêm của bộ nhận dạng ngay trước lệnh dấu câu → bỏ (lệnh thay thế nó)
+    if (op.type === 'punct') before = before.replace(/[\s.,;:!?]+$/u, '');
+    if (before.trim()) ops.push({ type: 'text', text: before.trim() });
+    ops.push(op);
+    // dấu câu tự thêm ngay sau lệnh → bỏ
+    rest = rest.slice(best.m.index + best.m[0].length).replace(/^[\s.,;:!?]+/u, '');
+  }
+  if (rest.trim()) ops.push({ type: 'text', text: rest.trim() });
+  return ops;
+}
+
+// ---------- Văn bản đại thể ----------
+function newGrossDoc() { return { body: '', cassettes: [], target: -1, history: [] }; }
+const grossSnapshot = (d) => ({ body: d.body, cassettes: d.cassettes.map((c) => ({ ...c })), target: d.target });
+const isSentenceEnd = (s) => /(^|[.!?:\n])\s*$/.test(s);
+function appendText(prev, piece) {
+  if (!piece) return prev;
+  let p = piece;
+  if (!prev.trim() || isSentenceEnd(prev)) p = p.charAt(0).toUpperCase() + p.slice(1);
+  else if (/^\p{Lu}\p{Ll}/u.test(p)) p = p.charAt(0).toLowerCase() + p.slice(1);   // bộ nhận dạng viết hoa đầu mỗi lượt
+  if (!prev) return p;
+  if (/[\s(]$/.test(prev) || /^[.,;:!?)%]/.test(p)) return prev + p;
+  return prev + ' ' + p;
+}
+function appendPunct(prev, mark) {
+  if (mark === '(') return prev.replace(/\s*$/, prev.trim() ? ' (' : '(');
+  const t = prev.replace(/[\s]+$/, '');
+  if (/[.,;:]$/.test(t) && mark !== ')') return t.slice(0, -1) + mark;
+  return t + mark;
+}
+function nextCode(doc) {
+  const last = doc.cassettes[doc.cassettes.length - 1]?.code;
+  if (!last) return 'A1';
+  const m = /^([A-Z]*)(\d+)$/.exec(last);
+  return m ? m[1] + (parseInt(m[2], 10) + 1) : last + '1';
+}
+
+/**
+ * Áp các lệnh của MỘT câu đọc vào văn bản. Trả về tín hiệu điều khiển ('pause' | 'resume' | 'stop').
+ * `paused`: đang tạm dừng → chỉ nhận lệnh "tiếp tục ghi".
+ */
+function applyDictation(doc, ops, { paused = false, corrections = [] } = {}) {
+  const signals = [];
+  let snap = grossSnapshot(doc), pushed = false, textSnap = null;
+  const remember = () => { if (!pushed) { doc.history.push(snap); if (doc.history.length > 50) doc.history.shift(); pushed = true; } };
+  const get = () => (doc.target < 0 ? doc.body : doc.cassettes[doc.target].text);
+  const set = (v) => { if (doc.target < 0) doc.body = v; else doc.cassettes[doc.target].text = v; };
+  for (const op of ops) {
+    if (paused) { if (op.type === 'resume') { paused = false; signals.push('resume'); } continue; }
+    switch (op.type) {
+      case 'text': remember(); textSnap = grossSnapshot(doc); set(appendText(get(), normalizeMeasurements(applyCorrections(op.text, corrections)))); break;
+      case 'punct': remember(); set(appendPunct(get(), op.text)); break;
+      case 'newline': remember(); set(get().replace(/[ \t]+$/, '') + '\n'); break;
+      case 'para': remember(); set(get().replace(/\s+$/, '') + '\n\n'); break;
+      case 'bullet': remember(); set(get().replace(/[ \t]+$/, '').replace(/([^\n])$/, '$1\n') + '- '); break;
+      case 'cassette': {
+        remember();
+        const k = doc.cassettes.findIndex((c) => c.code === op.code);
+        if (k >= 0) doc.target = k; else { doc.cassettes.push({ code: op.code, text: '' }); doc.target = doc.cassettes.length - 1; }
+        break;
+      }
+      case 'nextCassette': remember(); doc.cassettes.push({ code: nextCode(doc), text: '' }); doc.target = doc.cassettes.length - 1; break;
+      case 'body': remember(); doc.target = -1; break;
+      case 'undo':
+        // có chữ đọc trước lệnh trong cùng câu → chỉ xoá đoạn chữ đó; lệnh đứng riêng → xoá câu đọc trước
+        if (textSnap) { Object.assign(doc, textSnap); textSnap = null; }
+        else { const prev = doc.history.pop(); if (prev) Object.assign(doc, prev); snap = grossSnapshot(doc); pushed = false; }
+        break;
+      case 'pause': paused = true; signals.push('pause'); break;
+      case 'resume': signals.push('resume'); break;
+      case 'stop': signals.push('stop'); break;
+    }
+  }
+  return signals;
+}
+
+function grossReportText(doc, lang = 'vi') {
+  const body = doc.body.trim();
+  const cs = doc.cassettes;
+  if (!cs.length) return body;
+  const head = lang === 'en' ? 'SECTIONS / CASSETTES:' : 'CẮT LỌC – CÁT XÉT:';
+  return (body ? body + '\n\n' : '') + head + '\n' + cs.map((c) => `${c.code}: ${c.text.trim()}`).join('\n');
+}
+
+/** Gợi ý cấu trúc mô tả theo loại bệnh phẩm (hiển thị khi đọc, không tự chèn). */
+const GROSS_TEMPLATES = [
+  { id: 'biopsy', name: 'Sinh thiết nhỏ', items: ['Số mảnh', 'Kích thước (mảnh lớn nhất / gộp)', 'Màu sắc, mật độ', 'Cắt lọc toàn bộ / số cát xét'] },
+  { id: 'gallbladder', name: 'Túi mật', items: ['Kích thước', 'Thanh mạc', 'Độ dày thành', 'Niêm mạc', 'Sỏi: số lượng, kích thước, màu', 'Ống túi mật, hạch cổ túi mật', 'Cát xét'] },
+  { id: 'appendix', name: 'Ruột thừa', items: ['Chiều dài × đường kính', 'Thanh mạc (giả mạc, thủng)', 'Lòng (sỏi phân, mủ)', 'Đầu tận', 'Diện cắt', 'Cát xét'] },
+  { id: 'thyroid', name: 'Tuyến giáp', items: ['Thuỳ / eo, trọng lượng', 'Kích thước', 'Vỏ bao', 'Nốt: số lượng, vị trí, kích thước, vỏ bao, mặt cắt', 'Khoảng cách tới bờ (chấm mực)', 'Tuyến cận giáp, hạch', 'Cát xét'] },
+  { id: 'breast', name: 'Vú', items: ['Định hướng (chỉ khâu)', 'Kích thước, da, núm vú', 'U: vị trí, 3 chiều, bờ, mặt cắt', 'Khoảng cách tới từng diện cắt (màu mực)', 'Clip / dấu định vị', 'Hạch nách: số lượng', 'Cát xét'] },
+  { id: 'colon', name: 'Đại – trực tràng', items: ['Đoạn ruột, chiều dài', 'U: kích thước, dạng, % chu vi, mức xâm nhập', 'Khoảng cách tới diện cắt gần / xa / quanh (CRM)', 'Mạc treo, hạch (số lượng)', 'Polyp / tổn thương khác', 'Cát xét'] },
+  { id: 'uterus', name: 'Tử cung', items: ['Trọng lượng', 'Kích thước thân / cổ', 'Nội mạc: độ dày, tổn thương', 'Cơ tử cung: u xơ (số lượng, kích thước)', 'Cổ tử cung', 'Phần phụ', 'Cát xét'] },
+];
+
 // ViPath Web — giao diện và kết nối thư viện (WebLLM, Transformers.js, Tesseract.js, pdf.js, Claude API).
 
 // ============================================================================
@@ -1444,7 +1833,7 @@ const tts = {
 // ============================================================================
 // Khung ứng dụng: tab, chip trạng thái
 // ============================================================================
-const TITLES = { translate: 'Dịch', captions: 'Phụ đề trực tiếp', transcribe: 'Chép lời từ tệp', image: 'Chữ trong ảnh', glossary: 'Thuật ngữ', saved: 'Đã lưu' };
+const TITLES = { translate: 'Dịch', gross: 'Đọc mô tả đại thể', captions: 'Phụ đề trực tiếp', transcribe: 'Chép lời từ tệp', image: 'Chữ trong ảnh', glossary: 'Thuật ngữ', saved: 'Đã lưu' };
 let currentTab = 'translate';
 function showTab(name) {
   if (!TITLES[name]) name = 'translate';
@@ -1455,6 +1844,7 @@ function showTab(name) {
   if (name === 'glossary') renderGlossary();
   if (name === 'saved') renderSaved();
   if (name === 'captions') updateCapHint();
+  if (name === 'gross') { updateGrossHint(); renderGross(); }
   try { history.replaceState(null, '', '#' + name); } catch { /* */ }
 }
 $$('.tab[data-tab]').forEach((t) => t.addEventListener('click', () => showTab(t.dataset.tab)));
@@ -2007,6 +2397,241 @@ async function saveCaptions() {
 }
 
 // ============================================================================
+// Tab ĐẠI THỂ — đọc mô tả khi phẫu tích, cắt lọc bệnh phẩm (lệnh giọng nói rảnh tay)
+// ============================================================================
+const G = {
+  doc: newGrossDoc(), lang: store.get('grLang', 'vi'), asrMode: store.get('grAsr', 'whisper'),
+  running: false, paused: false, volatile: '', rec: null, capture: null,
+  chunk: [], chunkLen: 0, silence: 0, speech: 0, queue: [], busy: false, savedId: null, engine: '',
+  corrections: store.get('grCorrections', null) || GROSS_DEFAULT_CORRECTIONS,
+};
+if (!SR && G.asrMode === 'web') G.asrMode = 'whisper';
+setPressed($('#gr-lang'), G.lang); setPressed($('#gr-asr'), G.asrMode);
+$('#gr-template').innerHTML = GROSS_TEMPLATES.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
+$('#gr-template').value = store.get('grTemplate', 'biopsy');
+function renderGrossChecklist() {
+  const t = GROSS_TEMPLATES.find((x) => x.id === $('#gr-template').value);
+  $('#gr-checklist').innerHTML = (t?.items || []).map((i) => `<span>${esc(i)}</span>`).join('');
+}
+renderGrossChecklist();
+$('#gr-template').addEventListener('change', (e) => { store.set('grTemplate', e.target.value); renderGrossChecklist(); });
+onSeg($('#gr-lang'), (v) => { G.lang = v; store.set('grLang', v); updateGrossHint(); $('#gr-translate').textContent = v === 'vi' ? 'Dịch sang tiếng Anh' : 'Dịch sang tiếng Việt'; });
+onSeg($('#gr-asr'), (v) => { G.asrMode = v; store.set('grAsr', v); updateGrossHint(); });
+const grWhisperId = () => store.get('grWhisper', device.webgpu ? 'onnx-community/whisper-large-v3-turbo' : 'onnx-community/whisper-small');
+function updateGrossHint() {
+  const w = WHISPER_MODELS.find((m) => m.id === grWhisperId()) || WHISPER_MODELS[1];
+  $('#gr-hint').textContent = G.asrMode === 'web'
+    ? (SR ? 'Bộ nhận dạng của trình duyệt: nhanh, nhưng Chrome gửi âm thanh lên máy chủ Google. Không đọc thông tin định danh người bệnh.' : 'Trình duyệt này không có nhận dạng giọng nói — dùng Whisper.')
+    : `Whisper chạy trên máy (${w.name}) — không gửi âm thanh đi đâu; mỗi câu hiện ra sau khi bạn ngừng nói ~0,6 giây. Nói “cát xét A1”, “xuống dòng”, “xoá câu”… — bấm “Lệnh giọng nói” để xem đủ.`;
+}
+const grTargetLabel = () => (G.doc.target < 0 ? 'Mô tả' : 'Cát xét ' + G.doc.cassettes[G.doc.target].code);
+const setGrStatus = (t) => { $('#gr-status').textContent = t; };
+function grListening() { setGrStatus(G.paused ? 'Tạm dừng — nói “tiếp tục ghi” hoặc bấm ▶' : `Đang nghe · ${grTargetLabel()}`); }
+
+function renderGross() {
+  const d = G.doc;
+  const live = (i) => (G.running && d.target === i ? `<span class="gr-live${G.paused ? ' paused' : ''}"></span>` : '');
+  const vol = (i) => (d.target === i && !G.paused ? esc(G.volatile) : '');
+  const block = (i, head, text, ph) => `<div class="gr-block${d.target === i ? ' active' : ''}" data-gi="${i}">
+    <div class="gr-head">${head}${live(i)}<span class="grow"></span>${d.target === i ? '' : '<button class="btn ghost tiny" data-gr-target>Ghi vào đây</button>'}${i >= 0 ? '<button class="btn ghost tiny" data-gr-del title="Xoá cát xét">✕</button>' : ''}</div>
+    <textarea rows="${i < 0 ? 4 : 2}" placeholder="${ph}" data-gr-text>${esc(text)}</textarea><div class="gr-vol">${vol(i)}</div></div>`;
+  $('#gr-doc').innerHTML = block(-1, 'MÔ TẢ ĐẠI THỂ', d.body, 'Bấm micro rồi đọc: “Bệnh phẩm gồm ba mảnh, kích thước…”')
+    + d.cassettes.map((c, i) => block(i, `<span class="gr-code">${esc(c.code)}</span>`, c.text, 'Vị trí lấy mẫu…')).join('')
+    + (d.cassettes.length ? '' : '<div class="note">Cát xét: nói “cát xét A1”, “cát xét tiếp theo”… hoặc bấm Cát xét +. Danh sách cát xét được ghép vào cuối mô tả.</div>');
+  $('#gr-undo').disabled = !d.history.length;
+  const act = $('#gr-doc .gr-block.active');
+  if (act && G.running) act.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+function renderGrossVolatile() {
+  const el = $(`#gr-doc .gr-block[data-gi="${G.doc.target}"] .gr-vol`);
+  if (el) el.textContent = G.paused ? '' : G.volatile;
+}
+$('#gr-doc').addEventListener('input', (e) => {
+  const ta = e.target.closest('[data-gr-text]'); if (!ta) return;
+  const i = +ta.closest('[data-gi]').dataset.gi;
+  if (i < 0) G.doc.body = ta.value; else G.doc.cassettes[i].text = ta.value;
+});
+$('#gr-doc').addEventListener('click', (e) => {
+  const blk = e.target.closest('[data-gi]'); if (!blk) return;
+  const i = +blk.dataset.gi;
+  if (e.target.closest('[data-gr-target]')) { G.doc.target = i; renderGross(); if (G.running) grListening(); }
+  if (e.target.closest('[data-gr-del]')) {
+    G.doc.history.push({ body: G.doc.body, cassettes: G.doc.cassettes.map((c) => ({ ...c })), target: G.doc.target });
+    G.doc.cassettes.splice(i, 1);
+    if (G.doc.target >= G.doc.cassettes.length || G.doc.target === i) G.doc.target = -1; else if (G.doc.target > i) G.doc.target--;
+    renderGross();
+  }
+});
+$('#gr-undo').addEventListener('click', () => { applyDictation(G.doc, [{ type: 'undo' }]); renderGross(); });
+$('#gr-next').addEventListener('click', () => { applyDictation(G.doc, [{ type: 'nextCassette' }]); renderGross(); if (G.running) grListening(); });
+$('#gr-to-body').addEventListener('click', () => { G.doc.target = -1; renderGross(); if (G.running) grListening(); });
+$('#gr-pause').addEventListener('click', () => { if (!G.running) return; G.paused = !G.paused; G.volatile = ''; grPauseUI(); renderGross(); grListening(); });
+function grPauseUI() {
+  $('#gr-pause').disabled = !G.running;
+  $('#gr-pause span').textContent = G.paused ? 'Tiếp tục' : 'Tạm dừng';
+}
+$('#gr-mic').addEventListener('click', () => (G.running ? stopGross() : startGross()));
+
+/** Một câu đọc đã chốt từ bộ nhận dạng. */
+function grossFinal(text) {
+  const t = (text || '').replace(/\[[^\]]*\]|\([^)]*\)/g, ' ').trim();   // Whisper: bỏ [Music]…
+  if (!t) return;
+  const signals = applyDictation(G.doc, parseDictation(t), { paused: G.paused, corrections: G.corrections });
+  for (const s of signals) { if (s === 'pause') G.paused = true; if (s === 'resume') G.paused = false; }
+  G.volatile = '';
+  grPauseUI(); renderGross();
+  if (signals.includes('stop')) stopGross(); else if (G.running) grListening();
+}
+
+async function startGross() {
+  if (G.running) return;
+  G.running = true; G.paused = false; G.volatile = ''; G.queue = [];
+  $('#gr-mic').classList.add('on'); $('#gr-mic').setAttribute('aria-label', 'Dừng ghi'); grPauseUI();
+  try { G.wake = await navigator.wakeLock?.request('screen'); } catch { /* không bắt buộc */ }
+  try {
+    if (G.asrMode === 'web') {
+      if (!SR) throw new Error('Trình duyệt này không có nhận dạng giọng nói — chọn Whisper.');
+      const rec = new SR();
+      rec.lang = G.lang === 'vi' ? 'vi-VN' : 'en-US'; rec.continuous = true; rec.interimResults = true;
+      rec.onresult = (e) => {
+        let interim = '';
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          const r = e.results[i];
+          if (r.isFinal) grossFinal(r[0].transcript); else interim += r[0].transcript;
+        }
+        G.volatile = interim; renderGrossVolatile();
+      };
+      rec.onerror = (e) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { setGrStatus('Chưa cấp quyền micro / nhận dạng giọng nói'); stopGross(); } };
+      rec.onend = () => { if (G.running && G.rec === rec) { try { rec.start(); } catch { /* */ } } };
+      G.rec = rec; rec.start();
+      G.engine = 'Nhận dạng của trình duyệt';
+    } else {
+      setGrStatus('Đang nạp Whisper…');
+      await getASR(grWhisperId(), (p, t) => setGrStatus(`Nạp Whisper ${Math.round(p * 100)}% · ${t}`));
+      if (!G.running) return;
+      G.chunk = []; G.chunkLen = 0; G.silence = 0; G.speech = 0;
+      G.capture = await startCapture('mic', onGrossSamples);
+      G.engine = (WHISPER_MODELS.find((m) => m.id === grWhisperId()) || {}).name || 'Whisper';
+    }
+    grListening(); renderGross();
+  } catch (e) {
+    setGrStatus(e.message || String(e));
+    G.running = false; $('#gr-mic').classList.remove('on'); grPauseUI();
+  }
+}
+async function stopGross() {
+  if (!G.running) return;
+  G.running = false;
+  try { G.rec?.stop(); } catch { /* */ }
+  G.rec = null;
+  G.capture?.stop(); G.capture = null;
+  if (G.chunkLen > 16000) pushGrossChunk();
+  try { await G.wake?.release(); } catch { /* */ }
+  G.volatile = ''; G.paused = false;
+  $('#gr-mic').classList.remove('on'); $('#gr-mic').setAttribute('aria-label', 'Bắt đầu ghi'); grPauseUI();
+  setGrStatus(G.queue.length || G.busy ? 'Đang nhận dạng nốt…' : 'Đã dừng');
+  renderGross();
+}
+// Whisper: cắt câu khi ngừng nói ≥ 0,6 s (giống tab Phụ đề), câu dài tối đa 12 s
+function onGrossSamples(y) {
+  if (!G.running) return;
+  G.chunk.push(y); G.chunkLen += y.length;
+  const loud = rms(y) > 0.012;
+  if (loud) { G.speech += y.length; G.silence = 0; } else G.silence += y.length;
+  if ((G.silence > 9600 && G.chunkLen > 16000 && G.speech > 3200) || G.chunkLen > 16000 * 12) pushGrossChunk();
+  else if (G.silence > 16000 * 2 && G.speech < 3200) { G.chunk = []; G.chunkLen = 0; G.speech = 0; }
+  G.volatile = G.speech > 3200 && !G.paused ? '🎙 …' : G.volatile;
+}
+function pushGrossChunk() {
+  const a = new Float32Array(G.chunkLen);
+  let o = 0; for (const c of G.chunk) { a.set(c, o); o += c.length; }
+  G.chunk = []; G.chunkLen = 0; G.silence = 0; G.speech = 0;
+  G.queue.push(a); runGrossQueue();
+}
+async function runGrossQueue() {
+  if (G.busy) return;
+  G.busy = true;
+  while (G.queue.length) {
+    const a = G.queue.shift();
+    G.volatile = G.paused ? '' : '…đang nhận dạng'; renderGrossVolatile();
+    try {
+      const out = await asr.pipe(a, { language: whisperLang(G.lang), task: 'transcribe' });
+      grossFinal(out.text || '');
+    } catch (e) { setGrStatus('Lỗi Whisper: ' + (e.message || e)); }
+    G.volatile = ''; renderGrossVolatile();
+  }
+  G.busy = false;
+  if (!G.running) setGrStatus('Đã dừng');
+}
+
+const grossReport = () => grossReportText(G.doc, G.lang);
+$('#gr-copy').addEventListener('click', () => copyText(grossReport()));
+$('#gr-save').addEventListener('click', saveGross);
+async function saveGross() {
+  const text = grossReport();
+  if (!text) { toast('Chưa có nội dung'); return; }
+  const label = $('#gr-label').value.trim();
+  const item = { id: G.savedId || 'g' + Date.now(), kind: 'gross', createdAt: Date.now(),
+    title: 'Đại thể · ' + (label || autoTitle(G.doc.body || text)), dir: G.lang === 'vi' ? 'viToEn' : 'enToVi', engine: G.engine || 'Đọc chính tả',
+    source: text, translation: '' };
+  G.savedId = item.id;
+  if (await idb.put('saved', item)) toast('Đã lưu vào tab Đã lưu');
+}
+$('#gr-translate').addEventListener('click', () => {
+  const text = grossReport();
+  if (!text) return;
+  const dir = G.lang === 'vi' ? 'viToEn' : 'enToVi';
+  T.dirMode = dir; store.set('dirMode', dir); setPressed($('#dir-mode'), dir);
+  input.value = text; input.dispatchEvent(new Event('input'));
+  showTab('translate');
+  if (llm.engine) translateInput(); else toast('Nạp mô hình dịch trong Cài đặt rồi bấm Dịch');
+});
+$('#gr-clear').addEventListener('click', (e) => {
+  if (G.running) return;
+  const b = e.currentTarget;
+  if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Bấm lần nữa để xoá'; setTimeout(() => { b.dataset.confirm = ''; b.textContent = 'Xoá trang'; }, 3000); return; }
+  b.dataset.confirm = ''; b.textContent = 'Xoá trang';
+  G.doc = newGrossDoc(); G.savedId = null; $('#gr-label').value = ''; renderGross(); setGrStatus('');
+});
+$('#gr-help').addEventListener('click', () => modal(`<h3>Lệnh giọng nói</h3>
+  <div class="kv small">
+    <span>“cát xét A1”, “mẫu bê hai”, “cát xét số 3”</span><span>Mở cát xét — các câu sau ghi vào đó</span>
+    <span>“cát xét tiếp theo”, “khối tiếp”</span><span>Cát xét kế tiếp (A1 → A2)</span>
+    <span>“quay lại mô tả”</span><span>Ghi tiếp vào phần mô tả</span>
+    <span>“xuống dòng”, “đoạn mới”, “gạch đầu dòng”</span><span>Định dạng</span>
+    <span>“dấu chấm”, “dấu phẩy”, “dấu hai chấm”, “mở / đóng ngoặc”</span><span>Dấu câu</span>
+    <span>“xoá câu”, “hoàn tác”</span><span>Bỏ câu vừa đọc</span>
+    <span>“tạm dừng” / “tiếp tục ghi”</span><span>Ngừng nghe khi trao đổi với KTV</span>
+    <span>“dừng ghi”</span><span>Kết thúc</span>
+  </div>
+  <h3 style="margin-top:14px">Số đo tự chuẩn hoá</h3>
+  <div class="kv small">
+    <span>bốn nhân ba nhân hai xăng ti mét</span><span class="mono">4 x 3 x 2 cm</span>
+    <span>hai phẩy năm phân / hai phân rưỡi</span><span class="mono">2,5 cm</span>
+    <span>từ hai đến năm mi li mét</span><span class="mono">từ 2 đến 5 mm</span>
+    <span>nặng hai mươi lăm gam</span><span class="mono">nặng 25 g</span>
+    <span>ba mảnh, mười hai hạch</span><span class="mono">3 mảnh, 12 hạch</span>
+  </div>
+  <div class="note" style="margin-top:12px">Chỉ đổi chữ số khi đứng cạnh đơn vị, “nhân” hoặc danh từ đếm — “một đoạn đại tràng” giữ nguyên. Đeo tai nghe Bluetooth để đứng xa máy; màn hình được giữ sáng khi đang ghi.</div>
+  <div class="foot"><button class="btn primary" data-close>Đóng</button></div>`));
+$('#gr-fix').addEventListener('click', () => {
+  const row = (c, k) => `<div class="row" data-k="${k}"><input value="${esc(c.from)}" data-f style="flex:1;min-width:120px"><span class="muted">→</span><input value="${esc(c.to)}" data-t style="flex:1;min-width:120px"><button class="btn ghost" data-x>✕</button></div>`;
+  const m = modal(`<h3>Sửa lỗi nhận dạng</h3><div class="small muted">Máy nghe thành → sửa thành. Áp dụng cho các câu đọc sau.</div>
+    <div class="stack" id="gf-list">${G.corrections.map(row).join('')}</div>
+    <div class="row"><button class="btn" id="gf-add">Thêm dòng</button><button class="btn ghost" id="gf-reset">Khôi phục mặc định</button></div>
+    <div class="foot"><button class="btn primary" id="gf-save">Lưu</button></div>`);
+  const list = $('#gf-list', m.el);
+  $('#gf-add', m.el).addEventListener('click', () => list.insertAdjacentHTML('afterbegin', row({ from: '', to: '' }, Date.now())));
+  $('#gf-reset', m.el).addEventListener('click', () => { list.innerHTML = GROSS_DEFAULT_CORRECTIONS.map(row).join(''); });
+  list.addEventListener('click', (e) => { if (e.target.closest('[data-x]')) e.target.closest('[data-k]').remove(); });
+  $('#gf-save', m.el).addEventListener('click', () => {
+    G.corrections = $$('[data-k]', list).map((r) => ({ from: $('[data-f]', r).value.trim(), to: $('[data-t]', r).value.trim() })).filter((c) => c.from && c.to);
+    store.set('grCorrections', G.corrections); m.close(); toast('Đã lưu');
+  });
+});
+updateGrossHint();
+
+// ============================================================================
 // Tab CHÉP LỜI
 // ============================================================================
 const R = { lang: store.get('trLang', 'en'), display: 'source', segs: [], file: null, url: null, run: 0, busy: false, translating: false, trRun: 0, duration: 0, elapsed: 0, savedId: null };
@@ -2370,16 +2995,19 @@ $('#sv-search').addEventListener('input', renderSaved);
 async function renderSaved() {
   const q = $('#sv-search').value.trim().toLowerCase();
   const items = (await idb.all('saved')).sort((a, b) => b.createdAt - a.createdAt)
-    .filter((i) => svFilter === 'all' || (svFilter === 'text' ? i.kind === 'text' : i.kind !== 'text'))
+    .filter((i) => svFilter === 'all' || (svFilter === 'text' ? i.kind === 'text' : svFilter === 'gross' ? i.kind === 'gross' : !!i.pairs))
     .filter((i) => !q || JSON.stringify(i).toLowerCase().includes(q));
   $('#sv-empty').hidden = items.length > 0;
   $('#sv-list').innerHTML = items.map((i) => `<button class="item" data-sv="${i.id}"><span class="t">${esc(i.title)}</span>
-    <span class="small muted">${new Date(i.createdAt).toLocaleString('vi-VN')} · ${i.kind === 'text' ? 'Văn bản' : i.kind === 'captions' ? 'Phụ đề' : 'Chép lời'} · ${esc(DIR[i.dir]?.label || '')}${i.pairs ? ' · ' + i.pairs.length + ' đoạn' : ''}${i.claude ? ' · Claude' : ''}</span></button>`).join('');
+    <span class="small muted">${new Date(i.createdAt).toLocaleString('vi-VN')} · ${i.kind === 'text' ? 'Văn bản' : i.kind === 'gross' ? 'Đại thể' : i.kind === 'captions' ? 'Phụ đề' : 'Chép lời'} · ${esc(DIR[i.dir]?.label || '')}${i.pairs ? ' · ' + i.pairs.length + ' đoạn' : ''}${i.claude ? ' · Claude' : ''}</span></button>`).join('');
 }
 function savedExport(i) {
   const d = DIR[i.dir] || DIR.enToVi;
   let out = `${i.title}\n${new Date(i.createdAt).toLocaleString('vi-VN')} · ${d.label} · ${i.engine}\n`;
-  if (i.kind === 'text') {
+  if (i.kind === 'gross') {
+    out += `\n— Mô tả đại thể —\n${i.source}\n`;
+    if (i.translation) out += `\n— ${d.target} —\n${i.translation}\n`;
+  } else if (i.kind === 'text') {
     out += `\n— ${d.source} —\n${i.source}\n\n— ${d.target} (offline) —\n${i.translation}\n`;
     if (i.claude) out += `\n— ${d.target} (${i.claudeModel || 'Claude'}) —\n${i.claude}\n`;
   } else for (const p of i.pairs) out += `\n[${clock(p.start)}]\n${p.source}\n${p.translation}\n`;
@@ -2392,14 +3020,16 @@ $('#sv-list').addEventListener('click', async (e) => {
   const i = (await idb.all('saved')).find((x) => x.id === b.dataset.sv);
   if (!i) return;
   const d = DIR[i.dir] || DIR.enToVi;
-  const body = i.kind === 'text'
+  const body = i.kind === 'gross'
+    ? `<div class="preview" style="white-space:pre-wrap">${esc(i.source)}</div>`
+    : i.kind === 'text'
     ? `<div class="stack"><div class="tiny muted">${d.source}</div><div class="preview">${esc(i.source)}</div>
        ${i.translation ? `<div class="tiny muted">${d.target} · offline</div><div class="preview">${esc(i.translation)}</div>` : ''}
        ${i.claude ? `<div class="tiny muted">${d.target} · ${esc(i.claudeModel || 'Claude')}</div><div class="preview">${esc(i.claude)}</div>` : ''}</div>`
     : `<div class="preview" style="max-height:420px">${i.pairs.map((p) => `<div style="margin-bottom:10px"><span class="mono" style="color:var(--eosin)">${clock(p.start)}</span><br>${esc(p.source)}<br><b>${esc(p.translation)}</b></div>`).join('')}</div>`;
   const m = modal(`<h3>${esc(i.title)}</h3><div class="small muted">${new Date(i.createdAt).toLocaleString('vi-VN')} · ${d.label} · ${esc(i.engine)}</div>${body}
     <div class="foot"><button class="btn danger" id="sv-del">Xoá</button><div style="flex:1"></div>
-    ${i.kind !== 'text' ? '<button class="btn" id="sv-srt">Tải SRT song ngữ</button>' : ''}
+    ${i.pairs ? '<button class="btn" id="sv-srt">Tải SRT song ngữ</button>' : ''}
     <button class="btn" id="sv-dl">Tải .txt</button><button class="btn" id="sv-copy">Chép tất cả</button><button class="btn primary" data-close>Đóng</button></div>`);
   $('#sv-copy', m.el).addEventListener('click', () => copyText(savedExport(i)));
   $('#sv-dl', m.el).addEventListener('click', () => downloadText(i.title + '.txt', savedExport(i)));
