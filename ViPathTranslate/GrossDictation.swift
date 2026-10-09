@@ -13,6 +13,7 @@ nonisolated enum GrossOp: Equatable, Sendable {
     case newline, para, bullet, undo
     case cassette(String)
     case nextCassette, body
+    case pathcode(String)
     case pause, resume, stop
 }
 
@@ -22,6 +23,11 @@ nonisolated struct GrossCassette: Codable, Hashable, Sendable, Identifiable {
     var id = UUID()
     var code: String
     var text: String
+    /// Pathcode của ca chứa cát xét này
+    var pathcode: String = ""
+
+    /// "GPB-24-012345-A1" (có pathcode) hoặc "A1"
+    var label: String { pathcode.isEmpty ? code : "\(pathcode)-\(code)" }
 }
 
 nonisolated struct GrossCorrection: Codable, Hashable, Sendable, Identifiable {
@@ -36,15 +42,34 @@ nonisolated struct GrossDoc: Sendable {
         var body: String
         var cassettes: [GrossCassette]
         var target: Int
+        var pathcode: String
+        var oneShot: Bool
     }
+
+    init(pathcode: String = "") { self.pathcode = pathcode }
 
     var body = ""
     var cassettes: [GrossCassette] = []
     var target = -1
     var history: [Snapshot] = []
+    /// Pathcode của ca đang đọc
+    var pathcode = ""
+    /// Cát xét đang mở chỉ để ghi một ghi chú — có nội dung xong thì quay lại phần mô tả
+    var oneShot = false
 
-    var snapshot: Snapshot { Snapshot(body: body, cassettes: cassettes, target: target) }
-    mutating func restore(_ s: Snapshot) { body = s.body; cassettes = s.cassettes; target = s.target }
+    var snapshot: Snapshot { Snapshot(body: body, cassettes: cassettes, target: target, pathcode: pathcode, oneShot: oneShot) }
+    mutating func restore(_ s: Snapshot) {
+        body = s.body; cassettes = s.cassettes; target = s.target; pathcode = s.pathcode; oneShot = s.oneShot
+    }
+
+    /// Đổi pathcode của ca: cát xét đang mang pathcode cũ (hoặc chưa có) đổi theo.
+    mutating func setPathcode(_ code: String) {
+        let old = pathcode
+        pathcode = code
+        for i in cassettes.indices where cassettes[i].pathcode.isEmpty || cassettes[i].pathcode == old {
+            cassettes[i].pathcode = code
+        }
+    }
 
     var current: String {
         get { target < 0 || target >= cassettes.count ? body : cassettes[target].text }
@@ -301,6 +326,8 @@ nonisolated enum GrossParser {
     /// Thứ tự quan trọng: cụm dài trước ("dấu hai chấm" trước "dấu chấm").
     /// Chỉ đọc sau khi khởi tạo; NSRegularExpression không đổi trạng thái → dùng chung an toàn.
     nonisolated(unsafe) private static let commands: [(NSRegularExpression, Maker)] = [
+        (cmd("(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$"),
+         { g in .pathcode(spokenCode(g[1] ?? "")) }),
         (cmd("(?:cát\\s*-?\\s*xét|cassette|khối\\s+nến|khuôn\\s+nến|block)\\s+(?:số\\s+|number\\s+)?(?:(\(letRx))\\s*)?\(numRx)"),
          { g in .cassette((g[1].map(letter) ?? "") + String(cassetteNumber(g[2] ?? ""))) }),
         (cmd("mẫu\\s+(\(letRx))\\s*\(numRx)"),
@@ -323,6 +350,44 @@ nonisolated enum GrossParser {
         (cmd("tiếp\\s+tục\\s+ghi|ghi\\s+tiếp|resume\\s+dictation"), { _ in .resume }),
         (cmd("(?:dừng|kết\\s+thúc)\\s+ghi(?:\\s+âm)?|stop\\s+dictation"), { _ in .stop }),
     ]
+
+    // MARK: Pathcode đọc bằng giọng: "gê pê bê hai bốn gạch không một hai" → "GPB24-012"
+
+    private static let codeLetters: [String: String] = letters.merging([
+        "gê": "G", "pê": "P", "pờ": "P", "ét": "S", "ét xì": "S", "xờ": "S", "en": "N", "nờ": "N", "em": "M", "mờ": "M",
+        "o": "O", "ô": "O", "quy": "Q", "rờ": "R", "e rờ": "R", "tê": "T", "tờ": "T", "u": "U", "vê": "V", "vờ": "V",
+        "ích": "X", "ích xì": "X", "i dài": "Y", "dét": "Z", "ka": "K", "lờ": "L", "e lờ": "L", "gi": "J",
+    ]) { _, b in b }
+    private static let codeDigits: [String: String] = [
+        "không": "0", "linh": "0", "một": "1", "mốt": "1", "hai": "2", "ba": "3", "bốn": "4", "tư": "4", "năm": "5", "lăm": "5",
+        "sáu": "6", "bảy": "7", "bẩy": "7", "tám": "8", "chín": "9",
+        "zero": "0", "oh": "0", "one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6",
+        "seven": "7", "eight": "8", "nine": "9",
+    ]
+    private static let codeTrailRx = rx("[.,;:!?]+$", [])
+
+    static func spokenCode(_ raw: String) -> String {
+        let cleaned = replace(raw.precomposedStringWithCanonicalMapping.lowercased(), codeTrailRx, "")
+        let w = cleaned.split(whereSeparator: \.isWhitespace).map(String.init)
+        var out = ""
+        var i = 0
+        while i < w.count {
+            let two: String? = i + 1 < w.count ? w[i] + " " + w[i + 1] : nil
+            if let two, let l = codeLetters[two] { out += l; i += 2; continue }
+            let t = w[i]
+            if ["gạch", "ngang", "dash", "-"].contains(t) {
+                out += "-"
+                i += (two == "gạch ngang") ? 2 : 1
+                continue
+            }
+            if ["mươi", "mười", "trăm"].contains(t) { i += 1; continue }   // pathcode đọc từng chữ số
+            if let d = codeDigits[t] { out += d }
+            else if let l = codeLetters[t] { out += l }
+            else { out += String(t.filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "/" }).uppercased() }
+            i += 1
+        }
+        return out
+    }
 
     private static let trailingPunctRx = rx("[\\s.,;:!?]+$", [])
     private static let leadingPunctRx = rx("^[\\s.,;:!?]+", [])
@@ -394,6 +459,20 @@ nonisolated enum GrossParser {
         return t + mark
     }
 
+    /// Ghi chú "(A1)" vào mô tả tại chỗ đang đọc; câu mô tả kết thúc ở đó → "… xanh (A1)."
+    static func appendMarker(_ prev: String, _ code: String) -> String {
+        var t = prev
+        while let l = t.last, l.isWhitespace { t.removeLast() }
+        guard !t.isEmpty else { return prev }
+        let tail = String(prev.dropFirst(t.count))     // giữ xuống dòng phía sau
+        var mark = "."
+        if let l = t.last, ".,;:!?".contains(l) {
+            if l != "," && l != ";" { mark = String(l) }
+            t.removeLast()
+        }
+        return t + " (\(code))" + mark + tail
+    }
+
     static func nextCode(_ doc: GrossDoc) -> String {
         guard let last = doc.cassettes.last?.code else { return "A1" }
         let letters = last.prefix { $0.isLetter }
@@ -405,12 +484,33 @@ nonisolated enum GrossParser {
     /// Áp các lệnh của MỘT câu đọc. `paused` = đang tạm dừng → chỉ nhận lệnh "tiếp tục ghi".
     @discardableResult
     static func apply(_ ops: [GrossOp], to doc: inout GrossDoc, paused: Bool = false,
-                      corrections: [GrossCorrection] = []) -> [GrossSignal] {
+                      corrections: [GrossCorrection] = [],
+                      cassetteReturn: Bool = true, inlineMarker: Bool = true) -> [GrossSignal] {
         var signals: [GrossSignal] = []
         var paused = paused
         var snap = doc.snapshot
         var pushed = false
         var textSnap: GrossDoc.Snapshot?
+        var gotNote = false
+        // Mở cát xét khi đang đọc mô tả: ghi chú cát xét tách riêng, xong câu thì quay lại mô tả
+        func openCassette(_ code: String) {
+            // đang ở mô tả, hoặc vừa ghi chú một cát xét khác trong cùng mạch → mã vẫn vào mô tả
+            if doc.target >= 0, doc.target < doc.cassettes.count {      // khép ghi chú cát xét trước: "…," → "…."
+                var t = doc.cassettes[doc.target].text
+                while let l = t.last, l.isWhitespace { t.removeLast() }
+                if let l = t.last, l == "," || l == ";" { t.removeLast(); t += "." }
+                doc.cassettes[doc.target].text = t
+            }
+            if (doc.target < 0 || doc.oneShot) && inlineMarker { doc.body = appendMarker(doc.body, code) }
+            let pc = doc.pathcode
+            if let k = doc.cassettes.firstIndex(where: { $0.code == code && $0.pathcode == pc }) { doc.target = k }
+            else {
+                doc.cassettes.append(GrossCassette(code: code, text: "", pathcode: pc))
+                doc.target = doc.cassettes.count - 1
+            }
+            doc.oneShot = cassetteReturn
+            gotNote = false
+        }
         func remember() {
             guard !pushed else { return }
             doc.history.append(snap)
@@ -427,6 +527,7 @@ nonisolated enum GrossParser {
                 remember()
                 textSnap = doc.snapshot
                 doc.current = appendText(doc.current, normalizeMeasurements(applyCorrections(t, corrections)))
+                if doc.target >= 0 { gotNote = true }
             case .punct(let m):
                 remember(); doc.current = appendPunct(doc.current, m)
             case .newline:
@@ -446,34 +547,37 @@ nonisolated enum GrossParser {
                 if let l = t.last, l != "\n" { t += "\n" }
                 doc.current = t + "- "
             case .cassette(let code):
-                remember()
-                if let k = doc.cassettes.firstIndex(where: { $0.code == code }) { doc.target = k }
-                else { doc.cassettes.append(GrossCassette(code: code, text: "")); doc.target = doc.cassettes.count - 1 }
+                remember(); openCassette(code)
             case .nextCassette:
-                remember()
-                doc.cassettes.append(GrossCassette(code: nextCode(doc), text: ""))
-                doc.target = doc.cassettes.count - 1
+                remember(); openCassette(nextCode(doc))
             case .body:
-                remember(); doc.target = -1
+                remember(); doc.target = -1; doc.oneShot = false
+            case .pathcode(let code):
+                remember()
+                if !code.isEmpty { doc.setPathcode(code) }
             case .undo:
                 // có chữ đọc trước lệnh trong cùng câu → chỉ xoá đoạn chữ đó; lệnh đứng riêng → xoá câu đọc trước
-                if let ts = textSnap { doc.restore(ts); textSnap = nil }
+                if let ts = textSnap { doc.restore(ts); textSnap = nil; gotNote = false }
                 else if let prev = doc.history.popLast() { doc.restore(prev); snap = doc.snapshot; pushed = false }
             case .pause: paused = true; signals.append(.pause)
             case .resume: signals.append(.resume)
             case .stop: signals.append(.stop)
             }
         }
+        // ghi chú cát xét đã có nội dung → các câu sau quay lại phần mô tả
+        if doc.oneShot && gotNote && doc.target >= 0 { doc.target = -1; doc.oneShot = false }
         return signals
     }
 
     static func reportText(_ doc: GrossDoc, english: Bool = false) -> String {
+        let pc = doc.pathcode.trimmingCharacters(in: .whitespaces)
+        let header = pc.isEmpty ? "" : "Pathcode: \(pc)\n"
         let body = doc.body.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !doc.cassettes.isEmpty else { return body }
+        guard !doc.cassettes.isEmpty else { return (header + body).trimmingCharacters(in: .whitespacesAndNewlines) }
         let head = english ? "SECTIONS / CASSETTES:" : "CẮT LỌC – CÁT XÉT:"
-        let list = doc.cassettes.map { "\($0.code): \($0.text.trimmingCharacters(in: .whitespacesAndNewlines))" }
+        let list = doc.cassettes.map { "\($0.label): \($0.text.trimmingCharacters(in: .whitespacesAndNewlines))" }
             .joined(separator: "\n")
-        return (body.isEmpty ? "" : body + "\n\n") + head + "\n" + list
+        return header + (body.isEmpty ? "" : body + "\n\n") + head + "\n" + list
     }
 }
 

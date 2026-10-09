@@ -80,8 +80,9 @@ for (const [a, b] of PD) {
   ok(got === b, `parse "${a}" → ${got}`);
 }
 {
+  // chế độ cũ: cát xét "dính" (không tự quay lại mô tả, không chèn mã)
   const d = L.newGrossDoc();
-  const say = (t, o) => L.applyDictation(d, L.parseDictation(t), o);
+  const say = (t, o) => L.applyDictation(d, L.parseDictation(t), { cassetteReturn: false, inlineMarker: false, ...o });
   say('Bệnh phẩm gồm một đoạn đại tràng dài hai mươi lăm xăng ti mét.');
   say('U dạng sùi kích thước bốn nhân ba nhân hai xăng ti mét.');
   say('Cách diện cắt xa năm xăng ti mét.');
@@ -98,6 +99,37 @@ for (const [a, b] of PD) {
   const rep = L.grossReportText(d);
   const want = 'Bệnh phẩm gồm một đoạn đại tràng dài 25 cm. U dạng sùi kích thước 4 x 3 x 2 cm. Cách diện cắt xa 8 cm.\nMạc treo có 12 hạch. Carcinôm\n\nCẮT LỌC – CÁT XÉT:\nA1: Diện cắt gần và xa.\nA2: U và thanh mạc.';
   ok(rep === want, 'gross doc:\n' + rep);
+}
+// Đại thể — pathcode + ghi chú cát xét tách riêng rồi quay lại mô tả (mặc định)
+ok(L.spokenCode('gê pê bê hai bốn gạch không một hai ba bốn năm') === 'GPB24-012345', 'spoken code ' + L.spokenCode('gê pê bê hai bốn gạch không một hai ba bốn năm'));
+ok(L.spokenCode('S24-01234.') === 'S24-01234', 'typed-like code');
+ok(JSON.stringify(L.parseDictation('Mã ca là S24-01234.')) === '[{"type":"pathcode","code":"S24-01234"}]', 'parse pathcode');
+ok(JSON.stringify(L.parseDictation('Mã ca: S24-01234')) === '[{"type":"pathcode","code":"S24-01234"}]', 'parse pathcode colon');
+{
+  const d = L.newGrossDoc('S1');
+  L.applyDictation(d, L.parseDictation('Diện cắt chấm mực, cát xét A1 diện cắt gần, cát xét A2 diện cắt xa.'));
+  ok(d.body === 'Diện cắt chấm mực (A1) (A2).' && d.cassettes[0].text === 'Diện cắt gần.' && d.cassettes[1].text === 'Diện cắt xa.' && d.target === -1, 'two cassettes in one breath ' + JSON.stringify(d));
+}
+{
+  const d = L.newGrossDoc();
+  const say = (t) => L.applyDictation(d, L.parseDictation(t));
+  say('Mã ca gê pê bê hai bốn gạch không một hai ba bốn năm.');
+  say('Bệnh phẩm gồm một đoạn đại tràng dài hai mươi lăm xăng ti mét.');
+  say('Diện cắt gần chấm mực xanh, cát xét A1');
+  ok(d.target === 0 && d.oneShot, 'cassette waits for its note');
+  say('Diện cắt gần.');
+  ok(d.target === -1, 'back to body after note');
+  say('U dạng sùi kích thước bốn nhân ba nhân hai xăng ti mét, cát xét A2 u và thanh mạc.');
+  say('Cách diện cắt xa tám xăng ti mét. Xuống dòng.');
+  say('Cát xét tiếp theo. Hạch sai rồi xoá câu');
+  ok(d.target === 2, 'undo keeps cassette open');
+  say('Hạch mạc treo.');
+  say('Mạc treo có mười hai hạch.');
+  const want = 'Pathcode: GPB24-012345\nBệnh phẩm gồm một đoạn đại tràng dài 25 cm. Diện cắt gần chấm mực xanh (A1). U dạng sùi kích thước 4 x 3 x 2 cm (A2). Cách diện cắt xa 8 cm (A3).\nMạc treo có 12 hạch.\n\nCẮT LỌC – CÁT XÉT:\nGPB24-012345-A1: Diện cắt gần.\nGPB24-012345-A2: U và thanh mạc.\nGPB24-012345-A3: Hạch mạc treo.';
+  const got = L.grossReportText(d);
+  ok(got === want, 'gross pathcode doc:\n' + got);
+  L.setGrossPathcode(d, 'S24-9');
+  ok(d.cassettes.every((c) => c.pathcode === 'S24-9'), 'pathcode change follows cassettes');
 }
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đạt');
 process.exit(fails ? 1 : 0);

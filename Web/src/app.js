@@ -1104,6 +1104,19 @@ if (!SR && G.asrMode === 'web') G.asrMode = 'whisper';
 setPressed($('#gr-lang'), G.lang); setPressed($('#gr-asr'), G.asrMode);
 $('#gr-template').innerHTML = GROSS_TEMPLATES.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
 $('#gr-template').value = store.get('grTemplate', 'biopsy');
+$('#gr-return').checked = store.get('grReturn', true);
+$('#gr-marker').checked = store.get('grMarker', true);
+$('#gr-return').addEventListener('change', (e) => store.set('grReturn', e.target.checked));
+$('#gr-marker').addEventListener('change', (e) => store.set('grMarker', e.target.checked));
+const grOpts = () => ({ corrections: G.corrections, cassetteReturn: $('#gr-return').checked, inlineMarker: $('#gr-marker').checked });
+$('#gr-label').addEventListener('input', (e) => { setGrossPathcode(G.doc, e.target.value.trim().toUpperCase()); renderGross(); });
+$('#gr-label').addEventListener('change', (e) => { e.target.value = G.doc.pathcode; });
+$('#gr-newcase').addEventListener('click', async () => {
+  if (G.running) return;
+  if (!G.doc.body.trim() && !G.doc.cassettes.length) { $('#gr-label').value = ''; G.doc = newGrossDoc(); $('#gr-label').focus(); return; }
+  await saveGross();
+  G.doc = newGrossDoc(); G.savedId = null; $('#gr-label').value = ''; renderGross(); setGrStatus('Đã lưu ca trước · nhập pathcode ca mới'); $('#gr-label').focus();
+});
 function renderGrossChecklist() {
   const t = GROSS_TEMPLATES.find((x) => x.id === $('#gr-template').value);
   $('#gr-checklist').innerHTML = (t?.items || []).map((i) => `<span>${esc(i)}</span>`).join('');
@@ -1119,7 +1132,7 @@ function updateGrossHint() {
     ? (SR ? 'Bộ nhận dạng của trình duyệt: nhanh, nhưng Chrome gửi âm thanh lên máy chủ Google. Không đọc thông tin định danh người bệnh.' : 'Trình duyệt này không có nhận dạng giọng nói — dùng Whisper.')
     : `Whisper chạy trên máy (${w.name}) — không gửi âm thanh đi đâu; mỗi câu hiện ra sau khi bạn ngừng nói ~0,6 giây. Nói “cát xét A1”, “xuống dòng”, “xoá câu”… — bấm “Lệnh giọng nói” để xem đủ.`;
 }
-const grTargetLabel = () => (G.doc.target < 0 ? 'Mô tả' : 'Cát xét ' + G.doc.cassettes[G.doc.target].code);
+const grTargetLabel = () => (G.doc.target < 0 ? 'Mô tả' : 'Cát xét ' + cassetteLabel(G.doc.cassettes[G.doc.target]) + (G.doc.oneShot ? ' (ghi chú xong quay lại mô tả)' : ''));
 const setGrStatus = (t) => { $('#gr-status').textContent = t; };
 function grListening() { setGrStatus(G.paused ? 'Tạm dừng — nói “tiếp tục ghi” hoặc bấm ▶' : `Đang nghe · ${grTargetLabel()}`); }
 
@@ -1131,9 +1144,10 @@ function renderGross() {
     <div class="gr-head">${head}${live(i)}<span class="grow"></span>${d.target === i ? '' : '<button class="btn ghost tiny" data-gr-target>Ghi vào đây</button>'}${i >= 0 ? '<button class="btn ghost tiny" data-gr-del title="Xoá cát xét">✕</button>' : ''}</div>
     <textarea rows="${i < 0 ? 4 : 2}" placeholder="${ph}" data-gr-text>${esc(text)}</textarea><div class="gr-vol">${vol(i)}</div></div>`;
   $('#gr-doc').innerHTML = block(-1, 'MÔ TẢ ĐẠI THỂ', d.body, 'Bấm micro rồi đọc: “Bệnh phẩm gồm ba mảnh, kích thước…”')
-    + d.cassettes.map((c, i) => block(i, `<span class="gr-code">${esc(c.code)}</span>`, c.text, 'Vị trí lấy mẫu…')).join('')
+    + d.cassettes.map((c, i) => block(i, `<span class="gr-code">${c.pathcode ? `<span class="gr-pc">${esc(c.pathcode)}</span> · ` : ''}${esc(c.code)}</span>`, c.text, 'Vị trí lấy mẫu…')).join('')
     + (d.cassettes.length ? '' : '<div class="note">Cát xét: nói “cát xét A1”, “cát xét tiếp theo”… hoặc bấm Cát xét +. Danh sách cát xét được ghép vào cuối mô tả.</div>');
   $('#gr-undo').disabled = !d.history.length;
+  if (document.activeElement !== $('#gr-label')) $('#gr-label').value = d.pathcode || '';
   const act = $('#gr-doc .gr-block.active');
   if (act && G.running) act.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
@@ -1149,17 +1163,17 @@ $('#gr-doc').addEventListener('input', (e) => {
 $('#gr-doc').addEventListener('click', (e) => {
   const blk = e.target.closest('[data-gi]'); if (!blk) return;
   const i = +blk.dataset.gi;
-  if (e.target.closest('[data-gr-target]')) { G.doc.target = i; renderGross(); if (G.running) grListening(); }
+  if (e.target.closest('[data-gr-target]')) { G.doc.target = i; G.doc.oneShot = false; renderGross(); if (G.running) grListening(); }
   if (e.target.closest('[data-gr-del]')) {
     G.doc.history.push({ body: G.doc.body, cassettes: G.doc.cassettes.map((c) => ({ ...c })), target: G.doc.target });
     G.doc.cassettes.splice(i, 1);
-    if (G.doc.target >= G.doc.cassettes.length || G.doc.target === i) G.doc.target = -1; else if (G.doc.target > i) G.doc.target--;
+    if (G.doc.target >= G.doc.cassettes.length || G.doc.target === i) { G.doc.target = -1; G.doc.oneShot = false; } else if (G.doc.target > i) G.doc.target--;
     renderGross();
   }
 });
 $('#gr-undo').addEventListener('click', () => { applyDictation(G.doc, [{ type: 'undo' }]); renderGross(); });
-$('#gr-next').addEventListener('click', () => { applyDictation(G.doc, [{ type: 'nextCassette' }]); renderGross(); if (G.running) grListening(); });
-$('#gr-to-body').addEventListener('click', () => { G.doc.target = -1; renderGross(); if (G.running) grListening(); });
+$('#gr-next').addEventListener('click', () => { applyDictation(G.doc, [{ type: 'nextCassette' }], grOpts()); renderGross(); if (G.running) grListening(); });
+$('#gr-to-body').addEventListener('click', () => { G.doc.target = -1; G.doc.oneShot = false; renderGross(); if (G.running) grListening(); });
 $('#gr-pause').addEventListener('click', () => { if (!G.running) return; G.paused = !G.paused; G.volatile = ''; grPauseUI(); renderGross(); grListening(); });
 function grPauseUI() {
   $('#gr-pause').disabled = !G.running;
@@ -1171,7 +1185,7 @@ $('#gr-mic').addEventListener('click', () => (G.running ? stopGross() : startGro
 function grossFinal(text) {
   const t = (text || '').replace(/\[[^\]]*\]|\([^)]*\)/g, ' ').trim();   // Whisper: bỏ [Music]…
   if (!t) return;
-  const signals = applyDictation(G.doc, parseDictation(t), { paused: G.paused, corrections: G.corrections });
+  const signals = applyDictation(G.doc, parseDictation(t), { paused: G.paused, ...grOpts() });
   for (const s of signals) { if (s === 'pause') G.paused = true; if (s === 'resume') G.paused = false; }
   G.volatile = '';
   grPauseUI(); renderGross();
@@ -1265,8 +1279,8 @@ $('#gr-save').addEventListener('click', saveGross);
 async function saveGross() {
   const text = grossReport();
   if (!text) { toast('Chưa có nội dung'); return; }
-  const label = $('#gr-label').value.trim();
-  const item = { id: G.savedId || 'g' + Date.now(), kind: 'gross', createdAt: Date.now(),
+  const label = G.doc.pathcode;
+  const item = { id: G.savedId || 'g' + Date.now(), kind: 'gross', createdAt: Date.now(), pathcode: label,
     title: 'Đại thể · ' + (label || autoTitle(G.doc.body || text)), dir: G.lang === 'vi' ? 'viToEn' : 'enToVi', engine: G.engine || 'Đọc chính tả',
     source: text, translation: '' };
   G.savedId = item.id;
@@ -1286,11 +1300,13 @@ $('#gr-clear').addEventListener('click', (e) => {
   const b = e.currentTarget;
   if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Bấm lần nữa để xoá'; setTimeout(() => { b.dataset.confirm = ''; b.textContent = 'Xoá trang'; }, 3000); return; }
   b.dataset.confirm = ''; b.textContent = 'Xoá trang';
-  G.doc = newGrossDoc(); G.savedId = null; $('#gr-label').value = ''; renderGross(); setGrStatus('');
+  G.doc = newGrossDoc(G.doc.pathcode); G.savedId = null; renderGross(); setGrStatus('');
 });
 $('#gr-help').addEventListener('click', () => modal(`<h3>Lệnh giọng nói</h3>
   <div class="kv small">
-    <span>“cát xét A1”, “mẫu bê hai”, “cát xét số 3”</span><span>Mở cát xét — các câu sau ghi vào đó</span>
+    <span>“mã ca G P B hai bốn gạch …”</span><span>Đặt pathcode cho ca (gõ tay chính xác hơn)</span>
+    <span>“… mực xanh, cát xét A1 diện cắt gần”</span><span>Chèn (A1) vào mô tả, ghi “diện cắt gần” vào A1, rồi tự quay lại mô tả</span>
+    <span>“cát xét A1”, “mẫu bê hai”, “cát xét số 3”</span><span>Mở cát xét — câu kế tiếp là ghi chú của cát xét đó</span>
     <span>“cát xét tiếp theo”, “khối tiếp”</span><span>Cát xét kế tiếp (A1 → A2)</span>
     <span>“quay lại mô tả”</span><span>Ghi tiếp vào phần mô tả</span>
     <span>“xuống dòng”, “đoạn mới”, “gạch đầu dòng”</span><span>Định dạng</span>

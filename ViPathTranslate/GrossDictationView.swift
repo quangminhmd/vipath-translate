@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import VisionKit
 
 /// Tab "Đại thể": đọc mô tả khi phẫu tích – cắt lọc bệnh phẩm, rảnh tay bằng lệnh giọng nói.
 struct GrossDictationView: View {
@@ -11,6 +12,7 @@ struct GrossDictationView: View {
     @State private var showCorrections = false
     @State private var showChecklist = true
     @State private var confirmClear = false
+    @State private var showScanner = false
     @State private var toast: String?
 
     private var textFont: Font { largeText ? .title3 : .body }
@@ -59,6 +61,12 @@ struct GrossDictationView: View {
             .toolbar { toolbar }
             .sheet(isPresented: $showHelp) { GrossCommandHelp() }
             .sheet(isPresented: $showCorrections) { GrossCorrectionsView() }
+            .sheet(isPresented: $showScanner) {
+                PathcodeScannerSheet { code in
+                    showScanner = false
+                    if let code, !code.isEmpty { ctl.pathcode = code; flash("Pathcode: \(ctl.pathcode)") }
+                }
+            }
             .confirmationDialog("Xoá toàn bộ nội dung đang đọc?", isPresented: $confirmClear, titleVisibility: .visible) {
                 Button("Xoá trang", role: .destructive) { ctl.clear() }
             }
@@ -88,9 +96,22 @@ struct GrossDictationView: View {
                 }
                 .buttonStyle(.bordered)
             }
-            TextField("Nhãn mẫu (tuỳ chọn, vd. mã bệnh phẩm) — chỉ lưu trên máy", text: $ctl.label)
-                .textFieldStyle(.roundedBorder)
-                .font(.subheadline)
+            HStack(spacing: 8) {
+                Image(systemName: "barcode").foregroundStyle(.secondary)
+                TextField("Pathcode của ca (hoặc nói “mã ca …”)", text: $ctl.pathcode)
+                    .font(.body.monospaced())
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+                    .submitLabel(.done)
+                if PathcodeScannerSheet.isAvailable {
+                    Button { showScanner = true } label: { Image(systemName: "barcode.viewfinder") }
+                        .accessibilityLabel("Quét mã vạch trên nhãn")
+                }
+                Button("Ca mới") { flash(ctl.newCase() ? "Đã lưu ca trước" : "Trang mới") }
+                    .disabled(ctl.isRunning || ctl.isRewriting)
+            }
+            .padding(.horizontal, 10).padding(.vertical, 8)
+            .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 10))
         }
     }
 
@@ -144,7 +165,7 @@ struct GrossDictationView: View {
         let active = ctl.doc.target == i
         return VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(c.code)
+                Text(c.pathcode.isEmpty ? c.code : "\(c.pathcode) · \(c.code)")
                     .font(.headline.monospaced())
                     .padding(.horizontal, 8).padding(.vertical, 2)
                     .background(active ? Color.accentColor : Color(.tertiarySystemFill), in: .rect(cornerRadius: 6))
@@ -239,6 +260,8 @@ struct GrossDictationView: View {
                 }
                 .disabled(!ctl.canRewrite)
                 Toggle("Giữ bản ghi âm của phiên", isOn: Binding(get: { ctl.keepAudio }, set: { ctl.keepAudio = $0 }))
+                Toggle("Ghi chú cát xét xong quay lại mô tả", isOn: Binding(get: { ctl.cassetteReturn }, set: { ctl.cassetteReturn = $0 }))
+                Toggle("Chèn mã “(A1)” vào mô tả", isOn: Binding(get: { ctl.inlineMarker }, set: { ctl.inlineMarker = $0 }))
                 Toggle("Chữ lớn", isOn: $largeText)
                 Button("Sửa lỗi nhận dạng…", systemImage: "character.cursor.ibeam") { showCorrections = true }
                 Divider()
@@ -282,7 +305,9 @@ private struct RecordingDot: View {
 struct GrossCommandHelp: View {
     @Environment(\.dismiss) private var dismiss
     private let rows: [(String, String)] = [
-        ("“cát xét A1”, “mẫu bê hai”, “cát xét số 3”", "Mở cát xét — các câu sau ghi vào cát xét đó"),
+        ("“mã ca gê pê bê hai bốn gạch …”", "Đặt pathcode cho ca (gõ hoặc quét mã vạch chính xác hơn)"),
+        ("“… chấm mực xanh, cát xét A1 diện cắt gần”", "Chèn (A1) vào mô tả, ghi “diện cắt gần” vào A1, rồi tự quay lại mô tả"),
+        ("“cát xét A1”, “mẫu bê hai”, “cát xét số 3”", "Mở cát xét — câu kế tiếp là ghi chú của cát xét đó"),
         ("“cát xét tiếp theo”, “khối tiếp”", "Cát xét kế tiếp (A1 → A2)"),
         ("“quay lại mô tả”", "Ghi tiếp vào phần mô tả đại thể"),
         ("“xuống dòng”, “đoạn mới”, “gạch đầu dòng”", "Định dạng"),
@@ -371,6 +396,94 @@ struct GrossCorrectionsView: View {
             .navigationTitle("Sửa lỗi nhận dạng")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Xong") { dismiss() } } }
+        }
+    }
+}
+
+// MARK: - Quét pathcode trên nhãn bệnh phẩm
+
+/// Camera quét mã vạch (tự nhận) hoặc chạm vào dòng chữ pathcode trên nhãn / phiếu.
+struct PathcodeScannerSheet: View {
+    let onResult: (String?) -> Void
+
+    static var isAvailable: Bool { DataScannerViewController.isSupported && DataScannerViewController.isAvailable }
+
+    var body: some View {
+        NavigationStack {
+            PathcodeScanner(onResult: onResult)
+                .ignoresSafeArea(edges: .bottom)
+                .overlay(alignment: .bottom) {
+                    Text("Hướng camera vào mã vạch trên nhãn — hoặc chạm vào dòng chữ pathcode")
+                        .font(.footnote.bold()).padding(10)
+                        .background(.thinMaterial, in: .capsule).padding(.bottom, 30)
+                }
+                .navigationTitle("Quét pathcode")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Huỷ") { onResult(nil) } } }
+        }
+    }
+}
+
+private struct PathcodeScanner: UIViewControllerRepresentable {
+    let onResult: (String?) -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(onResult: onResult) }
+
+    func makeUIViewController(context: Context) -> DataScannerViewController {
+        let vc = DataScannerViewController(recognizedDataTypes: [.barcode(), .text()],
+                                           qualityLevel: .accurate,
+                                           recognizesMultipleItems: true,
+                                           isHighFrameRateTrackingEnabled: false,
+                                           isHighlightingEnabled: true)
+        vc.delegate = context.coordinator
+        return vc
+    }
+
+    func updateUIViewController(_ vc: DataScannerViewController, context: Context) {
+        if !vc.isScanning { try? vc.startScanning() }
+    }
+
+    static func dismantleUIViewController(_ vc: DataScannerViewController, coordinator: Coordinator) {
+        vc.stopScanning()
+    }
+
+    @MainActor
+    final class Coordinator: NSObject, DataScannerViewControllerDelegate {
+        let onResult: (String?) -> Void
+        private var done = false
+        init(onResult: @escaping (String?) -> Void) { self.onResult = onResult }
+
+        private func finish(_ s: String) {
+            let code = s.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !done, !code.isEmpty else { return }
+            done = true
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            onResult(code)
+        }
+
+        // Mã vạch: nhận ngay khi thấy
+        func dataScanner(_ dataScanner: DataScannerViewController, didAdd addedItems: [RecognizedItem],
+                         allItems: [RecognizedItem]) {
+            for item in addedItems {
+                if case .barcode(let b) = item, let v = b.payloadStringValue { finish(v); return }
+            }
+        }
+
+        // Camera bị từ chối / không dùng được → đóng, không để màn hình chết
+        func dataScanner(_ dataScanner: DataScannerViewController,
+                         becameUnavailableWithError error: DataScannerViewController.ScanningUnavailable) {
+            guard !done else { return }
+            done = true
+            onResult(nil)
+        }
+
+        // Chữ: chạm vào dòng pathcode
+        func dataScanner(_ dataScanner: DataScannerViewController, didTapOn item: RecognizedItem) {
+            switch item {
+            case .barcode(let b): if let v = b.payloadStringValue { finish(v) }
+            case .text(let t): finish(t.transcript)
+            @unknown default: break
+            }
         }
     }
 }

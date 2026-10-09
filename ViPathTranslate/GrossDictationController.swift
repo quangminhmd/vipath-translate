@@ -199,8 +199,19 @@ final class GrossDictationController {
     private(set) var isRewriting = false
     var status = ""
     var errorText: String?
-    /// Nhãn mẫu (vd. mã bệnh phẩm) để đặt tiêu đề khi lưu — chỉ lưu trên máy.
-    var label = ""
+    /// Pathcode của ca đang đọc (gõ, quét mã vạch, hoặc nói "mã ca …") — chỉ lưu trên máy.
+    var pathcode: String {
+        get { doc.pathcode }
+        set { doc.setPathcode(newValue.trimmingCharacters(in: .whitespaces).uppercased()) }
+    }
+    /// Đọc "cát xét A1 …" khi đang mô tả → ghi chú vào A1 rồi tự quay lại mô tả.
+    var cassetteReturn: Bool = UserDefaults.standard.object(forKey: "grossCassetteReturn") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(cassetteReturn, forKey: "grossCassetteReturn") }
+    }
+    /// Chèn "(A1)" vào phần mô tả tại chỗ gọi cát xét.
+    var inlineMarker: Bool = UserDefaults.standard.object(forKey: "grossInlineMarker") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(inlineMarker, forKey: "grossInlineMarker") }
+    }
     private(set) var engineLabel = ""
     private(set) var audioURL: URL?
     private(set) var savedID: UUID?
@@ -232,7 +243,10 @@ final class GrossDictationController {
 
     var template: GrossTemplate? { GrossTemplate.all.first { $0.id == templateID } }
     var reportText: String { GrossParser.reportText(doc, english: language == .en) }
-    var targetLabel: String { doc.target < 0 || doc.target >= doc.cassettes.count ? "Mô tả" : "Cát xét \(doc.cassettes[doc.target].code)" }
+    var targetLabel: String {
+        guard doc.target >= 0, doc.target < doc.cassettes.count else { return "Mô tả" }
+        return "Cát xét \(doc.cassettes[doc.target].label)" + (doc.oneShot ? " → xong quay lại mô tả" : "")
+    }
 
     // MARK: Ghi
 
@@ -317,7 +331,8 @@ final class GrossDictationController {
             return
         }
         volatileText = ""
-        let signals = GrossParser.apply(GrossParser.parse(text), to: &doc, paused: isPaused, corrections: corrections)
+        let signals = GrossParser.apply(GrossParser.parse(text), to: &doc, paused: isPaused, corrections: corrections,
+                                        cassetteReturn: cassetteReturn, inlineMarker: inlineMarker)
         for s in signals {
             switch s {
             case .pause: isPaused = true; mic?.setRecording(false)
@@ -337,12 +352,13 @@ final class GrossDictationController {
     }
 
     func addCassette() {
-        GrossParser.apply([.nextCassette], to: &doc)
+        GrossParser.apply([.nextCassette], to: &doc, cassetteReturn: cassetteReturn, inlineMarker: inlineMarker)
         if isRunning { status = "Đang nghe · \(targetLabel)" }
     }
 
     func select(target: Int) {
         doc.target = target
+        doc.oneShot = false          // chọn tay → ghi tiếp vào đó cho đến khi đổi
         if isRunning { status = "Đang nghe · \(targetLabel)" }
     }
 
@@ -350,17 +366,28 @@ final class GrossDictationController {
         guard doc.cassettes.indices.contains(index) else { return }
         doc.history.append(doc.snapshot)
         doc.cassettes.remove(at: index)
-        if doc.target >= doc.cassettes.count || doc.target == index { doc.target = -1 }
+        if doc.target >= doc.cassettes.count || doc.target == index { doc.target = -1; doc.oneShot = false }
         else if doc.target > index { doc.target -= 1 }
     }
 
     func clear() {
         guard !isRunning, !isRewriting else { return }
-        doc = GrossDoc()
-        label = ""
+        doc = GrossDoc(pathcode: doc.pathcode)     // giữ pathcode của ca
         savedID = nil
         removeAudio()
         status = ""
+    }
+
+    /// Ca mới: lưu ca đang đọc (nếu có nội dung) rồi mở trang trống, chờ pathcode mới.
+    @discardableResult
+    func newCase() -> Bool {
+        guard !isRunning, !isRewriting else { return false }
+        let saved = doc.isEmpty ? false : save()
+        doc = GrossDoc()
+        savedID = nil
+        removeAudio()
+        status = saved ? "Đã lưu ca trước · nhập pathcode ca mới" : ""
+        return saved
     }
 
     // MARK: Lưu
@@ -369,9 +396,9 @@ final class GrossDictationController {
     func save() -> Bool {
         let text = reportText
         guard !text.isEmpty else { return false }
-        let title = label.trimmingCharacters(in: .whitespaces).isEmpty
+        let title = doc.pathcode.isEmpty
             ? "Đại thể · " + SavedItem.autoTitle(doc.body.isEmpty ? text : doc.body)
-            : "Đại thể · " + label.trimmingCharacters(in: .whitespaces)
+            : "Đại thể · " + doc.pathcode
         var item = SavedItem(kind: .gross, title: title, direction: language == .vi ? .viToEn : .enToVi,
                              engine: engineLabel.isEmpty ? "Đọc chính tả" : engineLabel,
                              source: text, translation: "")
@@ -414,14 +441,16 @@ final class GrossDictationController {
             }
             // Phân tích lại từ đầu (tôn trọng "tạm dừng" / "tiếp tục ghi"), rồi gắn bản cũ vào lịch sử
             // để MỘT lần Hoàn tác quay về đúng bản trước khi chép lại.
-            var fresh = GrossDoc()
+            var fresh = GrossDoc(pathcode: doc.pathcode)
             var paused = false
             for line in collector.all {
-                for sig in GrossParser.apply(GrossParser.parse(line), to: &fresh, paused: paused, corrections: corrections) {
+                for sig in GrossParser.apply(GrossParser.parse(line), to: &fresh, paused: paused, corrections: corrections,
+                                             cassetteReturn: cassetteReturn, inlineMarker: inlineMarker) {
                     if sig == .pause { paused = true } else if sig == .resume { paused = false }
                 }
             }
             fresh.target = -1
+            fresh.oneShot = false
             fresh.history = Array((doc.history + [doc.snapshot]).suffix(50))
             doc = fresh
             status = "Đã chép lại bằng \(model.title) · bấm Hoàn tác để về bản cũ"

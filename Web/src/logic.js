@@ -710,6 +710,7 @@ function cassetteNumber(s) {
 const cmd = (src) => new RegExp(GW_L + src + GW_R, 'iu');
 /** Thứ tự quan trọng: cụm dài trước ("dấu hai chấm" trước "dấu chấm"). */
 const GROSS_COMMANDS = [
+  [cmd('(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$'), (m) => ({ type: 'pathcode', code: spokenCode(m[1]) })],
   [cmd(`(?:cát\\s*-?\\s*xét|cassette|khối\\s+nến|khuôn\\s+nến|block)\\s+(?:số\\s+|number\\s+)?(?:(${LET_RX})\\s*)?${NUM_RX}`), (m) => ({ type: 'cassette', code: (m[1] ? GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] : '') + cassetteNumber(m[2]) })],
   [cmd(`mẫu\\s+(${LET_RX})\\s*${NUM_RX}`), (m) => ({ type: 'cassette', code: GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] + cassetteNumber(m[2]) })],
   [cmd('(?:cát\\s*-?\\s*xét|cassette|khối|mẫu|block)\\s+(?:tiếp(?:\\s+theo)?|kế\\s+tiếp|next)|next\\s+(?:cassette|block)'), () => ({ type: 'nextCassette' })],
@@ -729,6 +730,27 @@ const GROSS_COMMANDS = [
   [cmd('tiếp\\s+tục\\s+ghi|ghi\\s+tiếp|resume\\s+dictation'), () => ({ type: 'resume' })],
   [cmd('(?:dừng|kết\\s+thúc)\\s+ghi(?:\\s+âm)?|stop\\s+dictation'), () => ({ type: 'stop' })],
 ];
+
+// ---------- Pathcode đọc bằng giọng: "gê pê bê hai bốn gạch không một hai" → "GPB24-012" ----------
+const CODE_LETTER = { ...GROSS_LETTER, 'gê': 'G', 'pê': 'P', 'pờ': 'P', 'ét': 'S', 'ét xì': 'S', 'xờ': 'S', 'en': 'N', 'nờ': 'N', 'em': 'M', 'mờ': 'M',
+  'o': 'O', 'ô': 'O', 'quy': 'Q', 'rờ': 'R', 'e rờ': 'R', 'tê': 'T', 'tờ': 'T', 'u': 'U', 'vê': 'V', 'vờ': 'V', 'ích': 'X', 'ích xì': 'X', 'i dài': 'Y', 'dét': 'Z', 'ka': 'K', 'lờ': 'L', 'e lờ': 'L', 'gi': 'J' };
+const CODE_DIGIT = { 'không': '0', 'linh': '0', 'một': '1', 'mốt': '1', 'hai': '2', 'ba': '3', 'bốn': '4', 'tư': '4', 'năm': '5', 'lăm': '5', 'sáu': '6', 'bảy': '7', 'bẩy': '7', 'tám': '8', 'chín': '9',
+  zero: '0', oh: '0', one: '1', two: '2', three: '3', four: '4', five: '5', six: '6', seven: '7', eight: '8', nine: '9' };
+export function spokenCode(raw) {
+  const w = raw.normalize('NFC').toLowerCase().replace(/[.,;:!?]+$/u, '').split(/\s+/).filter(Boolean);
+  let out = '';
+  for (let i = 0; i < w.length; i++) {
+    const two = i + 1 < w.length ? w[i] + ' ' + w[i + 1] : null;
+    if (two && CODE_LETTER[two]) { out += CODE_LETTER[two]; i++; continue; }
+    const t = w[i];
+    if (t === 'gạch' || t === 'ngang' || t === 'dash' || t === '-') { if (two === 'gạch ngang') i++; out += '-'; continue; }
+    if (t === 'mươi' || t === 'mười' || t === 'trăm') continue;   // pathcode đọc từng chữ số
+    if (t in CODE_DIGIT) { out += CODE_DIGIT[t]; continue; }
+    if (CODE_LETTER[t]) { out += CODE_LETTER[t]; continue; }
+    out += t.replace(/[^\p{L}\p{N}\-\/]/gu, '').toUpperCase();
+  }
+  return out;
+}
 
 /** Tách một câu đọc thành văn bản và lệnh. */
 export function parseDictation(input) {
@@ -755,8 +777,26 @@ export function parseDictation(input) {
 }
 
 // ---------- Văn bản đại thể ----------
-export function newGrossDoc() { return { body: '', cassettes: [], target: -1, history: [] }; }
-const grossSnapshot = (d) => ({ body: d.body, cassettes: d.cassettes.map((c) => ({ ...c })), target: d.target });
+export function newGrossDoc(pathcode = '') { return { body: '', cassettes: [], target: -1, history: [], pathcode, oneShot: false }; }
+const grossSnapshot = (d) => ({ body: d.body, cassettes: d.cassettes.map((c) => ({ ...c })), target: d.target, pathcode: d.pathcode || '', oneShot: !!d.oneShot });
+/** Mã cát xét đầy đủ: "GPB-24-012345-A1" (có pathcode) hoặc "A1". */
+export const cassetteLabel = (c) => (c.pathcode ? `${c.pathcode}-${c.code}` : c.code);
+/** Ghi chú "(A1)" vào mô tả tại chỗ đang đọc — đặt trước dấu câu cuối nếu có. */
+function appendMarker(prev, code) {
+  const t = prev.replace(/\s+$/, '');
+  if (!t) return prev;
+  const tail = prev.slice(t.length);   // giữ xuống dòng phía sau
+  // câu mô tả kết thúc tại lệnh cát xét → "… xanh (A1)." (dấu phẩy / không dấu → dấu chấm)
+  const m = /([.,;:!?])$/.exec(t);
+  const mark = m && m[1] !== ',' && m[1] !== ';' ? m[1] : '.';
+  return `${m ? t.slice(0, -1) : t} (${code})${mark}` + tail;
+}
+/** Đổi pathcode của ca: cát xét đang mang pathcode cũ (hoặc chưa có) đổi theo. */
+export function setGrossPathcode(doc, code) {
+  const old = doc.pathcode || '';
+  doc.pathcode = code;
+  for (const c of doc.cassettes) if (!c.pathcode || c.pathcode === old) c.pathcode = code;
+}
 const isSentenceEnd = (s) => /(^|[.!?:\n])\s*$/.test(s);
 function appendText(prev, piece) {
   if (!piece) return prev;
@@ -784,31 +824,37 @@ function nextCode(doc) {
  * Áp các lệnh của MỘT câu đọc vào văn bản. Trả về tín hiệu điều khiển ('pause' | 'resume' | 'stop').
  * `paused`: đang tạm dừng → chỉ nhận lệnh "tiếp tục ghi".
  */
-export function applyDictation(doc, ops, { paused = false, corrections = [] } = {}) {
+export function applyDictation(doc, ops, { paused = false, corrections = [], cassetteReturn = true, inlineMarker = true } = {}) {
   const signals = [];
-  let snap = grossSnapshot(doc), pushed = false, textSnap = null;
+  let snap = grossSnapshot(doc), pushed = false, textSnap = null, gotNote = false;
+  // Mở cát xét khi đang đọc mô tả: phần ghi chú cát xét được tách riêng, xong câu thì quay lại mô tả
+  const openCassette = (code) => {
+    // đang ở mô tả, hoặc vừa ghi chú một cát xét khác trong cùng mạch → mã vẫn vào mô tả
+    if (doc.target >= 0) doc.cassettes[doc.target].text = doc.cassettes[doc.target].text.replace(/\s*[,;]\s*$/, '.');   // khép ghi chú trước
+    if ((doc.target < 0 || doc.oneShot) && inlineMarker) doc.body = appendMarker(doc.body, code);
+    const pc = doc.pathcode || '';
+    const k = doc.cassettes.findIndex((c) => c.code === code && (c.pathcode || '') === pc);
+    if (k >= 0) doc.target = k; else { doc.cassettes.push({ code, text: '', pathcode: pc }); doc.target = doc.cassettes.length - 1; }
+    doc.oneShot = cassetteReturn; gotNote = false;
+  };
   const remember = () => { if (!pushed) { doc.history.push(snap); if (doc.history.length > 50) doc.history.shift(); pushed = true; } };
   const get = () => (doc.target < 0 ? doc.body : doc.cassettes[doc.target].text);
   const set = (v) => { if (doc.target < 0) doc.body = v; else doc.cassettes[doc.target].text = v; };
   for (const op of ops) {
     if (paused) { if (op.type === 'resume') { paused = false; signals.push('resume'); } continue; }
     switch (op.type) {
-      case 'text': remember(); textSnap = grossSnapshot(doc); set(appendText(get(), normalizeMeasurements(applyCorrections(op.text, corrections)))); break;
+      case 'text': remember(); textSnap = grossSnapshot(doc); set(appendText(get(), normalizeMeasurements(applyCorrections(op.text, corrections)))); if (doc.target >= 0) gotNote = true; break;
       case 'punct': remember(); set(appendPunct(get(), op.text)); break;
       case 'newline': remember(); set(get().replace(/[ \t]+$/, '') + '\n'); break;
       case 'para': remember(); set(get().replace(/\s+$/, '') + '\n\n'); break;
       case 'bullet': remember(); set(get().replace(/[ \t]+$/, '').replace(/([^\n])$/, '$1\n') + '- '); break;
-      case 'cassette': {
-        remember();
-        const k = doc.cassettes.findIndex((c) => c.code === op.code);
-        if (k >= 0) doc.target = k; else { doc.cassettes.push({ code: op.code, text: '' }); doc.target = doc.cassettes.length - 1; }
-        break;
-      }
-      case 'nextCassette': remember(); doc.cassettes.push({ code: nextCode(doc), text: '' }); doc.target = doc.cassettes.length - 1; break;
-      case 'body': remember(); doc.target = -1; break;
+      case 'cassette': remember(); openCassette(op.code); break;
+      case 'nextCassette': remember(); openCassette(nextCode(doc)); break;
+      case 'body': remember(); doc.target = -1; doc.oneShot = false; break;
+      case 'pathcode': remember(); if (op.code) setGrossPathcode(doc, op.code); break;
       case 'undo':
         // có chữ đọc trước lệnh trong cùng câu → chỉ xoá đoạn chữ đó; lệnh đứng riêng → xoá câu đọc trước
-        if (textSnap) { Object.assign(doc, textSnap); textSnap = null; }
+        if (textSnap) { Object.assign(doc, textSnap); textSnap = null; gotNote = false; }
         else { const prev = doc.history.pop(); if (prev) Object.assign(doc, prev); snap = grossSnapshot(doc); pushed = false; }
         break;
       case 'pause': paused = true; signals.push('pause'); break;
@@ -816,15 +862,18 @@ export function applyDictation(doc, ops, { paused = false, corrections = [] } = 
       case 'stop': signals.push('stop'); break;
     }
   }
+  // ghi chú cát xét đã có nội dung → các câu sau quay lại phần mô tả
+  if (doc.oneShot && gotNote && doc.target >= 0) { doc.target = -1; doc.oneShot = false; }
   return signals;
 }
 
 export function grossReportText(doc, lang = 'vi') {
+  const head = doc.pathcode ? `Pathcode: ${doc.pathcode}\n` : '';
   const body = doc.body.trim();
   const cs = doc.cassettes;
-  if (!cs.length) return body;
-  const head = lang === 'en' ? 'SECTIONS / CASSETTES:' : 'CẮT LỌC – CÁT XÉT:';
-  return (body ? body + '\n\n' : '') + head + '\n' + cs.map((c) => `${c.code}: ${c.text.trim()}`).join('\n');
+  if (!cs.length) return (head + body).trim();
+  const title = lang === 'en' ? 'SECTIONS / CASSETTES:' : 'CẮT LỌC – CÁT XÉT:';
+  return head + (body ? body + '\n\n' : '') + title + '\n' + cs.map((c) => `${cassetteLabel(c)}: ${c.text.trim()}`).join('\n');
 }
 
 /** Gợi ý cấu trúc mô tả theo loại bệnh phẩm (hiển thị khi đọc, không tự chèn). */

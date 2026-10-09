@@ -210,6 +210,7 @@ td .user { color: var(--eosin); font-size: 11px; font-weight: 600; margin-left: 
 .gr-block.active .gr-head { color: var(--eosin); }
 .gr-code { font: 600 15px/1 var(--font-mono); padding: 4px 8px; border-radius: 6px; background: var(--surface-2); color: var(--ink); letter-spacing: 0; }
 .gr-block.active .gr-code { background: var(--eosin); color: #fff; }
+.gr-pc { font-weight: 400; opacity: .8; }
 .gr-head .grow { flex: 1; }
 .gr-head button { font-size: 12px; }
 .gr-block textarea { min-height: 0; border: 0; padding: 0; background: none; font-size: var(--gr-size, 19px); line-height: 1.5; resize: vertical; field-sizing: content; }
