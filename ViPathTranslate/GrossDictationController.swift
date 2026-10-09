@@ -227,19 +227,30 @@ enum GrossEngine: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+/// Ngưỡng lời nói tự thích nghi với tiếng ồn nền (quạt hút, máy lạnh trong phòng cắt lọc).
+nonisolated struct NoiseFloor {
+    private var floor: Float = 0.004
+    /// true nếu mức âm thanh này là lời nói
+    mutating func isSpeech(_ rms: Float) -> Bool {
+        if rms < floor { floor = rms } else { floor += (rms - floor) * 0.003 }   // hạ nhanh, lên chậm
+        return rms > max(0.012, floor * 3)
+    }
+}
+
 /// Báo mỗi lần người đọc ngừng nói (≥ 0,7 s sau ≥ 0,3 s lời nói) — để chốt chữ ngay, không đợi bấm Dừng.
 nonisolated final class SilenceGate: @unchecked Sendable {
     private let lock = NSLock()
     private var speech: Double = 0
     private var silence: Double = 0
     private var fired = false
+    private var noise = NoiseFloor()
     private let onPause: @Sendable () -> Void
 
     init(onPause: @escaping @Sendable () -> Void) { self.onPause = onPause }
 
     func level(_ rms: Float, seconds: Double) {
         let fire: Bool = lock.withLock {
-            if rms > 0.012 {
+            if noise.isSpeech(rms) {
                 speech += seconds; silence = 0; fired = false
                 return false
             }
@@ -258,6 +269,7 @@ nonisolated final class VoiceChunker: @unchecked Sendable {
     private var silence = 0
     private var speech = 0
     private var active = true
+    private var noise = NoiseFloor()
     private let emit: @Sendable ([Float]) -> Void
     private let sampleRate = 16_000
 
@@ -273,9 +285,9 @@ nonisolated final class VoiceChunker: @unchecked Sendable {
         let out: [Float]? = lock.withLock {
             guard active else { return nil }
             buf += arr
-            if rms > 0.012 { speech += n; silence = 0 } else { silence += n }
-            // ngừng ≥ 0,6 s sau ≥ 0,2 s lời nói, hoặc đoạn dài 12 s → gửi đi
-            if (silence > sampleRate * 6 / 10 && buf.count > sampleRate && speech > sampleRate / 5) || buf.count > sampleRate * 12 {
+            if noise.isSpeech(rms) { speech += n; silence = 0 } else { silence += n }
+            // ngừng ≥ 0,6 s sau ≥ 0,2 s lời nói, hoặc đoạn dài 8 s (phòng ồn, không nghe ra chỗ ngừng) → gửi đi
+            if (silence > sampleRate * 6 / 10 && buf.count > sampleRate && speech > sampleRate / 5) || buf.count > sampleRate * 8 {
                 defer { reset() }
                 return buf
             }
@@ -352,6 +364,9 @@ final class GrossDictationController {
     }
     /// Whisper đang nhận dạng một đoạn vừa nói
     private(set) var whisperBusy = false
+    /// Chẩn đoán chế độ Whisper: số đoạn, độ dài, thời gian nhận dạng, kết quả gần nhất
+    private(set) var whisperInfo = ""
+    private var chunkCount = 0
     private var chunker: VoiceChunker?
     private var chunkQueue: [[Float]] = []
     private var chunkTask: Task<Void, Never>?
@@ -464,6 +479,8 @@ final class GrossDictationController {
             guard !stopping else { await teardown(); status = "Đã dừng"; return }
             liveWhisper = model
             engineLabel = model.title
+            chunkCount = 0
+            whisperInfo = "Đã nạp \(model.title) — đọc rồi ngừng nhẹ, chữ sẽ hiện sau mỗi đoạn"
             let ch = VoiceChunker { samples in Task { @MainActor in self.enqueueChunk(samples) } }
             chunker = ch
             let url = keepAudio ? newAudioURL() : nil
@@ -487,6 +504,12 @@ final class GrossDictationController {
         startChunkWorker()
     }
 
+    /// Whisper đôi khi đọc lại nguyên danh sách gợi ý khi đoạn âm thanh quá ngắn → bỏ.
+    private static func dropPromptEcho(_ t: String) -> String {
+        let head = GrossParser.vocabulary.prefix(3).joined(separator: ", ")
+        return t.localizedCaseInsensitiveContains(head) ? "" : t
+    }
+
     private var whisperPrompt: String {
         (GrossParser.vocabulary.prefix(30) + corrections.map(\.to)).joined(separator: ", ")
     }
@@ -504,8 +527,9 @@ final class GrossDictationController {
                     let t = (try? await WhisperRunner.shared.transcribe(samples: snap.samples, language: lang,
                                                                         promptText: prompt)) ?? ""
                     // đoạn đã được gửi đi nhận dạng chính thức trong lúc chờ → bỏ bản xem trước cũ
-                    if !t.isEmpty, ch.currentGeneration == snap.generation, chunkTask == nil {
-                        handle(t, isFinal: false)
+                    let clean = Self.dropPromptEcho(t)
+                    if !clean.isEmpty, ch.currentGeneration == snap.generation, chunkTask == nil {
+                        handle(clean, isFinal: false)
                     }
                 }
                 partialTask = job
@@ -525,9 +549,19 @@ final class GrossDictationController {
                 let s = chunkQueue.removeFirst()
                 whisperBusy = true
                 updateStatus()
-                if let t = try? await WhisperRunner.shared.transcribe(samples: s, language: lang, promptText: prompt),
-                   !t.isEmpty {
-                    handle(t, isFinal: true)
+                chunkCount += 1
+                let audioSec = Double(s.count) / 16_000
+                let t0 = Date()
+                do {
+                    let t = try await WhisperRunner.shared.transcribe(samples: s, language: lang, promptText: prompt)
+                    let took = Date().timeIntervalSince(t0)
+                    let clean = Self.dropPromptEcho(t)
+                    whisperInfo = String(format: "Đoạn %d · %.1f s âm thanh → %.1f s nhận dạng · ", chunkCount, audioSec, took)
+                        + (clean.isEmpty ? "(không có chữ)" : "“\(clean.suffix(60))”")
+                    if !clean.isEmpty { handle(clean, isFinal: true) }
+                } catch {
+                    whisperInfo = "Đoạn \(chunkCount): lỗi Whisper — \(error.localizedDescription)"
+                    errorText = "Whisper không nhận dạng được: \(error.localizedDescription). Thử chuyển GPU ở tab Chép lời."
                 }
             }
             whisperBusy = false

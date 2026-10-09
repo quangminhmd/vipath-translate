@@ -248,6 +248,10 @@ struct GrossDictationView: View {
                     Text(ctl.status).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
             }
+            if ctl.isRunning, ctl.engine != .apple, !ctl.whisperInfo.isEmpty {
+                Text(ctl.whisperInfo).font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
+                    .lineLimit(1).truncationMode(.tail).padding(.horizontal)
+            }
             if ctl.isRunning, !ctl.lastHeard.isEmpty {
                 Text("Nghe: “\(ctl.lastHeard)”").font(.caption2).foregroundStyle(.tertiary)
                     .lineLimit(1).truncationMode(.head).padding(.horizontal)
