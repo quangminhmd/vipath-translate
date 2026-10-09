@@ -31,9 +31,9 @@ struct ViPathTranslateApp: App {
         WindowGroup {
             TabView(selection: $router.tab) {
                 Tab("Dịch", systemImage: "character.book.closed", value: AppTab.translate) { TranslatorView() }
-                Tab("Đại thể", systemImage: "scissors", value: AppTab.gross) { GrossDictationView() }
                 Tab("Phụ đề", systemImage: "captions.bubble", value: AppTab.captions) { LiveCaptionsView() }
                 Tab("Chép lời", systemImage: "waveform", value: AppTab.transcribe) { TranscribeView() }
+                Tab("Đại thể", systemImage: "scissors", value: AppTab.gross) { GrossDictationView() }
                 Tab("Thuật ngữ", systemImage: "text.book.closed", value: AppTab.glossary) { GlossaryView() }
                     .badge(TermSuggestionStore.shared.pending.count)
                 Tab("Đã lưu", systemImage: "tray.full", value: AppTab.saved) { SavedListView() }
