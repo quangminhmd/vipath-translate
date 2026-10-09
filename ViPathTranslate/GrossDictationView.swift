@@ -117,31 +117,37 @@ struct GrossDictationView: View {
         }
     }
 
-    /// Chọn mô hình nhận dạng giọng nói.
+    /// Chọn mô hình nhận dạng giọng nói + trạng thái: đã tải / đã nạp, Neural Engine hay GPU.
     private var engineRow: some View {
         @Bindable var ctl = ctl
         let model = ctl.engine.whisperModel(for: ctl.language)
-        let ready = model.map { WhisperModelStore.shared.isReady($0) } ?? true
-        return VStack(alignment: .leading, spacing: 4) {
+        return VStack(alignment: .leading, spacing: 6) {
             Picker("Nhận dạng", selection: $ctl.engine) {
                 ForEach(GrossEngine.allCases) { Text($0.title).tag($0) }
             }
             .pickerStyle(.segmented)
             .disabled(ctl.isRunning)
-            if let model, !ready {
-                Label("Chưa tải \(model.title) (\(model.sizeLabel)) — vào tab Chép lời → chọn mô hình → Tải.",
-                      systemImage: "arrow.down.circle")
-                    .font(.caption).foregroundStyle(.orange)
+            if let model {
+                WhisperModelStatusRow(model: model)
+                    .disabled(ctl.isRunning)
+                if ctl.engine == .phoWhisper && ctl.language == .en {
+                    Text("PhoWhisper chỉ nghe tiếng Việt — tiếng Anh dùng Whisper turbo.")
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
             } else {
-                Text(ctl.engine == .phoWhisper && ctl.language == .en
-                     ? "PhoWhisper chỉ nghe tiếng Việt — tiếng Anh sẽ dùng Whisper turbo."
-                     : ctl.engine.detail)
-                    .font(.caption).foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    Image(systemName: "waveform").foregroundStyle(.secondary)
+                    Text("Apple Speech").font(.subheadline.bold())
+                    Label("Sẵn sàng · chạy trên máy", systemImage: "checkmark.circle.fill")
+                        .font(.caption).foregroundStyle(.green)
+                }
             }
+            Text(ctl.engine.detail).font(.caption2).foregroundStyle(.secondary)
         }
+        .padding(10)
+        .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 10))
     }
 
-    /// Gợi ý cấu trúc mô tả: các mục tự xuống dòng, thấy hết trong màn hình, không phải vuốt ngang.
     private func checklist(_ t: GrossTemplate) -> some View {
         FlowLayout(spacing: 6, lineSpacing: 6) {
             ForEach(t.items, id: \.self) { item in

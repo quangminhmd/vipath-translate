@@ -101,6 +101,8 @@ struct TranscribeView: View {
             } label: {
                 FastStatusLabel(direction: tc.language.direction)
             }
+            .padding(10)
+            .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 10))
 
             if tc.fileName.isEmpty {
                 VStack(spacing: 10) {
@@ -149,13 +151,12 @@ struct TranscribeView: View {
         }
     }
 
-    // MARK: Bộ nhận dạng (Apple Speech / Whisper trên Neural Engine)
+    // MARK: Bộ nhận dạng — gọn: chọn mô hình · trạng thái tải/nạp · Neural Engine/GPU · tuỳ chọn ẩn
 
     @ViewBuilder
     private var engineRow: some View {
         @Bindable var tc = tc
-        let store = WhisperModelStore.shared
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Label("Bộ nhận dạng", systemImage: "cpu").font(.subheadline)
                 Spacer()
@@ -168,75 +169,41 @@ struct TranscribeView: View {
                 .disabled(tc.isBusy)
             }
             if let wm = tc.engine.whisper {
-                switch store.state(wm) {
-                case .ready:
-                    HStack {
-                        Label("Đã tải · chạy trên Neural Engine, offline", systemImage: "checkmark.circle.fill")
-                            .font(.caption).foregroundStyle(.green)
-                        Spacer()
-                        Menu {
-                            Button("Xoá mô hình (\(wm.sizeLabel))", systemImage: "trash", role: .destructive) {
-                                store.delete(wm)
+                WhisperModelStatusRow(model: wm)
+                    .disabled(tc.isBusy)
+                DisclosureGroup {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Toggle("Gợi ý thuật ngữ GPB cho Whisper", isOn: $tc.useTermPrompt)
+                        Text(tc.whisperCompute == .neuralEngine
+                             ? "Neural Engine: nhanh, mát máy; lần nạp đầu iOS phải tối ưu mô hình (có thể vài phút)."
+                             : "GPU: nạp trong vài giây; chạy chung GPU với mô hình dịch.")
+                            .font(.caption2).foregroundStyle(.secondary)
+                        if WhisperModelStore.shared.isReady(wm) {
+                            Button("Xoá \(wm.title) (\(wm.sizeLabel))", systemImage: "trash", role: .destructive) {
+                                WhisperModelStore.shared.delete(wm)
                             }
-                        } label: { Image(systemName: "ellipsis").font(.caption) }
-                        .disabled(tc.isBusy)
-                    }
-                    Picker("Chạy trên", selection: $tc.whisperCompute) {
-                        ForEach(WhisperRunner.Compute.allCases) { Text($0.label).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .disabled(tc.isBusy || tc.isPreloading)
-                    if tc.isWhisperLoaded(wm) {
-                        Label("Đã nạp sẵn trên \(tc.whisperCompute.label)", systemImage: "bolt.horizontal.circle.fill")
-                            .font(.caption).foregroundStyle(.green)
-                    } else if tc.isPreloading {
-                        loadingTimer(title: "Đang nạp \(wm.title)…")
-                    } else {
-                        Button {
-                            tc.preloadWhisper()
-                        } label: {
-                            Label("Nạp sẵn mô hình (nên làm trước khi chọn tệp)", systemImage: "arrow.down.to.line.compact")
-                                .font(.caption.bold())
+                            .font(.caption)
+                            .disabled(tc.isBusy)
                         }
-                        .buttonStyle(.bordered)
-                        .disabled(tc.isBusy)
                     }
-                    Text(tc.whisperCompute == .neuralEngine
-                         ? "Neural Engine: nhanh, mát máy, nhưng LẦN ĐẦU iOS phải tối ưu mô hình (large-v3 turbo có thể 5–10 phút). Các lần sau nạp vài giây."
-                         : "GPU: nạp trong vài giây, không cần tối ưu lần đầu; chạy chung GPU với mô hình dịch nên dịch song song sẽ chậm hơn.")
+                    .font(.caption)
+                } label: {
+                    Text("Tuỳ chọn Whisper").font(.caption)
+                }
+            } else {
+                HStack(spacing: 8) {
+                    Image(systemName: "waveform").foregroundStyle(.secondary)
+                    Text("Apple Speech").font(.subheadline.bold())
+                    Label("Sẵn sàng", systemImage: "checkmark.circle.fill").font(.caption).foregroundStyle(.green)
+                }
+                if tc.language == .vi {
+                    Text("Apple Speech cho tiếng Việt kém chính xác hơn — nên dùng PhoWhisper.")
                         .font(.caption2).foregroundStyle(.secondary)
-                    Toggle("Gợi ý thuật ngữ GPB cho Whisper", isOn: $tc.useTermPrompt)
-                        .font(.caption)
-                case .downloading(let p):
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text("Đang tải \(wm.title)… \(Int(p * 100))%").font(.caption)
-                            Spacer()
-                            Button("Huỷ") { store.cancel(wm) }.font(.caption)
-                        }
-                        ProgressView(value: p)
-                        Text("Giữ app mở đến khi tải xong.").font(.caption2).foregroundStyle(.secondary)
-                    }
-                case .notDownloaded:
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(wm.summary).font(.caption).foregroundStyle(.secondary)
-                        Button {
-                            store.download(wm)
-                        } label: {
-                            Label("Tải \(wm.title) (\(wm.sizeLabel), nên dùng Wi-Fi)", systemImage: "arrow.down.circle")
-                                .font(.caption.bold())
-                        }
-                        .buttonStyle(.bordered)
-                    }
                 }
-                if let e = store.errorText {
-                    Text(e).font(.caption2).foregroundStyle(.red)
-                }
-            } else if tc.language == .vi {
-                Text("Apple Speech cho tiếng Việt có thể chưa được iOS hỗ trợ đầy đủ — nên dùng PhoWhisper.")
-                    .font(.caption).foregroundStyle(.secondary)
             }
         }
+        .padding(10)
+        .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 10))
     }
 
     private var importButtons: some View {

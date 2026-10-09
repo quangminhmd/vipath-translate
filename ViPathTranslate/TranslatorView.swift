@@ -491,6 +491,18 @@ private struct ModelPickerSheet: View {
     var body: some View {
         NavigationStack {
             List {
+                if vm.isLoading || vm.errorText != nil {
+                    Section {
+                        if vm.isLoading {
+                            ProgressView(value: vm.loadProgress) {
+                                Text("Đang nạp \(vm.selectedModel.shortName)… \(Int(vm.loadProgress * 100))%")
+                            }
+                        }
+                        if let err = vm.errorText, !vm.isLoading {
+                            Text(err).font(.footnote).foregroundStyle(.red)
+                        }
+                    }
+                }
                 Section {
                     ForEach(ModelChoice.allCases) { m in
                         Button { vm.selectedModel = m } label: {
@@ -515,28 +527,27 @@ private struct ModelPickerSheet: View {
                     Text("Lần đầu cần Internet để tải mô hình (trừ khi đã đóng gói trong app). Sau đó dịch hoàn toàn offline, văn bản không rời khỏi máy.")
                 }
 
-                Section {
+            }
+            .navigationTitle("Mô hình")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                // Nút Nạp ở góc trên phải, cạnh Xong — không phải cuộn xuống
+                ToolbarItemGroup(placement: .topBarTrailing) {
                     if vm.isLoading {
-                        ProgressView(value: vm.loadProgress) {
-                            Text("Đang nạp \(vm.selectedModel.shortName)… \(Int(vm.loadProgress * 100))%")
-                        }
+                        ProgressView()
                     } else {
-                        Button(vm.loadedModel == vm.selectedModel ? "Đã nạp" : "Nạp mô hình") {
+                        Button(vm.loadedModel == vm.selectedModel ? "Đã nạp" : "Nạp") {
                             Task {
                                 await vm.loadModel()
                                 if vm.errorText == nil { dismiss() }
                             }
                         }
+                        .fontWeight(.semibold)
                         .disabled(vm.loadedModel == vm.selectedModel || vm.isTranslating)
                     }
-                    if let err = vm.errorText {
-                        Text(err).font(.footnote).foregroundStyle(.red)
-                    }
+                    Button("Xong") { dismiss() }
                 }
             }
-            .navigationTitle("Mô hình")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Xong") { dismiss() } } }
         }
         .presentationDetents([.medium, .large])
     }

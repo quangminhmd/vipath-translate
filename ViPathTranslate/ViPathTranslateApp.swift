@@ -1,6 +1,6 @@
 import SwiftUI
 
-enum AppTab: Hashable { case translate, gross, captions, transcribe, glossary, saved }
+enum AppTab: Hashable { case translate, gross, captions, settings, transcribe, glossary, saved }
 
 /// Chuyển tab từ trong app (vd. Đại thể → Dịch sang tiếng Anh).
 @MainActor
@@ -33,6 +33,7 @@ struct ViPathTranslateApp: App {
                 Tab("Dịch", systemImage: "character.book.closed", value: AppTab.translate) { TranslatorView() }
                 Tab("Đại thể", systemImage: "scissors", value: AppTab.gross) { GrossDictationView() }
                 Tab("Phụ đề", systemImage: "captions.bubble", value: AppTab.captions) { LiveCaptionsView() }
+                Tab("Cài đặt", systemImage: "gearshape", value: AppTab.settings) { SettingsView() }
                 Tab("Chép lời", systemImage: "waveform", value: AppTab.transcribe) { TranscribeView() }
                 Tab("Thuật ngữ", systemImage: "text.book.closed", value: AppTab.glossary) { GlossaryView() }
                     .badge(TermSuggestionStore.shared.pending.count)
@@ -44,6 +45,12 @@ struct ViPathTranslateApp: App {
             .environment(transcribe)
             .environment(gross)
             .environment(router)
+            .task {
+                // "Tự nạp khi mở app" (tab Cài đặt): nạp mô hình dịch + Whisper đã chọn
+                if UserDefaults.standard.bool(forKey: "autoLoadModels") {
+                    await ModelLoader.loadAll(vm: viewModel, gross: gross, compute: transcribe.whisperCompute)
+                }
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             let active = (phase == .active)

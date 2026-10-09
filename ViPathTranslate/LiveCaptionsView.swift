@@ -44,6 +44,10 @@ struct LiveCaptionsView: View {
     private var setupPanel: some View {
         @Bindable var cc = cc
         return VStack(alignment: .leading, spacing: 10) {
+            // Mô hình dịch dùng chung với tab Dịch: thấy ngay đã nạp chưa, nạp tại chỗ
+            TranslationModelStatusRow(compact: true)
+                .padding(10)
+                .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 10))
             Picker("Nguồn âm thanh", selection: $cc.source) {
                 ForEach(LiveCaptionsController.Source.allCases) { Text($0.title).tag($0) }
             }
@@ -216,7 +220,11 @@ struct LiveCaptionsView: View {
     private var controlBar: some View {
         HStack(spacing: 12) {
             if cc.isRunning {
-                Text(cc.status).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(cc.status).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                    Text(vm.loadedModel.map { "Dịch: \($0.shortName) · \(cc.mode.title)" } ?? "Dịch: chỉ Dịch nhanh (Apple)")
+                        .font(.caption2).foregroundStyle(.tertiary)
+                }
                 Spacer()
                 Button(role: .destructive) { Task { await cc.stop() } } label: {
                     Label("Dừng", systemImage: "stop.fill")

@@ -236,6 +236,37 @@ nonisolated enum ModelDownloader {
 
 // MARK: - Chạy Whisper
 
+/// Trạng thái nạp Whisper cho giao diện (mọi tab cùng thấy: đã nạp mô hình nào, trên Neural Engine hay GPU).
+@MainActor
+@Observable
+final class WhisperStatus {
+    static let shared = WhisperStatus()
+    private(set) var loaded: WhisperModelChoice?
+    private(set) var compute: WhisperRunner.Compute?
+    private(set) var loading: WhisperModelChoice?
+    private(set) var loadingCompute: WhisperRunner.Compute?
+    private(set) var loadingSince: Date?
+    private(set) var lastError: String?
+
+    func isLoaded(_ m: WhisperModelChoice, _ c: WhisperRunner.Compute) -> Bool { loaded == m && compute == c }
+
+    fileprivate func begin(_ m: WhisperModelChoice, _ c: WhisperRunner.Compute) {
+        loading = m; loadingCompute = c; loadingSince = Date(); lastError = nil
+        if loaded != nil { loaded = nil; compute = nil }      // mô hình cũ đã bị bỏ khi bắt đầu nạp
+    }
+    fileprivate func finished(_ m: WhisperModelChoice, _ c: WhisperRunner.Compute) {
+        loaded = m; compute = c; loading = nil; loadingCompute = nil; loadingSince = nil
+    }
+    /// Mô hình nạp lỗi gần nhất (để chỉ hiện lỗi ở đúng dòng mô hình đó)
+    private(set) var failedModel: WhisperModelChoice?
+    fileprivate func failed(_ m: WhisperModelChoice, _ message: String?) {
+        loading = nil; loadingCompute = nil; loadingSince = nil; lastError = message; failedModel = message == nil ? nil : m
+    }
+    fileprivate func cleared() {
+        loaded = nil; compute = nil; loading = nil; loadingCompute = nil; loadingSince = nil; lastError = nil; failedModel = nil
+    }
+}
+
 /// Giữ một phiên WhisperKit đã nạp; bộ mã hoá âm thanh và bộ giải mã chạy trên Neural Engine.
 /// Âm thanh được cắt thành cửa sổ ≤ `maxWindow` giây tại chỗ im lặng nhất gần cuối cửa sổ.
 nonisolated final class WhisperRunner: @unchecked Sendable {
@@ -263,15 +294,31 @@ nonisolated final class WhisperRunner: @unchecked Sendable {
             loaded = nil
             loadedCompute = nil
         }
+        Task { @MainActor in WhisperStatus.shared.cleared() }
     }
 
     func isLoaded(_ m: WhisperModelChoice, _ c: Compute) -> Bool {
         lock.withLock { loaded == m && loadedCompute == c && kit != nil }
     }
 
-    /// Lượt nạp cũ (bị huỷ / bị thay bằng lượt nạp khác) hoàn tất muộn sẽ bị bỏ, không ghi đè.
+    /// Lượt nạp đang chạy — nơi khác xin nạp đúng mô hình + phần cứng đó thì chờ chung, không nạp lại từ đầu.
+    private var inFlight: (m: WhisperModelChoice, c: Compute, task: Task<Void, Error>)?
+
     @concurrent
     func load(_ m: WhisperModelChoice, compute c: Compute) async throws {
+        if isLoaded(m, c) { return }
+        let task: Task<Void, Error> = lock.withLock {
+            if let f = inFlight, f.m == m, f.c == c { return f.task }
+            let t = Task { try await self.loadNow(m, compute: c) }
+            inFlight = (m, c, t)
+            return t
+        }
+        defer { lock.withLock { if inFlight?.task == task { inFlight = nil } } }
+        try await task.value
+    }
+
+    /// Lượt nạp cũ (bị huỷ / bị thay bằng lượt nạp khác) hoàn tất muộn sẽ bị bỏ, không ghi đè.
+    private func loadNow(_ m: WhisperModelChoice, compute c: Compute) async throws {
         if isLoaded(m, c) { return }
         let gen = lock.withLock { () -> Int in
             generation += 1
@@ -280,6 +327,7 @@ nonisolated final class WhisperRunner: @unchecked Sendable {
             loadedCompute = nil
             return generation
         }
+        await MainActor.run { WhisperStatus.shared.begin(m, c) }
         let folder = WhisperModelStore.folder(m)
         let compute: ModelComputeOptions = switch c {
         case .neuralEngine:
@@ -299,7 +347,15 @@ nonisolated final class WhisperRunner: @unchecked Sendable {
                                       prewarm: false,
                                       load: true,
                                       download: false)
-        let k = try await WhisperKit(config)
+        let k: WhisperKit
+        do {
+            k = try await WhisperKit(config)
+        } catch {
+            let stillCurrent = lock.withLock { gen == generation }
+            let msg = error is CancellationError ? nil : error.localizedDescription
+            if stillCurrent { await MainActor.run { WhisperStatus.shared.failed(m, msg) } }
+            throw error
+        }
         let current = lock.withLock { () -> Bool in
             guard gen == generation else { return false }
             kit = k
@@ -308,6 +364,7 @@ nonisolated final class WhisperRunner: @unchecked Sendable {
             return true
         }
         if !current { throw CancellationError() }
+        await MainActor.run { WhisperStatus.shared.finished(m, c) }
     }
 
     /// - promptText: gợi ý thuật ngữ (vd. danh sách thuật ngữ GPB) để Whisper viết đúng chính tả
