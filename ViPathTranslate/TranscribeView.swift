@@ -74,7 +74,7 @@ struct TranscribeView: View {
                     Label(toast, systemImage: "checkmark.circle.fill")
                         .font(.subheadline.bold())
                         .padding(.horizontal, 16).padding(.vertical, 10)
-                        .background(.regularMaterial, in: .capsule)
+                        .glassEffect(.regular, in: .capsule)
                         .padding(.bottom, 70)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
@@ -144,7 +144,7 @@ struct TranscribeView: View {
                             tc.switchToGPUAndRetry()
                         }
                         .font(.caption.bold())
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.glass)
                     }
                 }
             }
@@ -212,12 +212,12 @@ struct TranscribeView: View {
             Button { showImporter = true } label: {
                 Label("Tệp", systemImage: "folder").frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
             PhotosPicker(selection: $photoItem, matching: .videos) {
                 Label(photoLabel, systemImage: "photo.on.rectangle")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.glass)
             .disabled(loadingPhoto)
         }
         .controlSize(.large)
@@ -283,7 +283,7 @@ struct TranscribeView: View {
                         Label("Dừng dịch \(tc.translatedCount)/\(tc.segments.count)", systemImage: "stop.fill")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.glass)
                 } else {
                     Button { tc.translateAll() } label: {
                         Label(tc.refinedCount == 0 ? "Dịch chuẩn sang \(target)"
@@ -292,7 +292,7 @@ struct TranscribeView: View {
                               systemImage: "character.book.closed")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.glassProminent)
                     .disabled(vm.loadedModel == nil || tc.refinedCount == tc.segments.count)
                 }
             }
@@ -306,7 +306,7 @@ struct TranscribeView: View {
                           systemImage: "bolt.fill")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.glass)
                 .disabled(tc.isFastTranslating)
             }
             if vm.loadedModel == nil {
@@ -420,9 +420,10 @@ struct TranscribeView: View {
             }
             .accessibilityLabel("Cuộn theo lời đang phát")
         }
-        .padding(.horizontal)
+        .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .background(.bar)
+        .glassEffect(.regular, in: .capsule)
+        .padding(.horizontal, 10)
     }
 
     // MARK: Hỗ trợ

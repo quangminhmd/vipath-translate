@@ -219,7 +219,7 @@ struct RedactionConfirmView: View {
                     } label: {
                         Label("Gửi tới Claude", systemImage: "paperplane.fill").frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.glassProminent)
                     .controlSize(.large)
                     .disabled(!confirmed || !claude.isReady)
                 } footer: {
@@ -328,11 +328,11 @@ private struct TermReviewRow: View {
                 Text(suggestion.model).font(.caption2).foregroundStyle(.tertiary)
                 Spacer()
                 Button("Bỏ qua", role: .destructive) { store.reject(suggestion) }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.glass)
                 Button("Duyệt") {
                     store.approve(suggestion, english: en, vietnamese: vi, note: suggestion.note, glossary: glossary)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .disabled(en.trimmingCharacters(in: .whitespaces).count < 2
                           || vi.trimmingCharacters(in: .whitespaces).count < 2)
             }

@@ -60,7 +60,7 @@ struct TranslationModelStatusRow: View {
                 Spacer()
                 if !vm.isLoading && vm.loadedModel != vm.selectedModel {
                     Button("Nạp") { Task { await vm.loadModel() } }
-                        .buttonStyle(.borderedProminent).controlSize(.small)
+                        .buttonStyle(.glassProminent).controlSize(.small)
                         .disabled(vm.isTranslating)
                 }
             }
@@ -138,7 +138,7 @@ struct WhisperModelStatusRow: View {
     @ViewBuilder private var actionButton: some View {
         switch store.state(model) {
         case .notDownloaded:
-            Button("Tải") { store.download(model) }.buttonStyle(.bordered).controlSize(.small)
+            Button("Tải") { store.download(model) }.buttonStyle(.glass).controlSize(.small)
         case .downloading:
             Button("Huỷ") { store.cancel(model) }.controlSize(.small)
         case .ready:
@@ -147,7 +147,7 @@ struct WhisperModelStatusRow: View {
                     let c = tc.whisperCompute
                     Task { try? await WhisperRunner.shared.load(model, compute: c) }
                 }
-                .buttonStyle(.borderedProminent).controlSize(.small)
+                .buttonStyle(.glassProminent).controlSize(.small)
                 .disabled(status.loading != nil || tc.isBusy)
             }
         }

@@ -72,7 +72,7 @@ struct TranslatorView: View {
                     Label("Đã lưu vào tab Đã lưu", systemImage: "checkmark.circle.fill")
                         .font(.subheadline.bold())
                         .padding(.horizontal, 16).padding(.vertical, 10)
-                        .background(.regularMaterial, in: .capsule)
+                        .glassEffect(.regular, in: .capsule)
                         .padding(.bottom, 12)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
@@ -219,7 +219,7 @@ struct TranslatorView: View {
                 Button(role: .destructive) { vm.stop() } label: {
                     Label("Dừng", systemImage: "stop.fill").frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.glass)
             } else {
                 Button {
                     editorFocused = false
@@ -228,7 +228,7 @@ struct TranslatorView: View {
                     Label("Dịch sang \(vm.direction.targetName.lowercased())", systemImage: "character.book.closed")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .disabled(vm.loadedModel == nil || vm.input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
@@ -248,7 +248,7 @@ struct TranslatorView: View {
                 Label(hasDraft ? "Hiệu đính bằng Claude" : "Dịch bằng Claude", systemImage: "sparkles")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.glass)
             .controlSize(.large)
             .disabled(empty || claude.isBusy || vm.isTranslating)
             Text(claude.isReady

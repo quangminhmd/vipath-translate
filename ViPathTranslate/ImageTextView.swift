@@ -279,18 +279,18 @@ struct ImageTextView: View {
                 PhotosPicker(selection: $photoItems, maxSelectionCount: 20, matching: .images) {
                     Label("Thư viện ảnh", systemImage: "photo.on.rectangle").frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 Button { showScanner = true } label: {
                     Label("Quét / chụp", systemImage: "doc.viewfinder").frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.glass)
                 .disabled(!VNDocumentCameraViewController.isSupported)
             }
             HStack {
                 Button { showImporter = true } label: {
                     Label("Tệp ảnh / PDF", systemImage: "folder").frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.glass)
                 Button {
                     if let img = UIPasteboard.general.image {
                         Task { await model.add(images: [img], label: "Ảnh dán") }
@@ -300,7 +300,7 @@ struct ImageTextView: View {
                 } label: {
                     Label("Dán ảnh", systemImage: "doc.on.clipboard").frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.glass)
             }
         }
         .controlSize(.regular)

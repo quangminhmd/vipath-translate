@@ -117,7 +117,7 @@ struct VoiceLabView: View {
                 } label: {
                     if busyIndex == i { ProgressView().controlSize(.small) } else { Label("Tổng hợp & phát", systemImage: "play.fill") }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.glass)
                 .disabled(busyIndex != nil || loading)
                 Spacer()
                 if let r = results[i] {

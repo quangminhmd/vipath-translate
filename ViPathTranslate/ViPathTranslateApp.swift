@@ -39,6 +39,7 @@ struct ViPathTranslateApp: App {
                 Tab("Đã lưu", systemImage: "tray.full", value: AppTab.saved) { SavedListView() }
                 Tab("Cài đặt", systemImage: "gearshape", value: AppTab.settings) { SettingsView() }
             }
+            .tabBarMinimizeBehavior(.onScrollDown)
             .environment(viewModel)
             .environment(typing)
             .environment(captions)

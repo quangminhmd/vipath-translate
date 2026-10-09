@@ -80,7 +80,8 @@ struct LiveCaptionsView: View {
             }
         }
         .padding()
-        .background(.bar)
+        .glassEffect(.regular, in: .rect(cornerRadius: 26))
+        .padding(.horizontal, 10)
     }
 
     // MARK: Hai khung chạy song song: trên = nghe được (tiếng Anh), dưới = phụ đề tiếng Việt
@@ -229,7 +230,7 @@ struct LiveCaptionsView: View {
                 Button(role: .destructive) { Task { await cc.stop() } } label: {
                     Label("Dừng", systemImage: "stop.fill")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.glass)
             } else {
                 Button("Xoá", systemImage: "trash") { cc.clear() }
                     .disabled(cc.captions.isEmpty)
@@ -237,13 +238,16 @@ struct LiveCaptionsView: View {
                 Button { Task { await cc.start() } } label: {
                     Label("Bắt đầu nghe", systemImage: "mic.fill")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.glassProminent)
                 .disabled(vm.loadedModel == nil && !FastTranslator.shared.isActive(.enToVi))
             }
         }
         .controlSize(.large)
-        .padding()
-        .background(.bar)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 12)
+        .glassEffect(.regular, in: .capsule)
+        .padding(.horizontal, 10)
+        .padding(.bottom, 2)
     }
 
     private var settings: some View {

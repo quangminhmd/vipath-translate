@@ -34,7 +34,7 @@ struct GrossDictationView: View {
                         } label: {
                             Label("Thêm cát xét", systemImage: "plus.square.on.square")
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.glass)
                         if let e = ctl.errorText {
                             Text(e).font(.footnote).foregroundStyle(.red)
                         }
@@ -54,7 +54,7 @@ struct GrossDictationView: View {
             .overlay(alignment: .top) {
                 if let toast {
                     Text(toast).font(.footnote.bold()).padding(.horizontal, 14).padding(.vertical, 8)
-                        .background(.thinMaterial, in: .capsule).transition(.move(edge: .top).combined(with: .opacity))
+                        .glassEffect(.regular, in: .capsule).transition(.move(edge: .top).combined(with: .opacity))
                 }
             }
             .navigationTitle("Đại thể")
@@ -95,7 +95,7 @@ struct GrossDictationView: View {
                     Label(ctl.template?.name ?? "Mẫu", systemImage: "list.bullet.clipboard")
                         .lineLimit(1)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.glass)
             }
             engineRow
             HStack(spacing: 8) {
@@ -273,18 +273,21 @@ struct GrossDictationView: View {
                     Image(systemName: ctl.isRunning ? "stop.fill" : "mic.fill")
                         .font(.system(size: 30, weight: .semibold))
                         .frame(width: 76, height: 76)
-                        .background(ctl.isRunning ? Color.red : Color.accentColor, in: .circle)
                         .foregroundStyle(.white)
+                        .glassEffect(.regular.tint(ctl.isRunning ? Color.red : Color.accentColor).interactive(), in: .circle)
                 }
+                .buttonStyle(.plain)
                 .disabled(ctl.isRewriting)
                 .accessibilityLabel(ctl.isRunning ? "Dừng ghi" : "Bắt đầu ghi")
                 barButton("plus.square.on.square", "Cát xét +") { ctl.addCassette() }
                 barButton("text.alignleft", "Mô tả") { ctl.select(target: -1) }
             }
         }
-        .padding(.vertical, 10)
+        .padding(.vertical, 12)
         .frame(maxWidth: .infinity)
-        .background(.bar)
+        .glassEffect(.regular, in: .rect(cornerRadius: 34))
+        .padding(.horizontal, 10)
+        .padding(.bottom, 2)
     }
 
     private func barButton(_ icon: String, _ title: String, action: @escaping () -> Void) -> some View {
@@ -482,7 +485,7 @@ struct PathcodeScannerSheet: View {
                 .overlay(alignment: .bottom) {
                     Text("Hướng camera vào mã vạch trên nhãn — hoặc chạm vào dòng chữ pathcode")
                         .font(.footnote.bold()).padding(10)
-                        .background(.thinMaterial, in: .capsule).padding(.bottom, 30)
+                        .glassEffect(.regular, in: .capsule).padding(.bottom, 30)
                 }
                 .navigationTitle("Quét pathcode")
                 .navigationBarTitleDisplayMode(.inline)
