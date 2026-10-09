@@ -248,12 +248,47 @@ export function userPrompt(text, hits, dir) {
   return (hits.length ? `TERMS (must use):\n${glossaryBlock(hits)}\n\n` : '') + `Translate into English:\n\n${text}`;
 }
 
+/** Họ mô hình suy ra từ tên trên máy chủ cục bộ (Ollama / LM Studio). */
+export function localFamily(model) {
+  const m = String(model || '').toLowerCase();
+  if (m.includes('translategemma')) return 'translateGemma';
+  if (m.includes('hunyuan')) return 'hunyuanMT';
+  return 'chat';
+}
+
+/**
+ * Tin nhắn cho máy chủ cục bộ. TranslateGemma và Hunyuan-MT được huấn luyện với một tin nhắn user
+ * duy nhất (không system prompt) → dựng đúng câu lệnh gốc, chèn khối thuật ngữ gọn.
+ */
+export function localMessages(model, text, hits, dir, styleGuide = '') {
+  const fam = localFamily(model);
+  const src = dir.id === 'enToVi' ? 'English' : 'Vietnamese';
+  const tgt = dir.id === 'enToVi' ? 'Vietnamese' : 'English';
+  const terms = hits.length ? glossaryBlock(hits, 0) : '';
+  const body = text.trim();
+  if (fam === 'translateGemma') {
+    let s = `You are a professional ${src} (${dir.src}) to ${tgt} (${dir.tgt}) translator specialising in anatomical pathology. ` +
+      `Your goal is to accurately convey the meaning and nuances of the original ${src} text while adhering to ${tgt} medical terminology.\n` +
+      `Produce only the ${tgt} translation, without any additional explanations or commentary.\n` +
+      'Keep gene, protein, antibody and marker names, TNM codes and person names unchanged.';
+    if (terms) s += `\nUse exactly these ${tgt} terms:\n${terms}`;
+    s += `\nPlease translate the following ${src} text into ${tgt}:\n\n\n${body}`;
+    return [{ role: 'user', content: s }];
+  }
+  if (fam === 'hunyuanMT') {
+    let s = `Translate the following segment into ${tgt}, without additional explanation.`;
+    if (terms) s += ` Use these term translations:\n${terms}`;
+    return [{ role: 'user', content: `${s}\n\n${body}` }];
+  }
+  return [{ role: 'system', content: systemPrompt(dir, styleGuide) }, { role: 'user', content: userPrompt(body, hits, dir) }];
+}
+
 /** Bỏ phần suy luận <think>…</think> và chuỗi dừng. */
 export function cleanOutput(raw) {
   let t = raw.replace(/<think>[\s\S]*?<\/think>/g, '');
   const open = t.indexOf('<think>');
   if (open >= 0) t = t.slice(0, open);
-  for (const m of ['<end_of_turn>', '<|im_end|>', '<eos>']) { const i = t.indexOf(m); if (i >= 0) t = t.slice(0, i); }
+  for (const m of ['<end_of_turn>', '<|im_end|>', '<eos>', '<|eos|>', '<|endoftext|>']) { const i = t.indexOf(m); if (i >= 0) t = t.slice(0, i); }
   return t.trim();
 }
 

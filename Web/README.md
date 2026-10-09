@@ -23,6 +23,25 @@ Bản trình duyệt của ViPath Translate, gói trong một tệp: `ViPath.htm
 | Thuật ngữ, Đã lưu | Lưu trong IndexedDB của trình duyệt, không gửi đi đâu |
 | Đọc tiếng Việt | Giọng tiếng Việt của hệ điều hành, kèm chuẩn hoá ký hiệu GPB (p.R132H, 1p/19q, CD20) |
 
+## Mô hình lớn qua máy chủ cục bộ (TranslateGemma 12B/27B, Hunyuan-MT-7B)
+
+Trình duyệt chỉ chạy được mô hình ≤ 9B. Mô hình lớn hơn chạy bằng Ollama hoặc LM Studio trên PC/Mac,
+ViPath gọi qua API kiểu OpenAI — văn bản không ra Internet.
+
+| Mô hình | Ollama | Dung lượng | Phần cứng gợi ý |
+|---|---|---|---|
+| TranslateGemma 27B | `ollama pull translategemma:27b` | 17 GB | GPU ≥ 20 GB VRAM hoặc Mac ≥ 32 GB RAM |
+| TranslateGemma 12B | `ollama pull translategemma:12b` | 8 GB | GPU ≥ 10 GB hoặc Mac ≥ 16 GB |
+| Hunyuan-MT-7B | LM Studio: tìm "Hunyuan-MT-7B" (GGUF) | ≈ 4,5 GB (Q4) | GPU ≥ 6 GB hoặc Mac ≥ 16 GB |
+
+1. Ollama: đặt biến môi trường `OLLAMA_ORIGINS=*` (Windows: System → Environment Variables; Mac: `launchctl setenv OLLAMA_ORIGINS "*"`), khởi động lại Ollama.
+   LM Studio: Developer → bật **Enable CORS** → **Start Server** (địa chỉ `http://localhost:1234/v1`).
+2. ViPath → Cài đặt → Mô hình dịch offline → **Máy chủ cục bộ** → **Liệt kê mô hình** → chọn → **Nạp mô hình**.
+3. Từ iPad/điện thoại trong cùng mạng LAN: thay `localhost` bằng IP của máy chạy mô hình.
+
+TranslateGemma và Hunyuan-MT được gửi đúng câu lệnh gốc mà mô hình được huấn luyện (một tin nhắn, không system prompt),
+kèm khối thuật ngữ từ glossary.
+
 ## Khác bản app iPhone
 - Không có VieNeu-TTS và Apple Translation. Mô hình PhoWhisper chưa có bản cho trình duyệt; dùng Whisper large-v3 turbo cho tiếng Việt.
 - Trình duyệt trên điện thoại không thu được âm thanh của app khác.

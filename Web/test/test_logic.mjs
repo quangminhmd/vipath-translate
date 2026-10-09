@@ -47,5 +47,14 @@ ok(L.srtTime(3723.5) === '01:02:03,500', 'srt time');
 const seg = L.segmentText('Line one.\n\nLine two\nLine three');
 ok(seg.length === 3 && seg[1].passthrough, 'segment');
 ok(L.cleanOutput('<think>x</think>Xin chào<|im_end|>rác') === 'Xin chào', 'clean');
+// Máy chủ cục bộ
+const hit = [{ matched: 'clear cell', translations: ['tế bào sáng'], ambiguous: false, notes: [] }];
+const tg = L.localMessages('translategemma:27b', 'Clear cell carcinoma.', hit, L.DIR.enToVi);
+ok(tg.length === 1 && tg[0].role === 'user' && tg[0].content.includes('English (en) to Vietnamese (vi)') && tg[0].content.includes('- clear cell → tế bào sáng') && tg[0].content.endsWith(':\n\n\nClear cell carcinoma.'), 'local tg ' + JSON.stringify(tg));
+const hy = L.localMessages('hunyuan-mt-7b', 'Ung thư biểu mô.', [], L.DIR.viToEn);
+ok(hy.length === 1 && hy[0].content === 'Translate the following segment into English, without additional explanation.\n\nUng thư biểu mô.', 'local hy ' + JSON.stringify(hy));
+const qw = L.localMessages('qwen3:32b', 'x', [], L.DIR.enToVi);
+ok(qw.length === 2 && qw[0].role === 'system', 'local chat');
+ok(L.cleanOutput('Carcinoma.<|eos|>') === 'Carcinoma.', 'clean hunyuan');
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đạt');
 process.exit(fails ? 1 : 0);

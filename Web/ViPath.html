@@ -713,12 +713,47 @@ function userPrompt(text, hits, dir) {
   return (hits.length ? `TERMS (must use):\n${glossaryBlock(hits)}\n\n` : '') + `Translate into English:\n\n${text}`;
 }
 
+/** Họ mô hình suy ra từ tên trên máy chủ cục bộ (Ollama / LM Studio). */
+function localFamily(model) {
+  const m = String(model || '').toLowerCase();
+  if (m.includes('translategemma')) return 'translateGemma';
+  if (m.includes('hunyuan')) return 'hunyuanMT';
+  return 'chat';
+}
+
+/**
+ * Tin nhắn cho máy chủ cục bộ. TranslateGemma và Hunyuan-MT được huấn luyện với một tin nhắn user
+ * duy nhất (không system prompt) → dựng đúng câu lệnh gốc, chèn khối thuật ngữ gọn.
+ */
+function localMessages(model, text, hits, dir, styleGuide = '') {
+  const fam = localFamily(model);
+  const src = dir.id === 'enToVi' ? 'English' : 'Vietnamese';
+  const tgt = dir.id === 'enToVi' ? 'Vietnamese' : 'English';
+  const terms = hits.length ? glossaryBlock(hits, 0) : '';
+  const body = text.trim();
+  if (fam === 'translateGemma') {
+    let s = `You are a professional ${src} (${dir.src}) to ${tgt} (${dir.tgt}) translator specialising in anatomical pathology. ` +
+      `Your goal is to accurately convey the meaning and nuances of the original ${src} text while adhering to ${tgt} medical terminology.\n` +
+      `Produce only the ${tgt} translation, without any additional explanations or commentary.\n` +
+      'Keep gene, protein, antibody and marker names, TNM codes and person names unchanged.';
+    if (terms) s += `\nUse exactly these ${tgt} terms:\n${terms}`;
+    s += `\nPlease translate the following ${src} text into ${tgt}:\n\n\n${body}`;
+    return [{ role: 'user', content: s }];
+  }
+  if (fam === 'hunyuanMT') {
+    let s = `Translate the following segment into ${tgt}, without additional explanation.`;
+    if (terms) s += ` Use these term translations:\n${terms}`;
+    return [{ role: 'user', content: `${s}\n\n${body}` }];
+  }
+  return [{ role: 'system', content: systemPrompt(dir, styleGuide) }, { role: 'user', content: userPrompt(body, hits, dir) }];
+}
+
 /** Bỏ phần suy luận <think>…</think> và chuỗi dừng. */
 function cleanOutput(raw) {
   let t = raw.replace(/<think>[\s\S]*?<\/think>/g, '');
   const open = t.indexOf('<think>');
   if (open >= 0) t = t.slice(0, open);
-  for (const m of ['<end_of_turn>', '<|im_end|>', '<eos>']) { const i = t.indexOf(m); if (i >= 0) t = t.slice(0, i); }
+  for (const m of ['<end_of_turn>', '<|im_end|>', '<eos>', '<|eos|>', '<|endoftext|>']) { const i = t.indexOf(m); if (i >= 0) t = t.slice(0, i); }
   return t.trim();
 }
 
@@ -1092,7 +1127,92 @@ const LLM_MODELS = [
 ];
 const llm = { engine: null, modelId: null, loading: false, progress: 0, progressText: '', tps: 0, queue: Promise.resolve(), error: '' };
 const modelIdFor = (id) => (device.f16 ? id : id.replace('q4f16_1', 'q4f32_1'));
-const llmName = () => LLM_MODELS.find((m) => modelIdFor(m.id) === llm.modelId)?.name || llm.modelId || '';
+const llmName = () => llm.engine?.local ? `${llm.engine.model} (máy chủ cục bộ)`
+  : LLM_MODELS.find((m) => modelIdFor(m.id) === llm.modelId)?.name || llm.modelId || '';
+
+// ---------- Máy chủ cục bộ (Ollama / LM Studio, API kiểu OpenAI) ----------
+// Dùng cho mô hình quá lớn với trình duyệt: TranslateGemma 12B/27B, Hunyuan-MT-7B, Gemma 3 27B…
+// Mô hình chạy trên GPU/RAM của PC/Mac; văn bản chỉ đi tới địa chỉ do bạn nhập (mặc định localhost).
+const LOCAL_DEFAULT_URL = 'http://localhost:11434/v1';
+const localCfg = {
+  url: () => store.get('localUrl', LOCAL_DEFAULT_URL),
+  model: () => store.get('localModel', 'translategemma:27b'),
+};
+const normBase = (u) => String(u || '').trim().replace(/\/+$/, '').replace(/\/chat\/completions$/, '');
+function localFetchError(e, base) {
+  if (e?.name === 'AbortError') return e;
+  const hint = base.includes('11434')
+    ? 'Ollama: đặt biến môi trường OLLAMA_ORIGINS="*" rồi khởi động lại Ollama.'
+    : 'LM Studio: Developer → bật "Enable CORS" và Start Server.';
+  return new Error(`Không kết nối được ${base}. Kiểm tra máy chủ đang chạy; ${hint}`);
+}
+async function localListModels(base) {
+  base = normBase(base);
+  let r;
+  try { r = await fetch(base + '/models', { signal: AbortSignal.timeout(6000) }); } catch (e) { throw localFetchError(e, base); }
+  if (!r.ok) throw new Error(`Máy chủ trả lỗi ${r.status} tại ${base}/models`);
+  const j = await r.json();
+  return (j.data || []).map((m) => m.id).filter(Boolean);
+}
+/** Đọc luồng SSE "data: {...}" của API kiểu OpenAI thành async iterator các chunk JSON. */
+async function* sseChunks(body) {
+  const reader = body.getReader();
+  const dec = new TextDecoder();
+  let buf = '';
+  try {
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+        if (!line.startsWith('data:')) continue;
+        const data = line.slice(5).trim();
+        if (data === '[DONE]') return;
+        try { yield JSON.parse(data); } catch { /* dòng hỏng — bỏ qua */ }
+      }
+    }
+  } catch (e) { if (e?.name !== 'AbortError') throw e; } finally { try { reader.releaseLock(); } catch { /* */ } }
+}
+/** Bọc máy chủ cục bộ thành đối tượng có cùng giao diện với engine WebLLM. */
+function makeLocalEngine(base, model) {
+  let ctrl = null;
+  return {
+    local: true, base, model,
+    chat: { completions: { async create(req) {
+      ctrl = new AbortController();
+      const { extra_body: _ignored, ...rest } = req;
+      let r;
+      try {
+        r = await fetch(base + '/chat/completions', { method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ...rest, model }), signal: ctrl.signal });
+      } catch (e) { throw localFetchError(e, base); }
+      if (!r.ok) { let m = ''; try { m = (await r.json()).error?.message || ''; } catch { /* */ } throw new Error(`Máy chủ cục bộ lỗi ${r.status}${m ? ': ' + m : ''}`); }
+      return sseChunks(r.body);
+    } } },
+    interruptGenerate() { ctrl?.abort(); },
+    async unload() { ctrl?.abort(); },
+  };
+}
+async function loadLocal(url, model) {
+  const base = normBase(url);
+  if (!model) throw new Error('Nhập tên mô hình trên máy chủ (vd. translategemma:27b).');
+  llm.loading = true; llm.progress = 0; llm.progressText = 'Đang kết nối máy chủ cục bộ…'; llm.error = ''; updateChips(); refreshSettingsProgress();
+  try {
+    const ids = await localListModels(base);
+    if (ids.length && !ids.includes(model)) throw new Error(`Máy chủ không có "${model}". Có: ${ids.slice(0, 12).join(', ')}`);
+    if (llm.engine) { try { await llm.engine.unload(); } catch { /* bỏ qua */ } }
+    llm.engine = makeLocalEngine(base, model);
+    llm.modelId = 'local:' + model;
+    store.set('localUrl', base); store.set('localModel', model); store.set('llmModel', 'local');
+  } catch (e) {
+    llm.error = e.message || String(e);
+    throw e;
+  } finally {
+    llm.loading = false; updateChips(); refreshSettingsProgress();
+  }
+}
 
 async function loadLLM(baseId) {
   await checkDevice();
@@ -1126,10 +1246,10 @@ function translateLLM(text, hits, dir, onText, isCancelled = () => false) {
   return runQueued(async () => {
     if (!llm.engine) throw new Error('Chưa nạp mô hình dịch — mở Cài đặt để nạp.');
     if (isCancelled()) throw new Cancelled();
-    const messages = [
-      { role: 'system', content: systemPrompt(dir, dir.id === 'enToVi' ? styleGuide : '') },
-      { role: 'user', content: userPrompt(text, hits, dir) },
-    ];
+    const guide = dir.id === 'enToVi' ? styleGuide : '';
+    const messages = llm.engine.local
+      ? localMessages(llm.engine.model, text, hits, dir, guide)
+      : [{ role: 'system', content: systemPrompt(dir, guide) }, { role: 'user', content: userPrompt(text, hits, dir) }];
     const t0 = performance.now();
     let first = 0, out = '', tokens = 0, lastEmit = 0;
     const stream = await llm.engine.chat.completions.create({
@@ -2302,7 +2422,7 @@ function refreshSettingsProgress() {
   p.hidden = !llm.loading;
   $('progress', p).value = llm.progress;
   $('.small', p).textContent = llm.progressText;
-  $('#st-llm-status', settingsModal.el).innerHTML = llm.engine ? `<span class="ok">Đã nạp ${esc(llmName())} · chạy trên máy</span>` : llm.error ? `<span class="danger">${esc(llm.error)}</span>` : 'Chưa nạp';
+  $('#st-llm-status', settingsModal.el).innerHTML = llm.engine ? `<span class="ok">Đã nạp ${esc(llmName())}${llm.engine.local ? '' : ' · chạy trên máy'}</span>` : llm.error ? `<span class="danger">${esc(llm.error)}</span>` : 'Chưa nạp';
   $('#st-llm-load', settingsModal.el).disabled = llm.loading;
 }
 async function openSettings(focus) {
@@ -2319,7 +2439,17 @@ async function openSettings(focus) {
 
     <div class="card" style="box-shadow:none">
       <div class="card-head"><h2>Mô hình dịch offline</h2></div>
-      <select id="st-llm">${LLM_MODELS.map((m) => `<option value="${m.id}" ${m.id === savedLLM ? 'selected' : ''}>${m.name} · ${m.size} — ${m.note}</option>`).join('')}</select>
+      <select id="st-llm">${LLM_MODELS.map((m) => `<option value="${m.id}" ${m.id === savedLLM ? 'selected' : ''}>${m.name} · ${m.size} — ${m.note}</option>`).join('')}
+        <option value="local" ${savedLLM === 'local' ? 'selected' : ''}>Máy chủ cục bộ (Ollama / LM Studio) — TranslateGemma 12B/27B, Hunyuan-MT-7B…</option></select>
+      <div class="stack" id="st-local" ${savedLLM === 'local' ? '' : 'hidden'}>
+        <div class="row"><input id="st-local-url" value="${esc(localCfg.url())}" placeholder="${LOCAL_DEFAULT_URL}" style="flex:1;min-width:200px">
+          <button class="btn ghost" id="st-local-list">Liệt kê mô hình</button></div>
+        <div class="row"><input id="st-local-model" list="st-local-models" value="${esc(localCfg.model())}" placeholder="translategemma:27b" style="flex:1;min-width:200px"><datalist id="st-local-models"></datalist></div>
+        <div class="tiny muted">Chạy mô hình lớn trên PC/Mac của bạn rồi app gọi qua mạng nội bộ — văn bản không ra Internet.
+          Ollama: <span class="mono">ollama pull translategemma:27b</span> (17 GB, cần GPU ≥ 20 GB hoặc Mac ≥ 32 GB) hoặc <span class="mono">translategemma:12b</span> (8 GB);
+          đặt <span class="mono">OLLAMA_ORIGINS=*</span> để trình duyệt gọi được. LM Studio: tải bản GGUF (vd. Hunyuan-MT-7B, translategemma-27b), Developer → Enable CORS → Start Server, địa chỉ <span class="mono">http://localhost:1234/v1</span>.
+          Mở app từ máy khác trong mạng LAN: thay localhost bằng IP của máy chạy mô hình.</div>
+      </div>
       <div class="row"><button class="btn primary" id="st-llm-load">Nạp mô hình</button><span class="small" id="st-llm-status"></span></div>
       <div class="stack" id="st-llm-progress" hidden><progress max="1" value="0"></progress><span class="small muted"></span></div>
       <div class="tiny muted">Lần đầu tải từ Hugging Face rồi lưu trong trình duyệt; sau đó dịch offline, văn bản không rời khỏi máy.</div>
@@ -2358,8 +2488,23 @@ async function openSettings(focus) {
     <div class="foot"><button class="btn primary" data-close>Xong</button></div>`, { onClose: () => { settingsModal = null; updateChips(); renderClaudeRow(); updateCapHint(); } });
   const el = settingsModal.el;
   refreshSettingsProgress();
+  $('#st-llm', el).addEventListener('change', (e) => { $('#st-local', el).hidden = e.target.value !== 'local'; });
+  $('#st-local-list', el).addEventListener('click', async () => {
+    const b = $('#st-local-list', el); b.textContent = 'Đang hỏi…';
+    try {
+      const ids = await localListModels($('#st-local-url', el).value);
+      $('#st-local-models', el).innerHTML = ids.map((i) => `<option value="${esc(i)}">`).join('');
+      toast(ids.length ? `Máy chủ có ${ids.length} mô hình: ${ids.slice(0, 6).join(', ')}${ids.length > 6 ? '…' : ''}` : 'Máy chủ chưa có mô hình nào');
+    } catch (e) { toast(e.message || String(e)); }
+    b.textContent = 'Liệt kê mô hình';
+  });
   $('#st-llm-load', el).addEventListener('click', async () => {
-    try { await loadLLM($('#st-llm', el).value); toast('Đã nạp mô hình'); T.liveCache.clear(); } catch (e) { toast(e.message || String(e)); }
+    const v = $('#st-llm', el).value;
+    try {
+      if (v === 'local') await loadLocal($('#st-local-url', el).value, $('#st-local-model', el).value.trim());
+      else await loadLLM(v);
+      toast('Đã nạp mô hình'); T.liveCache.clear();
+    } catch (e) { toast(e.message || String(e)); }
     refreshSettingsProgress();
   });
   $('#st-cap-whisper', el).addEventListener('change', (e) => store.set('capWhisper', e.target.value));

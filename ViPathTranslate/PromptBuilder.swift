@@ -82,8 +82,25 @@ enum PromptBuilder {
         return "<start_of_turn>user\n\(instruction)<end_of_turn>\n<start_of_turn>model\n"
     }
 
+    // MARK: Hunyuan-MT — prompt thô theo chat template của Tencent
+    //
+    // Template: "<|startoftext|>" + nội dung user + "<|extra_0|>"; mô hình trả lời rồi kết thúc bằng
+    // "<|eos|>". Hunyuan-MT được huấn luyện với đúng một câu lệnh ngắn và KHÔNG dùng system prompt,
+    // nên chỉ thêm khối thuật ngữ gọn ở giữa câu lệnh và văn bản nguồn.
+
+    static func hunyuanRaw(text: String, hits: [GlossaryHit],
+                           direction: TranslationDirection = .enToVi) -> String {
+        let tgt = direction == .enToVi ? "Vietnamese" : "English"
+        var prompt = "Translate the following segment into \(tgt), without additional explanation."
+        if !hits.isEmpty {
+            prompt += " Use these term translations:\n\(glossaryBlock(hits, maxNoteLength: 0))"
+        }
+        prompt += "\n\n\(text.trimmingCharacters(in: .whitespacesAndNewlines))"
+        return "<|startoftext|>\(prompt)<|extra_0|>"
+    }
+
     /// Chuỗi dừng / rác cần cắt khỏi đầu ra.
-    static let stopMarkers = ["<end_of_turn>", "<|im_end|>", "<eos>"]
+    static let stopMarkers = ["<end_of_turn>", "<|im_end|>", "<eos>", "<|eos|>", "<|endoftext|>"]
 
     static func clean(_ raw: String) -> String {
         var t = raw

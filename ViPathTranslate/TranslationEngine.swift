@@ -2,6 +2,7 @@ import Foundation
 import MLX
 import MLXLLM
 import MLXLMCommon
+import os
 
 /// Nạp mô hình MLX và dịch từng đoạn. Viết cho mlx-swift-lm 2.31.x
 /// (bản đầu tiên hỗ trợ Qwen3.5: model type `qwen3_5` / `qwen3_5_text`).
@@ -36,6 +37,17 @@ actor TranslationEngine {
         loaded = nil
         Memory.clearCache()
 
+        // Kiểm tra RAM còn trống: mô hình 9B/12B sát giới hạn của iPhone 12 GB,
+        // báo lỗi rõ ràng thay vì để iOS đóng app giữa chừng.
+        let available = UInt64(os_proc_available_memory())
+        if available > 0, available < choice.requiredFreeBytes {
+            throw EngineError.insufficientMemory(needGB: Double(choice.requiredFreeBytes) / 1_073_741_824,
+                                                 freeGB: Double(available) / 1_073_741_824)
+        }
+        if choice.needsCustomArchitecture {
+            await HunyuanRegistration.register()
+        }
+
         let configuration: ModelConfiguration
         if let dir = Bundle.main.url(forResource: choice.bundleFolder, withExtension: nil) {
             configuration = ModelConfiguration(directory: dir)   // đóng gói sẵn → offline ngay
@@ -65,7 +77,9 @@ actor TranslationEngine {
         let family = model.family
         let system = PromptBuilder.qwenSystem(direction: direction, styleGuide: styleGuide)
         let user = PromptBuilder.qwenUser(text: text, hits: hits, direction: direction)
-        let raw = PromptBuilder.translateGemmaRaw(text: text, hits: hits, direction: direction)
+        let raw = family == .hunyuanMT
+            ? PromptBuilder.hunyuanRaw(text: text, hits: hits, direction: direction)
+            : PromptBuilder.translateGemmaRaw(text: text, hits: hits, direction: direction)
 
         return try await container.perform { context in
             let parameters = GenerateParameters(maxTokens: maxTokens,
@@ -81,6 +95,10 @@ actor TranslationEngine {
                 input = try await context.processor.prepare(input: userInput)
             case .translateGemma:
                 let tokens = context.tokenizer.encode(text: raw)
+                input = LMInput(tokens: MLXArray(tokens.map(Int32.init)))
+            case .hunyuanMT:
+                // Prompt đã có sẵn <|startoftext|> → không để tokenizer thêm BOS lần nữa.
+                let tokens = context.tokenizer.encode(text: raw, addSpecialTokens: false)
                 input = LMInput(tokens: MLXArray(tokens.map(Int32.init)))
             }
 
@@ -137,8 +155,11 @@ actor TranslationEngine {
     enum EngineError: LocalizedError {
         case notLoaded
         case simulator
+        case insufficientMemory(needGB: Double, freeGB: Double)
         var errorDescription: String? {
             switch self {
+            case .insufficientMemory(let need, let free):
+                String(format: "Không đủ RAM: mô hình cần ≈%.1f GB nhưng app chỉ còn %.1f GB. Hãy đóng Whisper (tab Chép lời) và các app khác, hoặc chọn mô hình nhỏ hơn.", need, free)
             case .notLoaded: "Chưa nạp mô hình."
             case .simulator: "MLX không chạy trên iOS Simulator — hãy chạy app trên iPhone thật để dịch."
             }
