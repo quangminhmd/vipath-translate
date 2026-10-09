@@ -19,13 +19,7 @@ final class VieNeuPlayer {
     /// Giữ nguyên nếu phụ đề đang dùng playAndRecord (micro + đọc bản dịch).
     /// Chạy ngoài luồng giao diện: setCategory/setActive có thể chặn vài trăm ms.
     nonisolated static func preparePlaybackSession() async {
-        await Task.detached(priority: .userInitiated) {
-            let session = AVAudioSession.sharedInstance()
-            if session.category != .playAndRecord && session.category != .playback {
-                try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
-            }
-            try? session.setActive(true)
-        }.value
+        await AudioSessionControl.preparePlayback()
     }
 
     func schedule(_ audio: VieNeuAudio) throws {

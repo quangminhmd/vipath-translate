@@ -149,11 +149,9 @@ nonisolated final class DictationMicrophone: @unchecked Sendable {
 
     func start(format: AVAudioFormat, recordTo url: URL?,
                onLevel: (@Sendable (_ rms: Float, _ seconds: Double) -> Void)? = nil,
-               onBuffer: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws {
-        let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .default,
-                                options: [.allowBluetoothHFP, .defaultToSpeaker, .mixWithOthers])
-        try session.setActive(true)
+               onBuffer: @escaping @Sendable (AVAudioPCMBuffer) -> Void) async throws {
+        try await AudioSessionControl.activate(.playAndRecord, mode: .default,
+                                               options: [.allowBluetoothHFP, .defaultToSpeaker, .mixWithOthers])
 
         if let url {
             let f = try AVAudioFile(forWriting: url, settings: Self.recordFormat.settings,
@@ -185,7 +183,7 @@ nonisolated final class DictationMicrophone: @unchecked Sendable {
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
         lock.withLock { file = nil }        // đóng tệp
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        AudioSessionControl.deactivate()
     }
 }
 
@@ -459,7 +457,7 @@ final class GrossDictationController {
             committedWords = 0
             let g = SilenceGate { Task { @MainActor in self.commitVolatile() } }
             gate = g
-            try m.start(format: format, recordTo: url, onLevel: { rms, sec in g.level(rms, seconds: sec) }) { buffer in rec.feed(buffer) }
+            try await m.start(format: format, recordTo: url, onLevel: { rms, sec in g.level(rms, seconds: sec) }) { buffer in rec.feed(buffer) }
             mic = m
             if let url { appendAudio(url) }
             status = "Đang nghe · \(targetLabel)"
@@ -487,7 +485,7 @@ final class GrossDictationController {
             chunker = ch
             let url = keepAudio ? newAudioURL() : nil
             let m = DictationMicrophone()
-            try m.start(format: DictationMicrophone.recordFormat, recordTo: url) { buffer in ch.feed(buffer) }
+            try await m.start(format: DictationMicrophone.recordFormat, recordTo: url) { buffer in ch.feed(buffer) }
             mic = m
             if let url { appendAudio(url) }
             status = "Đang nghe (\(model.title)) · \(targetLabel)"

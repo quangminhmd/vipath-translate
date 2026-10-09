@@ -142,11 +142,59 @@ nonisolated final class BufferConverter: @unchecked Sendable {
     }
 }
 
+// MARK: - Phiên âm thanh (ngoài luồng giao diện)
+
+/// setCategory / setActive có thể chặn vài trăm ms → làm trên một hàng đợi nền nối tiếp
+/// (giữ đúng thứ tự: tắt phiên cũ xong mới bật phiên mới), không chạy trên luồng giao diện.
+nonisolated enum AudioSessionControl {
+    private static let queue = DispatchQueue(label: "vn.quangminh.vipath.audiosession", qos: .userInitiated)
+
+    static func activate(_ category: AVAudioSession.Category, mode: AVAudioSession.Mode,
+                         options: AVAudioSession.CategoryOptions) async throws {
+        // chỉ chuyển giá trị thô (String/UInt) sang hàng đợi nền — chắc chắn Sendable
+        let cat = category.rawValue, md = mode.rawValue, opt = options.rawValue
+        try await withCheckedThrowingContinuation { (c: CheckedContinuation<Void, Error>) in
+            queue.async {
+                do {
+                    let s = AVAudioSession.sharedInstance()
+                    try s.setCategory(AVAudioSession.Category(rawValue: cat), mode: AVAudioSession.Mode(rawValue: md),
+                                      options: AVAudioSession.CategoryOptions(rawValue: opt))
+                    try s.setActive(true)
+                    c.resume()
+                } catch {
+                    c.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    /// Phát âm thanh (đọc bản dịch): giữ playAndRecord nếu micro đang dùng.
+    static func preparePlayback() async {
+        await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
+            queue.async {
+                let s = AVAudioSession.sharedInstance()
+                if s.category != .playAndRecord && s.category != .playback {
+                    try? s.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+                }
+                try? s.setActive(true)
+                c.resume()
+            }
+        }
+    }
+
+    /// Tắt phiên (không chờ).
+    static func deactivate() {
+        queue.async {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
+    }
+}
+
 // MARK: - Nguồn âm thanh
 
-nonisolated protocol AudioSource: AnyObject {
+nonisolated protocol AudioSource: AnyObject, Sendable {
     /// `onBuffer` nhận âm thanh đã chuyển sang `format`.
-    func start(format: AVAudioFormat, onBuffer: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws
+    func start(format: AVAudioFormat, onBuffer: @escaping @Sendable (AVAudioPCMBuffer) -> Void) async throws
     func stop()
 }
 
@@ -154,11 +202,9 @@ nonisolated protocol AudioSource: AnyObject {
 nonisolated final class MicrophoneSource: AudioSource, @unchecked Sendable {
     private let engine = AVAudioEngine()
 
-    func start(format: AVAudioFormat, onBuffer: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws {
-        let session = AVAudioSession.sharedInstance()
+    func start(format: AVAudioFormat, onBuffer: @escaping @Sendable (AVAudioPCMBuffer) -> Void) async throws {
         // playAndRecord: vẫn đọc được bản dịch ra tai nghe trong lúc nghe micro
-        try session.setCategory(.playAndRecord, mode: .default, options: [.allowBluetoothA2DP, .mixWithOthers])
-        try session.setActive(true)
+        try await AudioSessionControl.activate(.playAndRecord, mode: .default, options: [.allowBluetoothA2DP, .mixWithOthers])
 
         let input = engine.inputNode
         let inputFormat = input.outputFormat(forBus: 0)
@@ -174,7 +220,7 @@ nonisolated final class MicrophoneSource: AudioSource, @unchecked Sendable {
     func stop() {
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        AudioSessionControl.deactivate()
     }
 }
 
@@ -183,7 +229,7 @@ nonisolated final class MicrophoneSource: AudioSource, @unchecked Sendable {
 nonisolated final class BroadcastSource: AudioSource, @unchecked Sendable {
     private var task: Task<Void, Never>?
 
-    func start(format: AVAudioFormat, onBuffer: @escaping @Sendable (AVAudioPCMBuffer) -> Void) throws {
+    func start(format: AVAudioFormat, onBuffer: @escaping @Sendable (AVAudioPCMBuffer) -> Void) async throws {
         guard let dir = SharedAudio.directory else { throw SourceError.noAppGroup }
         SharedAudio.removeAllChunks(in: dir)
         let converter = BufferConverter(target: format)   // Sendable; không bắt AVAudioFormat vào task

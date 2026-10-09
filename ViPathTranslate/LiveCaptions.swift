@@ -295,7 +295,7 @@ final class LiveCaptionsController {
             }
             guard let format = transcriber.analyzerFormat else { throw CaptionError.noFormat }
             let audio: AudioSource = (source == .microphone) ? MicrophoneSource() : BroadcastSource()
-            try audio.start(format: format) { buffer in transcriber.feed(buffer) }
+            try await audio.start(format: format) { buffer in transcriber.feed(buffer) }
             self.audio = audio
             if source == .broadcast, !BroadcastSource.isBroadcastLive {
                 status = "Chờ phát sóng: vuốt mở Trung tâm điều khiển → giữ nút Ghi màn hình → chọn ViPath"
@@ -584,7 +584,7 @@ final class LiveCaptionsController {
             let ch = VoiceChunker(maxSeconds: 6) { samples in Task { @MainActor in self.enqueueChunk(samples) } }
             chunker = ch
             let audio: AudioSource = (source == .microphone) ? MicrophoneSource() : BroadcastSource()
-            try audio.start(format: DictationMicrophone.recordFormat) { buffer in ch.feed(buffer) }
+            try await audio.start(format: DictationMicrophone.recordFormat) { buffer in ch.feed(buffer) }
             self.audio = audio
             status = "Đang nghe · \(model.title)"
             whisperInfo = "Đã nạp \(model.title) — chữ hiện sau mỗi lần người nói ngừng"
