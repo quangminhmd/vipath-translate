@@ -131,5 +131,23 @@ ok(JSON.stringify(L.parseDictation('Mã ca: S24-01234')) === '[{"type":"pathcode
   L.setGrossPathcode(d, 'S24-9');
   ok(d.cassettes.every((c) => c.pathcode === 'S24-9'), 'pathcode change follows cassettes');
 }
+// Biến thể bộ nhận dạng + lượt nói dài + nút Cát xét +
+for (const [txt, code] of [['Các xét Á 1 diện cắt gần', 'A1'], ['cát sét A-1', 'A1'], ['Cassette B2', 'B2'], ['ca xét bi ba', 'B3'], ['khát xét à một', 'A1']]) {
+  const op = L.parseDictation(txt)[0];
+  ok(op.type === 'cassette' && op.code === code, `variant "${txt}" → ${JSON.stringify(op)}`);
+}
+{
+  const d = L.newGrossDoc('S1');
+  L.applyDictation(d, L.parseDictation('Diện cắt gần chấm mực xanh, cát xét A1 diện cắt gần. U dạng sùi kích thước bốn nhân ba nhân hai xăng ti mét, cát xét A2 u và thanh mạc. Cách diện cắt xa tám phân.'));
+  ok(d.body === 'Diện cắt gần chấm mực xanh (A1). U dạng sùi kích thước 4 x 3 x 2 cm (A2). Cách diện cắt xa 8 cm.'
+    && d.cassettes[0].text === 'Diện cắt gần.' && d.cassettes[1].text === 'U và thanh mạc.' && d.target === -1, 'one long utterance ' + JSON.stringify(d));
+  L.applyDictation(d, L.parseDictation('Mạc treo có mười hai hạch'));
+  const k = L.addCassette(d);
+  ok(k === 2 && d.target === -1 && d.body.endsWith('12 hạch (A3).'), 'manual add keeps body ' + JSON.stringify(d.body));
+  L.applyDictation(d, L.parseDictation('phần còn lại cố định formol.'));
+  ok(d.body.endsWith('(A3). Phần còn lại cố định formol.') && d.cassettes[2].text === '', 'dictation stays in body after manual add');
+  L.applyDictation(d, L.parseDictation('cát xét A4 diện cắt quanh xuống dòng mỡ quanh'));
+  ok(d.cassettes[3].text === 'Diện cắt quanh' && d.body.endsWith('(A4).\nMỡ quanh'), 'newline closes note ' + JSON.stringify(d));
+}
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đạt');
 process.exit(fails ? 1 : 0);

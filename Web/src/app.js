@@ -1134,7 +1134,7 @@ function updateGrossHint() {
 }
 const grTargetLabel = () => (G.doc.target < 0 ? 'Mô tả' : 'Cát xét ' + cassetteLabel(G.doc.cassettes[G.doc.target]) + (G.doc.oneShot ? ' (ghi chú xong quay lại mô tả)' : ''));
 const setGrStatus = (t) => { $('#gr-status').textContent = t; };
-function grListening() { setGrStatus(G.paused ? 'Tạm dừng — nói “tiếp tục ghi” hoặc bấm ▶' : `Đang nghe · ${grTargetLabel()}`); }
+function grListening() { setGrStatus((G.paused ? 'Tạm dừng — nói “tiếp tục ghi” hoặc bấm ▶' : `Đang nghe · ${grTargetLabel()}`) + (G.heard ? ` · Nghe: “${G.heard.slice(-80)}”` : '')); }
 
 function renderGross() {
   const d = G.doc;
@@ -1172,7 +1172,7 @@ $('#gr-doc').addEventListener('click', (e) => {
   }
 });
 $('#gr-undo').addEventListener('click', () => { applyDictation(G.doc, [{ type: 'undo' }]); renderGross(); });
-$('#gr-next').addEventListener('click', () => { applyDictation(G.doc, [{ type: 'nextCassette' }], grOpts()); renderGross(); if (G.running) grListening(); });
+$('#gr-next').addEventListener('click', () => { addCassette(G.doc, grOpts()); renderGross(); if (G.running) grListening(); });
 $('#gr-to-body').addEventListener('click', () => { G.doc.target = -1; G.doc.oneShot = false; renderGross(); if (G.running) grListening(); });
 $('#gr-pause').addEventListener('click', () => { if (!G.running) return; G.paused = !G.paused; G.volatile = ''; grPauseUI(); renderGross(); grListening(); });
 function grPauseUI() {
@@ -1185,6 +1185,7 @@ $('#gr-mic').addEventListener('click', () => (G.running ? stopGross() : startGro
 function grossFinal(text) {
   const t = (text || '').replace(/\[[^\]]*\]|\([^)]*\)/g, ' ').trim();   // Whisper: bỏ [Music]…
   if (!t) return;
+  G.heard = t;   // hiện câu máy nghe được (để biết lệnh có được nhận không)
   const signals = applyDictation(G.doc, parseDictation(t), { paused: G.paused, ...grOpts() });
   for (const s of signals) { if (s === 'pause') G.paused = true; if (s === 'resume') G.paused = false; }
   G.volatile = '';

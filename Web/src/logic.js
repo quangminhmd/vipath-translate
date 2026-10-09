@@ -696,7 +696,11 @@ const GROSS_LETTER = {
   'ép phờ': 'F', 'bê': 'B', 'bờ': 'B', 'xê': 'C', 'cê': 'C', 'cờ': 'C', 'đê': 'D', 'dê': 'D', 'đờ': 'D',
   'giê': 'G', 'gờ': 'G', 'hát': 'H', 'ép': 'F', 'ca': 'K', 'a': 'A', 'b': 'B', 'c': 'C', 'd': 'D', 'e': 'E', 'ê': 'E',
   'f': 'F', 'g': 'G', 'h': 'H', 'i': 'I', 'k': 'K',
+  // biến thể bộ nhận dạng hay viết: "Á 1", "à một", "bi hai" (đọc kiểu Anh)…
+  'á': 'A', 'à': 'A', 'ả': 'A', 'ã': 'A', 'ạ': 'A', 'â': 'A', 'ă': 'A', 'ây': 'A', 'bi': 'B', 'si': 'C', 'xi': 'C', 'đi': 'D',
 };
+/** "cát xét" và các cách bộ nhận dạng hay viết sai: các xét, cát sét, ca-xét, cassette, khối nến… */
+const CASS_RX = '(?:(?:c[aá]t|các|cạc|kát|khát|ca)\\s*-?\\s*[xs][eéèẹẽ]t|cass?ett?e|khối\\s+nến|khuôn\\s+nến|block|blốc)';
 const LET_RX = Object.keys(GROSS_LETTER).sort((a, b) => b.length - a.length).map((k) => k.replace(' ', '\\s+')).join('|');
 const NUMW_RX = '(?:một|mốt|hai|ba|bốn|tư|năm|lăm|sáu|bảy|bẩy|tám|chín|mười|mươi|linh|lẻ|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)';
 const NUM_RX = `(\\d{1,2}|${NUMW_RX}(?:\\s+${NUMW_RX})*)`;
@@ -711,9 +715,9 @@ const cmd = (src) => new RegExp(GW_L + src + GW_R, 'iu');
 /** Thứ tự quan trọng: cụm dài trước ("dấu hai chấm" trước "dấu chấm"). */
 const GROSS_COMMANDS = [
   [cmd('(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$'), (m) => ({ type: 'pathcode', code: spokenCode(m[1]) })],
-  [cmd(`(?:cát\\s*-?\\s*xét|cassette|khối\\s+nến|khuôn\\s+nến|block)\\s+(?:số\\s+|number\\s+)?(?:(${LET_RX})\\s*)?${NUM_RX}`), (m) => ({ type: 'cassette', code: (m[1] ? GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] : '') + cassetteNumber(m[2]) })],
-  [cmd(`mẫu\\s+(${LET_RX})\\s*${NUM_RX}`), (m) => ({ type: 'cassette', code: GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] + cassetteNumber(m[2]) })],
-  [cmd('(?:cát\\s*-?\\s*xét|cassette|khối|mẫu|block)\\s+(?:tiếp(?:\\s+theo)?|kế\\s+tiếp|next)|next\\s+(?:cassette|block)'), () => ({ type: 'nextCassette' })],
+  [cmd(`${CASS_RX}\\s+(?:số\\s+|number\\s+)?(?:(${LET_RX})\\s*-?\\s*)?${NUM_RX}`), (m) => ({ type: 'cassette', code: (m[1] ? GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] : '') + cassetteNumber(m[2]) })],
+  [cmd(`mẫu\\s+(${LET_RX})\\s*-?\\s*${NUM_RX}`), (m) => ({ type: 'cassette', code: GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] + cassetteNumber(m[2]) })],
+  [cmd(`(?:${CASS_RX}|khối|mẫu)\\s+(?:tiếp(?:\\s+theo)?|kế\\s+tiếp|next)|next\\s+(?:cassette|block)`), () => ({ type: 'nextCassette' })],
   [cmd('(?:quay\\s+(?:lại|về)|về|trở\\s+lại)\\s+(?:phần\\s+)?mô\\s+tả|phần\\s+mô\\s+tả|back\\s+to\\s+description'), () => ({ type: 'body' })],
   [cmd('dấu\\s+chấm\\s+phẩy|semicolon'), () => ({ type: 'punct', text: ';' })],
   [cmd('dấu\\s+hai\\s+chấm|colon'), () => ({ type: 'punct', text: ':' })],
@@ -837,17 +841,33 @@ export function applyDictation(doc, ops, { paused = false, corrections = [], cas
     if (k >= 0) doc.target = k; else { doc.cassettes.push({ code, text: '', pathcode: pc }); doc.target = doc.cassettes.length - 1; }
     doc.oneShot = cassetteReturn; gotNote = false;
   };
+  // ghi chú cát xét đã có chữ → khép lại, quay về mô tả
+  const closeNote = () => {
+    if (doc.oneShot && doc.target >= 0 && doc.cassettes[doc.target].text.trim()) { doc.target = -1; doc.oneShot = false; gotNote = false; }
+  };
   const remember = () => { if (!pushed) { doc.history.push(snap); if (doc.history.length > 50) doc.history.shift(); pushed = true; } };
   const get = () => (doc.target < 0 ? doc.body : doc.cassettes[doc.target].text);
   const set = (v) => { if (doc.target < 0) doc.body = v; else doc.cassettes[doc.target].text = v; };
   for (const op of ops) {
     if (paused) { if (op.type === 'resume') { paused = false; signals.push('resume'); } continue; }
     switch (op.type) {
-      case 'text': remember(); textSnap = grossSnapshot(doc); set(appendText(get(), normalizeMeasurements(applyCorrections(op.text, corrections)))); if (doc.target >= 0) gotNote = true; break;
-      case 'punct': remember(); set(appendPunct(get(), op.text)); break;
-      case 'newline': remember(); set(get().replace(/[ \t]+$/, '') + '\n'); break;
-      case 'para': remember(); set(get().replace(/\s+$/, '') + '\n\n'); break;
-      case 'bullet': remember(); set(get().replace(/[ \t]+$/, '').replace(/([^\n])$/, '$1\n') + '- '); break;
+      case 'text': {
+        remember(); textSnap = grossSnapshot(doc);
+        const t = normalizeMeasurements(applyCorrections(op.text, corrections));
+        // ghi chú cát xét chỉ kéo dài tới hết câu đầu tiên; phần còn lại của lượt nói về mô tả
+        const end = doc.target >= 0 && doc.oneShot ? /[.!?](?=\s|$)/.exec(t) : null;
+        if (end) {
+          set(appendText(get(), t.slice(0, end.index + 1).trim()));
+          doc.target = -1; doc.oneShot = false; gotNote = false;
+          const rest = t.slice(end.index + 1).trim();
+          if (rest) set(appendText(get(), rest));
+        } else { set(appendText(get(), t)); if (doc.target >= 0) gotNote = true; }
+        break;
+      }
+      case 'punct': remember(); set(appendPunct(get(), op.text)); if (/[.!?]/.test(op.text)) closeNote(); break;
+      case 'newline': remember(); closeNote(); set(get().replace(/[ \t]+$/, '') + '\n'); break;
+      case 'para': remember(); closeNote(); set(get().replace(/\s+$/, '') + '\n\n'); break;
+      case 'bullet': remember(); closeNote(); set(get().replace(/[ \t]+$/, '').replace(/([^\n])$/, '$1\n') + '- '); break;
       case 'cassette': remember(); openCassette(op.code); break;
       case 'nextCassette': remember(); openCassette(nextCode(doc)); break;
       case 'body': remember(); doc.target = -1; doc.oneShot = false; break;
@@ -865,6 +885,20 @@ export function applyDictation(doc, ops, { paused = false, corrections = [], cas
   // ghi chú cát xét đã có nội dung → các câu sau quay lại phần mô tả
   if (doc.oneShot && gotNote && doc.target >= 0) { doc.target = -1; doc.oneShot = false; }
   return signals;
+}
+
+/**
+ * Nút "Cát xét +": thêm cát xét kế tiếp (và mã "(A2)" vào mô tả) nhưng KHÔNG đổi chỗ đang ghi —
+ * lời đọc vẫn vào phần mô tả; chạm "Ghi vào đây" trên thẻ để đọc vào cát xét.
+ */
+export function addCassette(doc, { inlineMarker = true } = {}) {
+  doc.history.push(grossSnapshot(doc)); if (doc.history.length > 50) doc.history.shift();
+  const code = nextCode(doc);
+  if (doc.target >= 0) doc.cassettes[doc.target].text = doc.cassettes[doc.target].text.replace(/\s*[,;]\s*$/, '.');
+  if ((doc.target < 0 || doc.oneShot) && inlineMarker) doc.body = appendMarker(doc.body, code);
+  doc.cassettes.push({ code, text: '', pathcode: doc.pathcode || '' });
+  if (doc.oneShot) { doc.target = -1; doc.oneShot = false; }
+  return doc.cassettes.length - 1;
 }
 
 export function grossReportText(doc, lang = 'vi') {

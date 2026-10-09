@@ -20,6 +20,8 @@ nonisolated final class LiveDictationRecognizer: @unchecked Sendable {
     private var analyzerStarted = false
     private(set) var analyzerFormat: AVAudioFormat?
     private(set) var engineLabel = ""
+    /// Câu máy vừa nghe được (để biết lệnh giọng nói có được nhận đúng không)
+    private(set) var lastHeard = ""
 
     enum RecognizerError: LocalizedError {
         case unsupported(String), noFormat
@@ -213,6 +215,8 @@ final class GrossDictationController {
         didSet { UserDefaults.standard.set(inlineMarker, forKey: "grossInlineMarker") }
     }
     private(set) var engineLabel = ""
+    /// Câu máy vừa nghe được (để biết lệnh giọng nói có được nhận đúng không)
+    private(set) var lastHeard = ""
     private(set) var audioURL: URL?
     private(set) var savedID: UUID?
 
@@ -331,6 +335,7 @@ final class GrossDictationController {
             return
         }
         volatileText = ""
+        lastHeard = text
         let signals = GrossParser.apply(GrossParser.parse(text), to: &doc, paused: isPaused, corrections: corrections,
                                         cassetteReturn: cassetteReturn, inlineMarker: inlineMarker)
         for s in signals {
@@ -352,7 +357,7 @@ final class GrossDictationController {
     }
 
     func addCassette() {
-        GrossParser.apply([.nextCassette], to: &doc, cassetteReturn: cassetteReturn, inlineMarker: inlineMarker)
+        GrossParser.addCassette(to: &doc, inlineMarker: inlineMarker)     // lời đọc vẫn vào phần mô tả
         if isRunning { status = "Đang nghe · \(targetLabel)" }
     }
 

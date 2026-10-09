@@ -195,6 +195,10 @@ struct GrossDictationView: View {
             if !ctl.status.isEmpty {
                 Text(ctl.status).font(.caption).foregroundStyle(.secondary).lineLimit(1)
             }
+            if ctl.isRunning, !ctl.lastHeard.isEmpty {
+                Text("Nghe: “\(ctl.lastHeard)”").font(.caption2).foregroundStyle(.tertiary)
+                    .lineLimit(1).truncationMode(.head).padding(.horizontal)
+            }
             HStack(spacing: 18) {
                 barButton("arrow.uturn.backward", "Hoàn tác") { ctl.undo() }
                     .disabled(ctl.doc.history.isEmpty)

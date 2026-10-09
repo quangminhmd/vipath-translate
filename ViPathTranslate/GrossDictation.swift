@@ -299,7 +299,12 @@ nonisolated enum GrossParser {
         "ép phờ": "F", "bê": "B", "bờ": "B", "xê": "C", "cê": "C", "cờ": "C", "đê": "D", "dê": "D", "đờ": "D",
         "giê": "G", "gờ": "G", "hát": "H", "ép": "F", "ca": "K", "a": "A", "b": "B", "c": "C", "d": "D", "e": "E", "ê": "E",
         "f": "F", "g": "G", "h": "H", "i": "I", "k": "K",
+        // biến thể bộ nhận dạng hay viết: "Á 1", "à một", "bi hai" (đọc kiểu Anh)…
+        "á": "A", "à": "A", "ả": "A", "ã": "A", "ạ": "A", "â": "A", "ă": "A", "ây": "A",
+        "bi": "B", "si": "C", "xi": "C", "đi": "D",
     ]
+    /// "cát xét" và các cách bộ nhận dạng hay viết sai: các xét, cát sét, ca-xét, cassette, khối nến…
+    private static let cassRx = "(?:(?:c[aá]t|các|cạc|kát|khát|ca)\\s*-?\\s*[xs][eéèẹẽ]t|cass?ett?e|khối\\s+nến|khuôn\\s+nến|block|blốc)"
     private static let letRx = letters.keys.sorted { $0.count > $1.count }
         .map { $0.replacingOccurrences(of: " ", with: "\\s+") }.joined(separator: "|")
     private static let numWRx = "(?:một|mốt|hai|ba|bốn|tư|năm|lăm|sáu|bảy|bẩy|tám|chín|mười|mươi|linh|lẻ|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)"
@@ -328,11 +333,11 @@ nonisolated enum GrossParser {
     nonisolated(unsafe) private static let commands: [(NSRegularExpression, Maker)] = [
         (cmd("(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$"),
          { g in .pathcode(spokenCode(g[1] ?? "")) }),
-        (cmd("(?:cát\\s*-?\\s*xét|cassette|khối\\s+nến|khuôn\\s+nến|block)\\s+(?:số\\s+|number\\s+)?(?:(\(letRx))\\s*)?\(numRx)"),
+        (cmd("\(cassRx)\\s+(?:số\\s+|number\\s+)?(?:(\(letRx))\\s*-?\\s*)?\(numRx)"),
          { g in .cassette((g[1].map(letter) ?? "") + String(cassetteNumber(g[2] ?? ""))) }),
-        (cmd("mẫu\\s+(\(letRx))\\s*\(numRx)"),
+        (cmd("mẫu\\s+(\(letRx))\\s*-?\\s*\(numRx)"),
          { g in .cassette(letter(g[1] ?? "") + String(cassetteNumber(g[2] ?? ""))) }),
-        (cmd("(?:cát\\s*-?\\s*xét|cassette|khối|mẫu|block)\\s+(?:tiếp(?:\\s+theo)?|kế\\s+tiếp|next)|next\\s+(?:cassette|block)"),
+        (cmd("(?:\(cassRx)|khối|mẫu)\\s+(?:tiếp(?:\\s+theo)?|kế\\s+tiếp|next)|next\\s+(?:cassette|block)"),
          { _ in .nextCassette }),
         (cmd("(?:quay\\s+(?:lại|về)|về|trở\\s+lại)\\s+(?:phần\\s+)?mô\\s+tả|phần\\s+mô\\s+tả|back\\s+to\\s+description"), { _ in .body }),
         (cmd("dấu\\s+chấm\\s+phẩy|semicolon"), { _ in .punct(";") }),
@@ -511,6 +516,12 @@ nonisolated enum GrossParser {
             doc.oneShot = cassetteReturn
             gotNote = false
         }
+        // ghi chú cát xét đã có chữ → khép lại, quay về mô tả
+        func closeNote() {
+            guard doc.oneShot, doc.target >= 0, doc.target < doc.cassettes.count,
+                  !doc.cassettes[doc.target].text.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+            doc.target = -1; doc.oneShot = false; gotNote = false
+        }
         func remember() {
             guard !pushed else { return }
             doc.history.append(snap)
@@ -523,25 +534,38 @@ nonisolated enum GrossParser {
                 continue
             }
             switch op {
-            case .text(let t):
+            case .text(let raw):
                 remember()
                 textSnap = doc.snapshot
-                doc.current = appendText(doc.current, normalizeMeasurements(applyCorrections(t, corrections)))
-                if doc.target >= 0 { gotNote = true }
+                let t = normalizeMeasurements(applyCorrections(raw, corrections))
+                // ghi chú cát xét chỉ kéo dài tới hết câu đầu tiên; phần còn lại của lượt nói về mô tả
+                if doc.target >= 0, doc.oneShot, let end = firstSentenceEnd(t) {
+                    doc.current = appendText(doc.current, String(t[..<end]).trimmingCharacters(in: .whitespaces))
+                    doc.target = -1; doc.oneShot = false; gotNote = false
+                    let rest = String(t[end...]).trimmingCharacters(in: .whitespaces)
+                    if !rest.isEmpty { doc.current = appendText(doc.current, rest) }
+                } else {
+                    doc.current = appendText(doc.current, t)
+                    if doc.target >= 0 { gotNote = true }
+                }
             case .punct(let m):
                 remember(); doc.current = appendPunct(doc.current, m)
+                if m == "." || m == "?" || m == "!" { closeNote() }
             case .newline:
                 remember()
+                closeNote()
                 var t = doc.current
                 while let l = t.last, l == " " || l == "\t" { t.removeLast() }
                 doc.current = t + "\n"
             case .para:
                 remember()
+                closeNote()
                 var t = doc.current
                 while let l = t.last, l.isWhitespace { t.removeLast() }
                 doc.current = t + "\n\n"
             case .bullet:
                 remember()
+                closeNote()
                 var t = doc.current
                 while let l = t.last, l == " " || l == "\t" { t.removeLast() }
                 if let l = t.last, l != "\n" { t += "\n" }
@@ -567,6 +591,34 @@ nonisolated enum GrossParser {
         // ghi chú cát xét đã có nội dung → các câu sau quay lại phần mô tả
         if doc.oneShot && gotNote && doc.target >= 0 { doc.target = -1; doc.oneShot = false }
         return signals
+    }
+
+    private static let sentenceEndRx = rx("[.!?](?=\\s|$)", [])
+
+    /// Vị trí ngay sau dấu kết câu đầu tiên ("2,5" / "Ki-67" không bị tính).
+    static func firstSentenceEnd(_ t: String) -> String.Index? {
+        guard let m = sentenceEndRx.firstMatch(in: t, range: NSRange(t.startIndex..., in: t)),
+              let r = Range(m.range, in: t) else { return nil }
+        return r.upperBound
+    }
+
+    /// Nút "Cát xét +": thêm cát xét kế tiếp (và mã "(A2)" vào mô tả) nhưng KHÔNG đổi chỗ đang ghi —
+    /// lời đọc vẫn vào phần mô tả; chạm "Ghi vào đây" trên thẻ để đọc vào cát xét.
+    @discardableResult
+    static func addCassette(to doc: inout GrossDoc, inlineMarker: Bool = true) -> Int {
+        doc.history.append(doc.snapshot)
+        if doc.history.count > 50 { doc.history.removeFirst() }
+        let code = nextCode(doc)
+        if doc.target >= 0, doc.target < doc.cassettes.count {
+            var t = doc.cassettes[doc.target].text
+            while let l = t.last, l.isWhitespace { t.removeLast() }
+            if let l = t.last, l == "," || l == ";" { t.removeLast(); t += "." }
+            doc.cassettes[doc.target].text = t
+        }
+        if (doc.target < 0 || doc.oneShot) && inlineMarker { doc.body = appendMarker(doc.body, code) }
+        doc.cassettes.append(GrossCassette(code: code, text: "", pathcode: doc.pathcode))
+        if doc.oneShot { doc.target = -1; doc.oneShot = false }
+        return doc.cassettes.count - 1
     }
 
     static func reportText(_ doc: GrossDoc, english: Bool = false) -> String {
