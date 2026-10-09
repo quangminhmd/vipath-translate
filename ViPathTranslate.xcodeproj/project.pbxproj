@@ -366,6 +366,7 @@
 		C10000000000000000000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/ViPathTranslate.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -373,7 +374,6 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = ViPath;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_KEY_NSCameraUsageDescription = "ViPath dùng máy ảnh để quét tài liệu, slide và trích chữ ngay trên máy.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "ViPath dùng micro để nhận dạng lời giảng và lời đọc mô tả đại thể khi cắt lọc, ngay trên máy.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nhận dạng giọng nói chạy trên máy, không gửi dữ liệu ra ngoài.";
@@ -400,6 +400,7 @@
 		C10000000000000000000004 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Config/ViPathTranslate.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -407,7 +408,6 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = ViPath;
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				INFOPLIST_KEY_NSCameraUsageDescription = "ViPath dùng máy ảnh để quét tài liệu, slide và trích chữ ngay trên máy.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "ViPath dùng micro để nhận dạng lời giảng và lời đọc mô tả đại thể khi cắt lọc, ngay trên máy.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nhận dạng giọng nói chạy trên máy, không gửi dữ liệu ra ngoài.";
