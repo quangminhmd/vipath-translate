@@ -97,6 +97,7 @@ struct GrossDictationView: View {
                 }
                 .buttonStyle(.bordered)
             }
+            engineRow
             HStack(spacing: 8) {
                 Image(systemName: "barcode").foregroundStyle(.secondary)
                 TextField("Pathcode của ca (hoặc nói “mã ca …”)", text: $ctl.pathcode)
@@ -113,6 +114,30 @@ struct GrossDictationView: View {
             }
             .padding(.horizontal, 10).padding(.vertical, 8)
             .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 10))
+        }
+    }
+
+    /// Chọn mô hình nhận dạng giọng nói.
+    private var engineRow: some View {
+        @Bindable var ctl = ctl
+        let model = ctl.engine.whisperModel(for: ctl.language)
+        let ready = model.map { WhisperModelStore.shared.isReady($0) } ?? true
+        return VStack(alignment: .leading, spacing: 4) {
+            Picker("Nhận dạng", selection: $ctl.engine) {
+                ForEach(GrossEngine.allCases) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
+            .disabled(ctl.isRunning)
+            if let model, !ready {
+                Label("Chưa tải \(model.title) (\(model.sizeLabel)) — vào tab Chép lời → chọn mô hình → Tải.",
+                      systemImage: "arrow.down.circle")
+                    .font(.caption).foregroundStyle(.orange)
+            } else {
+                Text(ctl.engine == .phoWhisper && ctl.language == .en
+                     ? "PhoWhisper chỉ nghe tiếng Việt — tiếng Anh sẽ dùng Whisper turbo."
+                     : ctl.engine.detail)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -217,7 +242,10 @@ struct GrossDictationView: View {
     private var controlBar: some View {
         VStack(spacing: 6) {
             if !ctl.status.isEmpty {
-                Text(ctl.status).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                HStack(spacing: 6) {
+                    if ctl.whisperBusy { ProgressView().controlSize(.mini) }
+                    Text(ctl.status).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                }
             }
             if ctl.isRunning, !ctl.lastHeard.isEmpty {
                 Text("Nghe: “\(ctl.lastHeard)”").font(.caption2).foregroundStyle(.tertiary)

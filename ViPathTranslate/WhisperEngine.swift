@@ -371,6 +371,31 @@ nonisolated final class WhisperRunner: @unchecked Sendable {
         }
     }
 
+    /// Nhận dạng một đoạn âm thanh ngắn (16 kHz mono) — dùng cho đọc chính tả trực tiếp ở tab Đại thể.
+    @concurrent
+    func transcribe(samples: [Float], language: TranscriptLanguage, promptText: String?) async throws -> String {
+        guard let kit = lock.withLock({ kit }) else { throw CocoaError(.featureUnsupported) }
+        guard Self.rms(samples) > 0.003 else { return "" }       // im lặng → không để Whisper "bịa" chữ
+        var promptTokens: [Int]?
+        if let promptText, !promptText.isEmpty, let tok = kit.tokenizer {
+            let ids = tok.encode(text: " " + promptText).filter { $0 < tok.specialTokens.specialTokenBegin }
+            promptTokens = Array(ids.prefix(120))
+        }
+        let options = DecodingOptions(task: .transcribe,
+                                      language: language.languageCode,
+                                      temperature: 0,
+                                      usePrefillPrompt: true,
+                                      detectLanguage: false,
+                                      skipSpecialTokens: true,
+                                      withoutTimestamps: true,
+                                      wordTimestamps: false,
+                                      promptTokens: promptTokens,
+                                      suppressBlank: true,
+                                      chunkingStrategy: ChunkingStrategy.none)
+        let results = try await kit.transcribe(audioArray: samples, decodeOptions: options)
+        return Self.clean(results.map(\.text).joined(separator: " "))
+    }
+
     /// Cắt tại khung 100 ms nhỏ năng lượng nhất trong 3 giây cuối cửa sổ.
     private static func quietestCut(_ s: [Float], sampleRate: Double) -> Int {
         let frame = Int(sampleRate * 0.1)
