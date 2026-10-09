@@ -304,16 +304,20 @@ nonisolated enum GrossParser {
         "bi": "B", "si": "C", "xi": "C", "đi": "D",
     ]
     /// "cát xét" và các cách bộ nhận dạng hay viết sai: các xét, cát sét, ca-xét, cassette, khối nến…
-    private static let cassRx = "(?:(?:c[aá]t|các|cạc|kát|khát|ca)\\s*-?\\s*[xs][eéèẹẽ]t|cass?ett?e|khối\\s+nến|khuôn\\s+nến|block|blốc)"
+    // Whisper/PhoWhisper còn viết: "cắt xét", "cách xét", "cắt xe,", "khắc sét"… (quan sát thực tế)
+    private static let cassRx = "(?:(?:c|k|kh)[aáàảãạăắằẳẵặâấầẩẫậ](?:t|c|ch)?[\\s,-]*[xs][eéèẻẽẹêếềểễệ](?:t|c)?|cass?ett?e|khối\\s+nến|khuôn\\s+nến|block|blốc)"
     private static let letRx = letters.keys.sorted { $0.count > $1.count }
         .map { $0.replacingOccurrences(of: " ", with: "\\s+") }.joined(separator: "|")
-    private static let numWRx = "(?:một|mốt|hai|ba|bốn|tư|năm|lăm|sáu|bảy|bẩy|tám|chín|mười|mươi|linh|lẻ|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)"
+    private static let numWRx = "(?:một|mốt|hai|ba|bà|bá|bả|bốn|tư|năm|lăm|sáu|bảy|bẩy|tám|chín|mười|mươi|linh|lẻ|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)"
     private static let numRx = "([0-9]{1,2}|\(numWRx)(?:\\s+\(numWRx))*)"
     private static let enNum: [String: Int] = ["one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6,
                                                "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12]
 
+    /// Whisper hay viết "a bà" cho "a ba"
+    private static let numFix: [String: String] = ["bà": "ba", "bá": "ba", "bả": "ba"]
+
     static func cassetteNumber(_ s: String) -> Int {
-        let w = s.lowercased().split(whereSeparator: \.isWhitespace).map(String.init)
+        let w = s.lowercased().split(whereSeparator: \.isWhitespace).map { numFix[String($0)] ?? String($0) }
         guard let first = w.first else { return 0 }
         if let n = Int(first) { return n }
         if w.count == 1, let n = enNum[first] { return n }
@@ -333,7 +337,7 @@ nonisolated enum GrossParser {
     nonisolated(unsafe) private static let commands: [(NSRegularExpression, Maker)] = [
         (cmd("(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$"),
          { g in .pathcode(spokenCode(g[1] ?? "")) }),
-        (cmd("\(cassRx)\\s+(?:số\\s+|number\\s+)?(?:(\(letRx))\\s*-?\\s*)?\(numRx)(?:\\s+là(?=\\s|$))?"),
+        (cmd("\(cassRx)[\\s,]+(?:số\\s+|number\\s+)?(?:(\(letRx))[\\s,-]*)?\(numRx)(?:[\\s,]+là(?=\\s|$))?"),
          { g in .cassette((g[1].map(letter) ?? "") + String(cassetteNumber(g[2] ?? ""))) }),
         (cmd("mẫu\\s+(\(letRx))\\s*-?\\s*\(numRx)(?:\\s+là(?=\\s|$))?"),
          { g in .cassette(letter(g[1] ?? "") + String(cassetteNumber(g[2] ?? ""))) }),
@@ -538,7 +542,12 @@ nonisolated enum GrossParser {
             case .text(let raw):
                 remember()
                 textSnap = doc.snapshot
-                let t = normalizeMeasurements(applyCorrections(raw, corrections))
+                var t = normalizeMeasurements(applyCorrections(raw, corrections))
+                // ghi chú cát xét đến ở lượt nói sau, bắt đầu bằng "Là …" → bỏ chữ "là"
+                if doc.target >= 0, doc.target < doc.cassettes.count, doc.oneShot,
+                   doc.cassettes[doc.target].text.trimmingCharacters(in: .whitespaces).isEmpty {
+                    t = replace(t, leadingLaRx, "")
+                }
                 // ghi chú cát xét chỉ kéo dài tới hết câu đầu tiên; phần còn lại của lượt nói về mô tả
                 if doc.target >= 0, doc.oneShot, let end = firstSentenceEnd(t) {
                     doc.current = appendText(doc.current, String(t[..<end]).trimmingCharacters(in: .whitespaces))
@@ -594,6 +603,7 @@ nonisolated enum GrossParser {
         return signals
     }
 
+    private static let leadingLaRx = rx("^là\\s+")
     private static let sentenceEndRx = rx("[.!?](?=\\s|$)", [])
 
     /// Vị trí ngay sau dấu kết câu đầu tiên ("2,5" / "Ki-67" không bị tính).

@@ -157,5 +157,18 @@ for (const [txt, code] of [['Các xét Á 1 diện cắt gần', 'A1'], ['cát s
   ok(d.body === '' && !d.cassettes.length, 'preview does not touch doc');
   ok(p.body === 'Diện cắt gần chấm mực xanh (A1) (A2).\n' && p.cassettes[0].text === 'Diện cắt gần' && p.cassettes[1].text === 'Diện cắt xa' && p.cassettes[1].pathcode === '26-3901', 'real iPhone output ' + JSON.stringify(p));
 }
+// Kết quả thực tế từ PhoWhisper (ảnh chụp 19:39)
+for (const [txt, code] of [['Cắt xét a một.', 'A1'], ['Cách xét a hai là diện cắt xa.', 'A2'], ['Cát xét a bà.', 'A3'], ['Cắt xe, A 6 là thành cơ', 'A6'], ['khắc sét bê một', 'B1']]) {
+  const op = L.parseDictation(txt)[0];
+  ok(op.type === 'cassette' && op.code === code, `whisper "${txt}" → ${JSON.stringify(op)}`);
+}
+ok(L.parseDictation('diện cắt xa 2 cm').every((o) => o.type === 'text'), '"diện cắt xa" is not a cassette');
+ok(L.parseDictation('mặt cắt sẫm màu 3 cm').every((o) => o.type === 'text'), '"cắt sẫm" is not a cassette');
+{
+  const d = L.newGrossDoc('26');
+  for (const chunk of ['Túi mật màu xám.', 'Cắt xét a một.', 'Là diện cắt gần.', 'Cách xét a hai là diện cắt xa.', 'Thành cơ dày.'])
+    L.applyDictation(d, L.parseDictation(chunk));
+  ok(d.body === 'Túi mật màu xám (A1) (A2). Thành cơ dày.' && d.cassettes[0].text === 'Diện cắt gần.' && d.cassettes[1].text === 'Diện cắt xa.', 'whisper chunks ' + JSON.stringify(d));
+}
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đạt');
 process.exit(fails ? 1 : 0);
