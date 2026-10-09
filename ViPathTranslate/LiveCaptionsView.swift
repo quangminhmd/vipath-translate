@@ -4,7 +4,9 @@ import UIKit
 struct LiveCaptionsView: View {
     @Environment(TranslatorViewModel.self) private var vm
     @Environment(LiveCaptionsController.self) private var cc
+    @Environment(TranscribeController.self) private var tc
     @State private var showSettings = false
+    @State private var appliedNote: String?
 
     var body: some View {
         NavigationStack {
@@ -43,15 +45,38 @@ struct LiveCaptionsView: View {
     // MARK: Thiết lập trước khi nghe
     private var setupPanel: some View {
         @Bindable var cc = cc
-        return VStack(alignment: .leading, spacing: 10) {
-            // Mô hình dịch dùng chung với tab Dịch: thấy ngay đã nạp chưa, nạp tại chỗ
-            TranslationModelStatusRow(compact: true)
-                .padding(10)
-                .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 10))
+        return ScrollView {
+          VStack(alignment: .leading, spacing: 10) {
             Picker("Chiều dịch", selection: $cc.direction) {
                 ForEach(TranslationDirection.allCases) { Text($0.label).tag($0) }
             }
             .pickerStyle(.segmented)
+            Menu {
+                Button("PhoWhisper + Hunyuan-MT-7B (chất lượng)") { applySuggested(.hunyuanMT7b) }
+                Button("PhoWhisper + TranslateGemma-4B (nhanh, nhẹ)") { applySuggested(.translateGemma4b) }
+            } label: {
+                Label("Cấu hình gợi ý Việt → Anh", systemImage: "wand.and.stars").font(.subheadline.bold())
+            }
+            if let appliedNote {
+                Text(appliedNote).font(.caption).foregroundStyle(.secondary)
+            }
+            // Nhận dạng giọng nói
+            VStack(alignment: .leading, spacing: 6) {
+                Picker("Nhận dạng", selection: $cc.engine) {
+                    ForEach(LiveCaptionsController.engines(for: cc.direction)) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                Text(cc.engine.detail).font(.caption).foregroundStyle(.secondary)
+                if let wm = cc.whisperModel {
+                    WhisperModelStatusRow(model: wm)
+                }
+            }
+            .padding(10)
+            .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 10))
+            // Mô hình dịch dùng chung với tab Dịch: thấy ngay đã nạp chưa, nạp tại chỗ
+            TranslationModelStatusRow(compact: true)
+                .padding(10)
+                .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 10))
             Picker("Nguồn âm thanh", selection: $cc.source) {
                 ForEach(LiveCaptionsController.Source.allCases) { Text($0.title).tag($0) }
             }
@@ -82,10 +107,41 @@ struct LiveCaptionsView: View {
             if let err = cc.errorText {
                 Text(err).font(.caption).foregroundStyle(.red)
             }
+          }
+          .padding()
         }
-        .padding()
+        .scrollBounceBehavior(.basedOnSize)
+        .frame(maxHeight: 400)
+        .fixedSize(horizontal: false, vertical: true)
         .glassEffect(.regular, in: .rect(cornerRadius: 26))
         .padding(.horizontal, 10)
+    }
+
+    /// Việt → Anh · PhoWhisper-medium · mô hình dịch đã chọn · Cân bằng (⚡ Apple hiện ngay, mô hình + glossary thay vào).
+    /// Nạp luôn mô hình dịch và PhoWhisper (song song: GPU + Neural Engine); PhoWhisper chưa tải thì bắt đầu tải.
+    private func applySuggested(_ model: ModelChoice) {
+        cc.direction = .viToEn
+        cc.engineVI = .phoWhisper
+        cc.mode = .balanced
+        FastTranslator.shared.enabled = true
+        var notes = ["Việt → Anh", "PhoWhisper", model.shortName, "Cân bằng (⚡ + mô hình + glossary)"]
+        if !vm.isLoading && !vm.isTranslating {
+            vm.selectedModel = model
+            if vm.loadedModel != model { Task { await vm.loadModel() } }
+        } else {
+            notes.append("chưa đổi mô hình vì đang bận — chọn lại sau")
+        }
+        let pho = WhisperModelChoice.phoWhisperMedium
+        let store = WhisperModelStore.shared
+        if store.isReady(pho) {
+            let c = tc.whisperCompute
+            Task { try? await WhisperRunner.shared.load(pho, compute: c) }
+        } else if case .notDownloaded = store.state(pho) {
+            store.download(pho)
+            notes.append("đang tải PhoWhisper")
+        }
+        if !FastTranslator.shared.isActive(.viToEn) { notes.append("Dịch nhanh Việt → Anh chưa sẵn sàng — bấm dòng Dịch nhanh để tải") }
+        withAnimation { appliedNote = "Đã chọn: " + notes.joined(separator: " · ") }
     }
 
     // MARK: Hai khung chạy song song: trên = nghe được (tiếng Anh), dưới = phụ đề tiếng Việt
@@ -227,6 +283,9 @@ struct LiveCaptionsView: View {
             if cc.isRunning {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(cc.status).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                    if cc.engine != .apple, !cc.whisperInfo.isEmpty {
+                        Text(cc.whisperInfo).font(.caption2.monospacedDigit()).foregroundStyle(.tertiary).lineLimit(1)
+                    }
                     Text("\(cc.direction.label) · " + (vm.loadedModel.map { "\($0.shortName) · \(cc.mode.title)" } ?? "chỉ Dịch nhanh (Apple)"))
                         .font(.caption2).foregroundStyle(.tertiary)
                 }

@@ -272,8 +272,10 @@ nonisolated final class VoiceChunker: @unchecked Sendable {
     private var noise = NoiseFloor()
     private let emit: @Sendable ([Float]) -> Void
     private let sampleRate = 16_000
+    private let maxSeconds: Int
 
-    init(emit: @escaping @Sendable ([Float]) -> Void) { self.emit = emit }
+    /// - maxSeconds: đoạn dài nhất (không nghe ra chỗ ngừng) — phụ đề dùng 6 s để không trễ.
+    init(maxSeconds: Int = 8, emit: @escaping @Sendable ([Float]) -> Void) { self.maxSeconds = maxSeconds; self.emit = emit }
 
     func feed(_ b: AVAudioPCMBuffer) {
         guard let ch = b.floatChannelData?[0] else { return }
@@ -287,7 +289,7 @@ nonisolated final class VoiceChunker: @unchecked Sendable {
             buf += arr
             if noise.isSpeech(rms) { speech += n; silence = 0 } else { silence += n }
             // ngừng ≥ 0,6 s sau ≥ 0,2 s lời nói, hoặc đoạn dài 8 s (phòng ồn, không nghe ra chỗ ngừng) → gửi đi
-            if (silence > sampleRate * 6 / 10 && buf.count > sampleRate && speech > sampleRate / 5) || buf.count > sampleRate * 8 {
+            if (silence > sampleRate * 6 / 10 && buf.count > sampleRate && speech > sampleRate / 5) || buf.count > sampleRate * maxSeconds {
                 defer { reset() }
                 return buf
             }

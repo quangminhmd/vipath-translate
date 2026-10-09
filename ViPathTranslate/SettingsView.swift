@@ -242,6 +242,7 @@ struct SettingsView: View {
     @Environment(TranslatorViewModel.self) private var vm
     @Environment(TranscribeController.self) private var tc
     @Environment(GrossDictationController.self) private var gross
+    @Environment(LiveCaptionsController.self) private var cc
     @AppStorage("autoLoadModels") private var autoLoad = true
     @AppStorage("preloadWhisper") private var preloadWhisper = ""
     @State private var loadingAll = false
@@ -255,6 +256,7 @@ struct SettingsView: View {
         @Bindable var vm = vm
         @Bindable var tc = tc
         @Bindable var gross = gross
+        @Bindable var cc = cc
         let pending = ModelLoader.pending(vm: vm, gross: gross, compute: tc.whisperCompute)
         NavigationStack {
             Form {
@@ -316,7 +318,7 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                     .disabled(WhisperStatus.shared.loading != nil)
                 } header: {
-                    Text("Nhận dạng giọng nói (Whisper) · Đại thể, Chép lời")
+                    Text("Nhận dạng giọng nói (Whisper) · Đại thể, Phụ đề, Chép lời")
                 } footer: {
                     Text(tc.whisperCompute == .neuralEngine
                          ? "Neural Engine: nhanh, mát máy; lần nạp ĐẦU TIÊN iOS phải tối ưu mô hình (vài phút), các lần sau vài giây."
@@ -326,6 +328,12 @@ struct SettingsView: View {
                 Section("Bộ nhận dạng mặc định") {
                     Picker("Đại thể", selection: $gross.engine) {
                         ForEach(GrossEngine.allCases) { Text($0.title).tag($0) }
+                    }
+                    Picker("Phụ đề · tiếng Việt", selection: $cc.engineVI) {
+                        ForEach(LiveCaptionsController.engines(for: .viToEn)) { Text($0.title).tag($0) }
+                    }
+                    Picker("Phụ đề · tiếng Anh", selection: $cc.engineEN) {
+                        ForEach(LiveCaptionsController.engines(for: .enToVi)) { Text($0.title).tag($0) }
                     }
                     Picker("Chép lời · tiếng Việt", selection: $tc.engineVI) {
                         ForEach(ASREngine.options(for: .vi)) { Text($0.title).tag($0) }

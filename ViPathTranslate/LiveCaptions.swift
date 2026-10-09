@@ -83,6 +83,25 @@ final class LiveCaptionsController {
     }
     var isRunning = false
     var status = ""
+    /// Bộ nhận dạng theo từng chiều (tiếng Anh: Apple / Whisper turbo; tiếng Việt: Apple / PhoWhisper / turbo).
+    var engineEN: GrossEngine = GrossEngine(rawValue: UserDefaults.standard.string(forKey: "captionsEngineEN") ?? "") ?? .apple {
+        didSet { UserDefaults.standard.set(engineEN.rawValue, forKey: "captionsEngineEN") }
+    }
+    var engineVI: GrossEngine = GrossEngine(rawValue: UserDefaults.standard.string(forKey: "captionsEngineVI") ?? "") ?? .apple {
+        didSet { UserDefaults.standard.set(engineVI.rawValue, forKey: "captionsEngineVI") }
+    }
+    /// Bộ nhận dạng của chiều đang chọn.
+    var engine: GrossEngine {
+        get { direction == .enToVi ? engineEN : engineVI }
+        set { if direction == .enToVi { engineEN = newValue } else { engineVI = newValue } }
+    }
+    static func engines(for d: TranslationDirection) -> [GrossEngine] {
+        d == .enToVi ? [.apple, .whisperTurbo] : GrossEngine.allCases
+    }
+    /// Mô hình Whisper cần cho chiều + bộ nhận dạng đang chọn (nil = Apple).
+    var whisperModel: WhisperModelChoice? {
+        engine.whisperModel(for: direction == .enToVi ? .en : .vi)
+    }
     var volatileText = ""        // câu đang nói, chưa chốt (chữ xám)
     /// Bản dịch nhanh của câu đang nói — phụ đề xuất hiện trước khi câu chốt
     var volatileFast = ""
@@ -103,6 +122,17 @@ final class LiveCaptionsController {
 
     private let vm: TranslatorViewModel
     private var transcriber: (any CaptionRecognizer)?
+    // Whisper (PhoWhisper / turbo): micro → cắt đoạn tại chỗ ngừng nói → nhận dạng tuần tự
+    private var chunker: VoiceChunker?
+    private var chunkQueue: [[Float]] = []
+    private var chunkTask: Task<Void, Never>?
+    private var partialLoop: Task<Void, Never>?
+    private var partialTask: Task<Void, Never>?
+    private var liveWhisper: WhisperModelChoice?
+    /// Đã nhận xong toàn bộ chữ của phiên (sau khi Dừng) → worker được phép thoát khi hết hàng đợi.
+    private var inputFinished = false
+    /// Thông tin Whisper (đoạn n · x s âm thanh → y s nhận dạng)
+    var whisperInfo = ""
     /// Chiều của phiên đang chạy (cố định từ lúc bấm Bắt đầu).
     private var dir: TranslationDirection = .enToVi
     /// Tiếng Việt: bộ nhận dạng giữ chữ ở dạng tạm đến khi dừng → tự chốt khi người nói ngừng.
@@ -203,9 +233,16 @@ final class LiveCaptionsController {
                 return
             }
         }
-        guard await EnglishTranscriber.requestAuthorization() else {
-            errorText = "Chưa cấp quyền nhận dạng giọng nói (Cài đặt → ViPath)."
+        let wm = whisperModel
+        if let wm, !WhisperModelStore.shared.isReady(wm) {
+            errorText = "Chưa tải \(wm.title) — tải trong tab Cài đặt (mục Whisper) hoặc chọn bộ nhận dạng Apple."
             return
+        }
+        if wm == nil {
+            guard await EnglishTranscriber.requestAuthorization() else {
+                errorText = "Chưa cấp quyền nhận dạng giọng nói (Cài đặt → ViPath)."
+                return
+            }
         }
 
         isRunning = true
@@ -215,9 +252,19 @@ final class LiveCaptionsController {
         volatileFast = ""
         volatileWords = []
         committedWords = 0
+        chunkQueue = []
+        inputFinished = false
+        whisperInfo = ""
         queue = []
         status = "Đang chuẩn bị…"
         UIApplication.shared.isIdleTimerDisabled = true   // không khoá màn hình khi đang nghe
+
+        if let wm {
+            guard await startWhisper(wm, dir: dir) else { return }
+            if vm.loadedModel != nil { startWorker() }
+            startFlusher()
+            return
+        }
 
         let onStatus: @Sendable (String) -> Void = { s in Task { @MainActor in self.status = s } }
         let onResult: @Sendable (String, Bool) -> Void = { text, isFinal in
@@ -284,7 +331,16 @@ final class LiveCaptionsController {
         audio = nil
         await transcriber?.finish()
         transcriber = nil
+        if let ch = chunker {
+            // Whisper: nhận dạng nốt đoạn cuối trước khi dừng
+            partialLoop?.cancel()
+            if let rest = ch.flush() { chunkQueue.append(rest) }
+            startChunkWorker()
+            status = "Đang nhận dạng nốt…"
+            await chunkTask?.value
+        }
         flushPending()
+        inputFinished = true
         flusher?.cancel()
         status = queue.isEmpty ? "Đã dừng" : "Đang dịch nốt…"
         await worker?.value                 // worker tự thoát khi hết hàng đợi
@@ -303,6 +359,14 @@ final class LiveCaptionsController {
         flusher?.cancel()
         volatileTask?.cancel()
         volatileTask = nil
+        partialLoop?.cancel()
+        partialLoop = nil
+        partialTask = nil
+        chunkTask?.cancel()
+        chunkTask = nil
+        chunkQueue = []
+        chunker = nil
+        liveWhisper = nil
         isRunning = false
         volatileText = ""
         volatileFast = ""
@@ -492,7 +556,7 @@ final class LiveCaptionsController {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(300))
                 // Tiếng Việt: chữ tạm đứng yên ≥ 0,9 s (người nói ngừng) → chốt thành câu
-                if dir == .viToEn, !volatileText.isEmpty, Date().timeIntervalSince(lastVolatileChange) > silenceFlush {
+                if dir == .viToEn, chunker == nil, !volatileText.isEmpty, Date().timeIntervalSince(lastVolatileChange) > silenceFlush {
                     commitVolatile()
                 }
                 if !pendingText.isEmpty, Date().timeIntervalSince(lastFinalAt) > silenceFlush {
@@ -502,6 +566,116 @@ final class LiveCaptionsController {
                     status = "Đang nghe âm thanh app"
                 }
             }
+        }
+    }
+
+    // MARK: Whisper (PhoWhisper / turbo)
+
+    /// Nạp Whisper (nếu chưa), bật nguồn âm thanh ở 16 kHz và bắt đầu cắt đoạn. false = lỗi / đã dừng.
+    private func startWhisper(_ model: WhisperModelChoice, dir: TranslationDirection) async -> Bool {
+        let compute = WhisperRunner.Compute(rawValue: UserDefaults.standard.string(forKey: "whisperCompute") ?? "") ?? .neuralEngine
+        do {
+            if !WhisperRunner.shared.isLoaded(model, compute) {
+                status = "Đang nạp \(model.title)… (lần đầu trên Neural Engine có thể mất 1–3 phút)"
+                try await WhisperRunner.shared.load(model, compute: compute)
+            }
+            guard !stopping else { await teardown(); status = "Đã dừng"; return false }
+            liveWhisper = model
+            let ch = VoiceChunker(maxSeconds: 6) { samples in Task { @MainActor in self.enqueueChunk(samples) } }
+            chunker = ch
+            let audio: AudioSource = (source == .microphone) ? MicrophoneSource() : BroadcastSource()
+            try audio.start(format: DictationMicrophone.recordFormat) { buffer in ch.feed(buffer) }
+            self.audio = audio
+            status = "Đang nghe · \(model.title)"
+            whisperInfo = "Đã nạp \(model.title) — chữ hiện sau mỗi lần người nói ngừng"
+            if source == .broadcast, !BroadcastSource.isBroadcastLive {
+                status = "Chờ phát sóng: vuốt mở Trung tâm điều khiển → giữ nút Ghi màn hình → chọn ViPath"
+            }
+            startPartialLoop(ch)
+            return true
+        } catch {
+            errorText = "Không nạp được \(model.title): \(error.localizedDescription)"
+            await teardown()
+            return false
+        }
+    }
+
+    private var whisperLanguage: TranscriptLanguage { dir == .enToVi ? .en : .vi }
+
+    /// Gợi ý thuật ngữ cho Whisper: thuật ngữ người dùng tự thêm (ngôn ngữ nguồn), tối đa 30.
+    private var whisperPrompt: String? {
+        let terms = vm.glossary.userEntries.map { dir == .enToVi ? $0.en : $0.vi }
+            .filter { !$0.isEmpty && $0.split(separator: " ").count <= 4 }
+        return terms.isEmpty ? nil : Array(terms.prefix(30)).joined(separator: ", ")
+    }
+
+    /// Whisper đôi khi đọc lại nguyên câu gợi ý khi đoạn âm thanh quá ngắn → bỏ.
+    private func dropPromptEcho(_ t: String, prompt: String?) -> String {
+        guard let prompt else { return t }
+        let head = prompt.split(separator: ",").prefix(3).joined(separator: ",")
+        return t.localizedCaseInsensitiveContains(head) ? "" : t
+    }
+
+    private func enqueueChunk(_ samples: [Float]) {
+        guard isRunning else { return }
+        chunkQueue.append(samples)
+        startChunkWorker()
+    }
+
+    /// Mỗi ~0,9 s: Whisper rảnh → nhận dạng đoạn đang nói dở → hiện chữ xám + bản ⚡ trước khi câu chốt.
+    private func startPartialLoop(_ ch: VoiceChunker) {
+        partialLoop = Task {
+            while !Task.isCancelled, isRunning {
+                try? await Task.sleep(for: .milliseconds(900))
+                guard isRunning, !stopping, chunkTask == nil, partialTask == nil,
+                      let snap = ch.snapshot(), liveWhisper != nil else { continue }
+                let lang = whisperLanguage
+                let prompt = whisperPrompt
+                let job = Task {
+                    let t = (try? await WhisperRunner.shared.transcribe(samples: snap.samples, language: lang,
+                                                                        promptText: prompt)) ?? ""
+                    let clean = dropPromptEcho(t, prompt: prompt)
+                    // đoạn đã được gửi đi nhận dạng chính thức trong lúc chờ → bỏ bản xem trước cũ
+                    if !clean.isEmpty, ch.currentGeneration == snap.generation, chunkTask == nil {
+                        volatileText = clean
+                        translateVolatile()
+                    }
+                }
+                partialTask = job
+                await job.value
+                partialTask = nil
+            }
+        }
+    }
+
+    private func startChunkWorker() {
+        guard chunkTask == nil, liveWhisper != nil, !chunkQueue.isEmpty else { return }
+        let lang = whisperLanguage
+        let prompt = whisperPrompt
+        chunkTask = Task {
+            await partialTask?.value          // không chạy song song hai lượt Whisper
+            var n = 0
+            while !chunkQueue.isEmpty, !Task.isCancelled {
+                let s = chunkQueue.removeFirst()
+                n += 1
+                let audioSec = Double(s.count) / 16_000
+                let t0 = Date()
+                do {
+                    let t = try await WhisperRunner.shared.transcribe(samples: s, language: lang, promptText: prompt)
+                    let clean = dropPromptEcho(t, prompt: prompt)
+                    whisperInfo = String(format: "%.1f s âm thanh → %.1f s nhận dạng", audioSec, Date().timeIntervalSince(t0))
+                    volatileText = ""
+                    volatileFast = ""
+                    if !clean.isEmpty {
+                        acceptFinal(clean)
+                        // đoạn kết thúc vì người nói ngừng (không phải bị cắt ở 6 s) → chốt câu ngay
+                        if audioSec < 5.8 { flushPending() }
+                    }
+                } catch {
+                    whisperInfo = "Lỗi Whisper: \(error.localizedDescription)"
+                }
+            }
+            chunkTask = nil
         }
     }
 
@@ -516,7 +690,7 @@ final class LiveCaptionsController {
                 if queue.isEmpty {
                     // chỉ thoát khi stop() đã nhận xong kết quả cuối (transcriber == nil);
                     // kết quả cuối có thể đến sau flushPending() trong stop()
-                    if stopping, transcriber == nil {
+                    if stopping, inputFinished {
                         if !pendingText.isEmpty { flushPending(); continue }
                         return
                     }
