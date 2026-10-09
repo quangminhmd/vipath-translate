@@ -866,7 +866,7 @@ async function startCaptions() {
     $('#cap-start').hidden = false; $('#cap-stop').hidden = true; $('#cap-live-en').hidden = true;
     return;
   }
-  C.flushTimer = setInterval(() => { if (C.pending && Date.now() - C.lastFinal > 1500) flushPending(); }, 400);
+  C.flushTimer = setInterval(() => { if (C.pending && Date.now() - C.lastFinal > 900) flushPending(); }, 300);
 }
 async function stopCaptions() {
   if (!C.running) return;
@@ -892,7 +892,7 @@ function startWebSpeech() {
       const r = e.results[i];
       if (r.isFinal) handleFinal(r[0].transcript); else interim += r[0].transcript;
     }
-    C.volatile = interim; renderCapsEN();
+    C.volatile = interim; renderCapsEN(); translateVolatile();
   };
   rec.onerror = (e) => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { setCapStatus('Chưa cấp quyền micro / nhận dạng giọng nói'); stopCaptions(); } };
   rec.onend = () => { if (C.running && C.rec === rec) { try { rec.start(); } catch { /* */ } } };
@@ -933,26 +933,65 @@ async function runAsrQueue() {
 }
 function handleFinal(text) {
   const t = text.trim();
+  C.volFast = '';
   if (!t) return;
   C.pending = C.pending ? C.pending + ' ' + t : t;
   C.lastFinal = Date.now();
   const { sentences, rest } = completeSentences(C.pending);
   sentences.forEach(enqueueCaption);
   C.pending = rest.trim();
-  if (C.pending.split(/\s+/).length >= 28) flushPending();
+  splitLongClause();
+  if (C.pending.split(/\s+/).length >= 24) flushPending();
   renderCapsEN();
 }
-function flushPending() { const t = C.pending.trim(); C.pending = ''; if (t) enqueueCaption(t); }
+function flushPending() { const t = C.pending.trim(); C.pending = ''; if (t) enqueueCaption(t); if (C.volatile) translateVolatile(); else C.volFast = ''; }
+/** Câu dài chưa có dấu chấm: cắt ở dấu phẩy / chấm phẩy cuối (vế trái ≥ 8 từ) — câu ngắn dịch nhanh hơn. */
+function splitLongClause() {
+  const w = C.pending.split(/\s+/);
+  if (w.length < 14) return;
+  let cut = -1, words = 0;
+  for (let i = 0; i < C.pending.length; i++) {
+    if (C.pending[i] === ' ') words++;
+    if ((C.pending[i] === ',' || C.pending[i] === ';') && words >= 7) cut = i + 1;
+  }
+  if (cut < 0) return;
+  const left = C.pending.slice(0, cut).trim(), right = C.pending.slice(cut).trim();
+  if (right.split(/\s+/).length < 2) return;
+  enqueueCaption(left); C.pending = right;
+}
+/** ⚡ dịch câu đang nói (chưa chốt) — một lượt một lúc, luôn lấy bản mới nhất. */
+async function translateVolatile() {
+  if (C.volBusy || !$('#cap-fast').checked || !fastActive(DIR.enToVi)) return;
+  C.volBusy = true;
+  let last = '';
+  while (C.running) {
+    const src = (C.pending ? C.pending + ' ' : '') + C.volatile;
+    if (!C.volatile || src === last) break;
+    last = src;
+    const t = await fastTranslate(src, DIR.enToVi);
+    if (t && C.volatile) { C.volFast = t; renderCapsVI(); }
+    await sleep(120);
+  }
+  C.volBusy = false;
+}
+const capMode = () => (!llm.engine ? 'fastest' : (C.mode === 'fastest' && !fastActive(DIR.enToVi)) ? 'balanced' : C.mode);
+C.mode = store.get('capMode', 'balanced');
+setPressed($('#cap-mode'), C.mode);
+onSeg($('#cap-mode'), (v) => { C.mode = v; store.set('capMode', v); updateCapHint(); });
+function finalizeFast(cap) {
+  cap.vi = cap.fast; cap.missing = glossaryMissing(cap.hits, cap.fast); cap.state = 'done'; cap.fastFinal = true;
+  if ($('#cap-speak').checked) tts.speak(cap.fast, { enqueue: true });
+}
 function enqueueCaption(sentence) {
   if (!/\p{L}/u.test(sentence)) return;
   const cap = { id: C.nextId++, en: sentence, vi: '', fast: '', hits: hitsFor(sentence, DIR.enToVi), missing: [], state: 'queued', at: Date.now() };
   C.caps.push(cap);
-  const useModel = !!llm.engine;
+  const useModel = capMode() !== 'fastest';
   if ($('#cap-fast').checked && fastActive(DIR.enToVi)) {
     fastTranslate(sentence, DIR.enToVi).then((t) => {
       if (!t || cap.state === 'done') return;
       cap.fast = t;
-      if (!useModel) { cap.vi = t; cap.missing = glossaryMissing(cap.hits, t); cap.state = 'done'; if ($('#cap-speak').checked) tts.speak(t, { enqueue: true }); }
+      if (!useModel) finalizeFast(cap);
       renderCapsVI();
     });
   }
@@ -963,6 +1002,18 @@ async function runCapQueue() {
   if (C.working) return;
   C.working = true;
   while (C.queue.length) {
+    // Cân bằng: câu cũ đã có ⚡ (tồn đọng / chờ > 6 s) → giữ ⚡, mô hình chỉ dịch câu mới nhất
+    const mode = capMode();
+    if (mode !== 'accurate') {
+      const newest = mode === 'fastest' ? null : C.queue[C.queue.length - 1];
+      C.queue = C.queue.filter((id) => {
+        const c = C.caps.find((x) => x.id === id);
+        if (c && c.fast && (id !== newest || Date.now() - c.at > 6000)) { finalizeFast(c); return false; }
+        return true;
+      });
+      renderCapsVI();
+      if (!C.queue.length) break;
+    }
     if (C.queue.length >= 3) {   // tồn đọng → gộp các câu chờ vào câu đầu
       const ids = C.queue.splice(0);
       const caps = ids.map((id) => C.caps.find((c) => c.id === id)).filter(Boolean);
@@ -978,6 +1029,7 @@ async function runCapQueue() {
     cap.state = 'translating'; renderCaps();
     try {
       const st = await translateLLM(cap.en, cap.hits, DIR.enToVi, (t) => { if (!cap.fast) { cap.vi = t; renderCapsVI(); } });
+      cap.fastFinal = false;
       cap.vi = st.text; cap.missing = glossaryMissing(cap.hits, st.text); cap.state = 'done';
       setCapStatus(`trễ ${((Date.now() - cap.at) / 1000).toFixed(1)} s · ${st.tps.toFixed(0)} tok/s`);
       if ($('#cap-speak').checked) tts.speak(st.text, { enqueue: true });
@@ -995,15 +1047,38 @@ function renderCapsEN() {
     + (!C.caps.length && !C.volatile && !C.pending ? `<div class="muted small">${C.running ? 'Đang nghe…' : 'Lời nói tiếng Anh nhận dạng được sẽ hiện ở đây.'}</div>` : '');
   if (atBottom) box.scrollTop = box.scrollHeight;
 }
+/** Khung phụ đề: cập nhật từng dòng theo id thay vì dựng lại toàn bộ khung mỗi token (mượt với phiên dài). */
+function capViHTML(c) {
+  if (c.state !== 'done' && c.fast) return `<div class="cap-vi pending fast">${esc(c.fast)}</div>`;
+  if (c.state === 'queued') return '<div class="cap-vi pending">…</div>';
+  return `<div class="cap-vi${c.state === 'done' ? '' : ' pending'}${c.fastFinal ? ' fast' : ''}">${esc(c.vi || '…')}</div>${c.missing.length ? `<div class="miss">⚠︎ ${c.missing.map((h) => `${esc(h.matched)} → ${esc(h.translations[0])}`).join('  ')}</div>` : ''}`;
+}
 function renderCapsVI() {
+  if (C.raf) return;
+  C.raf = requestAnimationFrame(() => { C.raf = 0; drawCapsVI(); });
+}
+function drawCapsVI() {
   const box = $('#cap-vi');
-  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
-  $('#cap-live-vi').hidden = !C.caps.some((c) => c.state === 'translating');
-  box.innerHTML = C.caps.map((c) => {
-    if (c.state !== 'done' && c.fast) return `<div class="cap-vi pending fast">${esc(c.fast)}</div>`;
-    if (c.state === 'queued') return '<div class="cap-vi pending">…</div>';
-    return `<div class="cap-vi${c.state === 'done' ? '' : ' pending'}">${esc(c.vi || '…')}</div>${c.missing.length ? `<div class="miss">⚠︎ ${c.missing.map((h) => `${esc(h.matched)} → ${esc(h.translations[0])}`).join('  ')}</div>` : ''}`;
-  }).join('') || '<div class="muted small">Phụ đề tiếng Việt hiện ở đây: ⚡ bản dịch nhanh trước, bản chuẩn theo glossary thay vào sau.</div>';
+  const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+  $('#cap-live-vi').hidden = !C.caps.some((c) => c.state === 'translating') && !C.volFast;
+  if (!C.caps.length && !C.volFast) {
+    box.innerHTML = '<div class="muted small">Phụ đề tiếng Việt hiện ở đây: ⚡ bản dịch nhanh trước, bản chuẩn theo glossary thay vào sau.</div>';
+    return;
+  }
+  box.querySelector(':scope > .muted')?.remove();
+  const ids = new Set(C.caps.map((c) => String(c.id)));
+  for (const el of [...box.querySelectorAll(':scope > [data-cid]')]) if (!ids.has(el.dataset.cid)) el.remove();
+  let vol = box.querySelector(':scope > .cap-vol');
+  for (const c of C.caps) {
+    let el = box.querySelector(`:scope > [data-cid="${c.id}"]`);
+    const html = capViHTML(c);
+    if (!el) { el = document.createElement('div'); el.dataset.cid = c.id; box.insertBefore(el, vol); }
+    if (el._html !== html) { el.innerHTML = html; el._html = html; }
+  }
+  if (C.volFast) {
+    if (!vol) { vol = document.createElement('div'); vol.className = 'cap-vol'; box.append(vol); }
+    vol.textContent = '〜 ' + C.volFast;
+  } else vol?.remove();
   if (atBottom) box.scrollTop = box.scrollHeight;
 }
 async function saveCaptions() {

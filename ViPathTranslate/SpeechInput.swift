@@ -43,7 +43,8 @@ nonisolated final class EnglishTranscriber: @unchecked Sendable {
 
         let transcriber = SpeechTranscriber(locale: locale,
                                             transcriptionOptions: [],
-                                            reportingOptions: [.volatileResults],
+                                            // fastResults: trả câu đã chốt sớm hơn (đổi lấy chút độ chính xác)
+                                            reportingOptions: [.volatileResults, .fastResults],
                                             attributeOptions: [])
         let installed = await Set(SpeechTranscriber.installedLocales.map { $0.identifier(.bcp47) })
         if !installed.contains(locale.identifier(.bcp47)) {

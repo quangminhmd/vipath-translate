@@ -196,6 +196,10 @@ td .user { color: var(--eosin); font-size: 11px; font-weight: 600; margin-left: 
 .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 30;
   padding: 10px 16px; border-radius: 999px; background: var(--ink); color: var(--bg); font-weight: 600; font-size: 14px; box-shadow: var(--shadow); }
 
+/* ---------- Phụ đề: câu đang nói ---------- */
+.cap-vol { font-size: inherit; font-style: italic; color: var(--muted); opacity: .75; }
+.cap-vi { transition: color .15s ease; }
+
 /* ---------- Đại thể ---------- */
 .gr-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .gr-chips span { padding: 4px 10px; border-radius: 999px; background: var(--eosin-soft); color: var(--eosin); font-size: 12.5px; }
