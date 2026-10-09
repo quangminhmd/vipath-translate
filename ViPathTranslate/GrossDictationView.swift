@@ -141,16 +141,17 @@ struct GrossDictationView: View {
         }
     }
 
+    /// Gợi ý cấu trúc mô tả: các mục tự xuống dòng, thấy hết trong màn hình, không phải vuốt ngang.
     private func checklist(_ t: GrossTemplate) -> some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(t.items, id: \.self) { item in
-                    Text(item).font(.caption)
-                        .padding(.horizontal, 10).padding(.vertical, 6)
-                        .background(Color.accentColor.opacity(0.1), in: .capsule)
-                }
+        FlowLayout(spacing: 6, lineSpacing: 6) {
+            ForEach(t.items, id: \.self) { item in
+                Text(item).font(.caption)
+                    .lineLimit(2)
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+                    .background(Color.accentColor.opacity(0.1), in: .capsule)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: Nội dung
@@ -540,6 +541,46 @@ private struct PathcodeScanner: UIViewControllerRepresentable {
             case .text(let t): finish(t.transcript)
             @unknown default: break
             }
+        }
+    }
+}
+
+// MARK: - Bố cục tự xuống dòng
+
+/// Xếp các phần tử từ trái sang phải, hết chỗ thì xuống dòng.
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 6
+    var lineSpacing: CGFloat = 6
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var x: CGFloat = 0, y: CGFloat = 0, lineHeight: CGFloat = 0, widest: CGFloat = 0
+        for v in subviews {
+            let size = v.sizeThatFits(ProposedViewSize(width: maxWidth, height: nil))
+            if x > 0, x + size.width > maxWidth {
+                y += lineHeight + lineSpacing
+                x = 0
+                lineHeight = 0
+            }
+            x += size.width + spacing
+            lineHeight = max(lineHeight, size.height)
+            widest = max(widest, x - spacing)
+        }
+        return CGSize(width: min(widest, maxWidth), height: y + lineHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX, y = bounds.minY, lineHeight: CGFloat = 0
+        for v in subviews {
+            let size = v.sizeThatFits(ProposedViewSize(width: bounds.width, height: nil))
+            if x > bounds.minX, x + size.width > bounds.maxX {
+                y += lineHeight + lineSpacing
+                x = bounds.minX
+                lineHeight = 0
+            }
+            v.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(width: min(size.width, bounds.width), height: size.height))
+            x += size.width + spacing
+            lineHeight = max(lineHeight, size.height)
         }
     }
 }
