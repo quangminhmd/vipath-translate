@@ -168,9 +168,10 @@ struct GrossDictationView: View {
     /// Phần đã chốt chữ thường, phần đang nghe (mới thêm) chữ nghiêng màu nhạt.
     private func liveText(committed: String, shown: String) -> Text {
         if shown.hasPrefix(committed), shown.count > committed.count {
-            return Text(committed) + Text(String(shown.dropFirst(committed.count))).italic().foregroundStyle(.secondary)
+            let delta = Text(verbatim: String(shown.dropFirst(committed.count))).italic().foregroundStyle(.secondary)
+            return Text("\(Text(verbatim: committed))\(delta)")
         }
-        return Text(shown.isEmpty ? " " : shown).foregroundStyle(shown == committed ? .primary : .secondary)
+        return Text(verbatim: shown.isEmpty ? " " : shown).foregroundStyle(shown == committed ? .primary : .secondary)
     }
 
     private func cassetteCard(_ i: Int, _ c: GrossCassette) -> some View {
