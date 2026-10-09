@@ -333,9 +333,9 @@ nonisolated enum GrossParser {
     nonisolated(unsafe) private static let commands: [(NSRegularExpression, Maker)] = [
         (cmd("(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$"),
          { g in .pathcode(spokenCode(g[1] ?? "")) }),
-        (cmd("\(cassRx)\\s+(?:số\\s+|number\\s+)?(?:(\(letRx))\\s*-?\\s*)?\(numRx)"),
+        (cmd("\(cassRx)\\s+(?:số\\s+|number\\s+)?(?:(\(letRx))\\s*-?\\s*)?\(numRx)(?:\\s+là(?=\\s|$))?"),
          { g in .cassette((g[1].map(letter) ?? "") + String(cassetteNumber(g[2] ?? ""))) }),
-        (cmd("mẫu\\s+(\(letRx))\\s*-?\\s*\(numRx)"),
+        (cmd("mẫu\\s+(\(letRx))\\s*-?\\s*\(numRx)(?:\\s+là(?=\\s|$))?"),
          { g in .cassette(letter(g[1] ?? "") + String(cassetteNumber(g[2] ?? ""))) }),
         (cmd("(?:\(cassRx)|khối|mẫu)\\s+(?:tiếp(?:\\s+theo)?|kế\\s+tiếp|next)|next\\s+(?:cassette|block)"),
          { _ in .nextCassette }),
@@ -348,7 +348,8 @@ nonisolated enum GrossParser {
         (cmd("mở\\s+ngoặc|open\\s+(?:paren|parenthesis|bracket)"), { _ in .punct("(") }),
         (cmd("đóng\\s+ngoặc|close\\s+(?:paren|parenthesis|bracket)"), { _ in .punct(")") }),
         (cmd("gạch\\s+đầu\\s+dòng|bullet"), { _ in .bullet }),
-        (cmd("xuống\\s+dòng|new\\s+line"), { _ in .newline }),
+        // "XXX ne ne Ex Ex Ex": cách bộ nhận dạng iPhone đã viết "xuống dòng" (quan sát thực tế)
+        (cmd("xuống\\s+(?:dòng|giòng|ròng)|xxx(?:\\s+(?:ne|ex))*|new\\s+line"), { _ in .newline }),
         (cmd("đoạn\\s+mới|sang\\s+đoạn(?:\\s+mới)?|new\\s+paragraph"), { _ in .para }),
         (cmd("(?:xoá|xóa)\\s+câu(?:\\s+(?:cuối|vừa\\s+rồi|trước))?|hoàn\\s+tác|scratch\\s+that|undo\\s+that"), { _ in .undo }),
         (cmd("tạm\\s+dừng(?:\\s+ghi)?|pause\\s+dictation"), { _ in .pause }),
@@ -421,13 +422,13 @@ nonisolated enum GrossParser {
             var before = ns.substring(to: m.range.location)
             // dấu câu tự thêm của bộ nhận dạng ngay trước lệnh dấu câu → bỏ (lệnh thay thế nó)
             if case .punct = op { before = replace(before, trailingPunctRx, "") }
-            let b = before.trimmingCharacters(in: .whitespacesAndNewlines)
+            let b = replace(before, leadingPunctRx, "").trimmingCharacters(in: .whitespacesAndNewlines)
             if !b.isEmpty { ops.append(.text(b)) }
             ops.append(op)
             // dấu câu tự thêm ngay sau lệnh → bỏ
             rest = replace(ns.substring(from: m.range.location + m.range.length), leadingPunctRx, "")
         }
-        let r = rest.trimmingCharacters(in: .whitespacesAndNewlines)
+        let r = replace(rest, leadingPunctRx, "").trimmingCharacters(in: .whitespacesAndNewlines)
         if !r.isEmpty { ops.append(.text(r)) }
         return ops
     }
@@ -619,6 +620,16 @@ nonisolated enum GrossParser {
         doc.cassettes.append(GrossCassette(code: code, text: "", pathcode: doc.pathcode))
         if doc.oneShot { doc.target = -1; doc.oneShot = false }
         return doc.cassettes.count - 1
+    }
+
+    /// Xem trước tức thì: áp phần đang nghe (chưa chốt) lên bản sao — không đụng văn bản thật.
+    static func preview(_ doc: GrossDoc, volatile: String, corrections: [GrossCorrection],
+                        cassetteReturn: Bool, inlineMarker: Bool) -> GrossDoc {
+        var d = doc
+        d.history = []
+        apply(parse(volatile), to: &d, corrections: corrections,
+              cassetteReturn: cassetteReturn, inlineMarker: inlineMarker)
+        return d
     }
 
     static func reportText(_ doc: GrossDoc, english: Bool = false) -> String {

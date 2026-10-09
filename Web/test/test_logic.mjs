@@ -149,5 +149,13 @@ for (const [txt, code] of [['Các xét Á 1 diện cắt gần', 'A1'], ['cát s
   L.applyDictation(d, L.parseDictation('cát xét A4 diện cắt quanh xuống dòng mỡ quanh'));
   ok(d.cassettes[3].text === 'Diện cắt quanh' && d.body.endsWith('(A4).\nMỡ quanh'), 'newline closes note ' + JSON.stringify(d));
 }
+// Kết quả thực tế từ iPhone (DictationTranscriber): ". … cát sét A1 là …", "XXX ne ne Ex Ex Ex" = xuống dòng
+{
+  const d = L.newGrossDoc('26-3901');
+  const live = '. Diện cắt gần chấm mực xanh cát sét A1 là diện cắt gần XXX ne ne Ex Ex Ex cát xét A2 là diện cắt xa';
+  const p = L.previewDictation(d, live);
+  ok(d.body === '' && !d.cassettes.length, 'preview does not touch doc');
+  ok(p.body === 'Diện cắt gần chấm mực xanh (A1) (A2).\n' && p.cassettes[0].text === 'Diện cắt gần' && p.cassettes[1].text === 'Diện cắt xa' && p.cassettes[1].pathcode === '26-3901', 'real iPhone output ' + JSON.stringify(p));
+}
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đạt');
 process.exit(fails ? 1 : 0);

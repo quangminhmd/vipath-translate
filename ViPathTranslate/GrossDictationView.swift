@@ -26,8 +26,8 @@ struct GrossDictationView: View {
                         setupRow
                         if showChecklist, let t = ctl.template { checklist(t) }
                         bodyCard
-                        ForEach(Array(ctl.doc.cassettes.enumerated()), id: \.element.id) { i, c in
-                            cassetteCard(i, c).id(c.id)
+                        ForEach(Array(ctl.liveDoc.cassettes.enumerated()), id: \.element.label) { i, c in
+                            cassetteCard(i, c).id(c.label)
                         }
                         Button {
                             ctl.addCassette()
@@ -43,9 +43,10 @@ struct GrossDictationView: View {
                     .padding()
                 }
                 .scrollDismissesKeyboard(.interactively)
-                .onChange(of: ctl.doc.target) { _, t in
+                .onChange(of: ctl.liveDoc.target) { _, t in
+                    let cs = ctl.liveDoc.cassettes
                     withAnimation {
-                        if t >= 0, t < ctl.doc.cassettes.count { proxy.scrollTo(ctl.doc.cassettes[t].id, anchor: .center) }
+                        if t >= 0, t < cs.count { proxy.scrollTo(cs[t].label, anchor: .center) }
                     }
                 }
             }
@@ -131,7 +132,7 @@ struct GrossDictationView: View {
 
     private var bodyCard: some View {
         @Bindable var ctl = ctl
-        let active = ctl.doc.target < 0
+        let active = ctl.liveDoc.target < 0
         return VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("MÔ TẢ ĐẠI THỂ").font(.caption.bold()).foregroundStyle(active ? Color.accentColor : .secondary)
@@ -141,11 +142,14 @@ struct GrossDictationView: View {
                     Button("Ghi vào đây") { ctl.select(target: -1) }.font(.caption)
                 }
             }
-            TextField("Bấm micro rồi đọc: “Bệnh phẩm gồm ba mảnh, kích thước…”", text: $ctl.doc.body, axis: .vertical)
-                .font(textFont)
-                .lineLimit(4...)
-            if active, !ctl.volatileText.isEmpty {
-                Text(ctl.volatileText).font(textFont).italic().foregroundStyle(.secondary)
+            if ctl.isPreviewing {
+                liveText(committed: ctl.doc.body, shown: ctl.liveDoc.body)
+                    .font(textFont)
+                    .frame(maxWidth: .infinity, minHeight: 80, alignment: .topLeading)
+            } else {
+                TextField("Bấm micro rồi đọc: “Bệnh phẩm gồm ba mảnh, kích thước…”", text: $ctl.doc.body, axis: .vertical)
+                    .font(textFont)
+                    .lineLimit(4...)
             }
         }
         .padding(12)
@@ -161,8 +165,17 @@ struct GrossDictationView: View {
                 })
     }
 
+    /// Phần đã chốt chữ thường, phần đang nghe (mới thêm) chữ nghiêng màu nhạt.
+    private func liveText(committed: String, shown: String) -> Text {
+        if shown.hasPrefix(committed), shown.count > committed.count {
+            return Text(committed) + Text(String(shown.dropFirst(committed.count))).italic().foregroundStyle(.secondary)
+        }
+        return Text(shown.isEmpty ? " " : shown).foregroundStyle(shown == committed ? .primary : .secondary)
+    }
+
     private func cassetteCard(_ i: Int, _ c: GrossCassette) -> some View {
-        let active = ctl.doc.target == i
+        let active = ctl.liveDoc.target == i
+        let committed = ctl.doc.cassettes.first { $0.label == c.label }
         return VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(c.pathcode.isEmpty ? c.code : "\(c.pathcode) · \(c.code)")
@@ -172,20 +185,30 @@ struct GrossDictationView: View {
                     .foregroundStyle(active ? .white : .primary)
                 if active && ctl.isRunning { RecordingDot(paused: ctl.isPaused) }
                 Spacer()
-                if !active { Button("Ghi vào đây") { ctl.select(target: i) }.font(.caption) }
-                Menu {
-                    Button("Xoá cát xét", systemImage: "trash", role: .destructive) { ctl.deleteCassette(at: i) }
-                } label: { Image(systemName: "ellipsis") }
+                if !ctl.isPreviewing, let committed {
+                    if !active, let k = ctl.doc.cassettes.firstIndex(where: { $0.id == committed.id }) {
+                        Button("Ghi vào đây") { ctl.select(target: k) }.font(.caption)
+                    }
+                    Menu {
+                        Button("Xoá cát xét", systemImage: "trash", role: .destructive) {
+                            if let k = ctl.doc.cassettes.firstIndex(where: { $0.id == committed.id }) { ctl.deleteCassette(at: k) }
+                        }
+                    } label: { Image(systemName: "ellipsis") }
+                }
             }
-            TextField("Vị trí lấy mẫu…", text: cassetteText(c.id), axis: .vertical)
-                .font(textFont)
-            if active, !ctl.volatileText.isEmpty {
-                Text(ctl.volatileText).font(textFont).italic().foregroundStyle(.secondary)
+            if ctl.isPreviewing || committed == nil {
+                liveText(committed: committed?.text ?? "", shown: c.text)
+                    .font(textFont)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else if let committed {
+                TextField("Vị trí lấy mẫu…", text: cassetteText(committed.id), axis: .vertical)
+                    .font(textFont)
             }
         }
         .padding(12)
         .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(active ? Color.accentColor : .clear, lineWidth: 2))
+        .animation(.easeOut(duration: 0.15), value: active)
     }
 
     // MARK: Thanh điều khiển (nút lớn, dễ bấm khi đeo găng)

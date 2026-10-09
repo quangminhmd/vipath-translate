@@ -195,7 +195,14 @@ nonisolated final class GrossSegmentCollector: @unchecked Sendable {
 @Observable
 final class GrossDictationController {
     var doc = GrossDoc()
-    var volatileText = ""
+    var volatileText = "" {
+        didSet { if volatileText.isEmpty { preview = nil } }
+    }
+    /// Bản xem trước: phần đang nghe đã áp lệnh (cát xét, dấu câu…) — hiển thị tức thì, chốt khi câu được chốt.
+    private(set) var preview: GrossDoc?
+    /// Văn bản đang hiển thị: bản xem trước nếu đang nghe, nếu không là văn bản thật.
+    var liveDoc: GrossDoc { preview ?? doc }
+    var isPreviewing: Bool { preview != nil }
     private(set) var isRunning = false
     private(set) var isPaused = false
     private(set) var isRewriting = false
@@ -248,8 +255,9 @@ final class GrossDictationController {
     var template: GrossTemplate? { GrossTemplate.all.first { $0.id == templateID } }
     var reportText: String { GrossParser.reportText(doc, english: language == .en) }
     var targetLabel: String {
-        guard doc.target >= 0, doc.target < doc.cassettes.count else { return "Mô tả" }
-        return "Cát xét \(doc.cassettes[doc.target].label)" + (doc.oneShot ? " → xong quay lại mô tả" : "")
+        let d = liveDoc
+        guard d.target >= 0, d.target < d.cassettes.count else { return "Mô tả" }
+        return "Cát xét \(d.cassettes[d.target].label)" + (d.oneShot ? " → xong quay lại mô tả" : "")
     }
 
     // MARK: Ghi
@@ -331,7 +339,14 @@ final class GrossDictationController {
     private func handle(_ text: String, isFinal: Bool) {
         guard isRunning else { return }
         guard isFinal else {
-            if !isPaused { volatileText = text }
+            // Bộ nhận dạng tiếng Việt có thể giữ cả tràng nói ở dạng "đang nghe" rất lâu →
+            // áp lệnh lên bản xem trước để cát xét / xuống dòng hiện ngay, không đợi chốt câu.
+            if !isPaused {
+                volatileText = text
+                preview = GrossParser.preview(doc, volatile: text, corrections: corrections,
+                                              cassetteReturn: cassetteReturn, inlineMarker: inlineMarker)
+                status = "Đang nghe · \(targetLabel)"
+            }
             return
         }
         volatileText = ""

@@ -715,8 +715,8 @@ const cmd = (src) => new RegExp(GW_L + src + GW_R, 'iu');
 /** Thứ tự quan trọng: cụm dài trước ("dấu hai chấm" trước "dấu chấm"). */
 const GROSS_COMMANDS = [
   [cmd('(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$'), (m) => ({ type: 'pathcode', code: spokenCode(m[1]) })],
-  [cmd(`${CASS_RX}\\s+(?:số\\s+|number\\s+)?(?:(${LET_RX})\\s*-?\\s*)?${NUM_RX}`), (m) => ({ type: 'cassette', code: (m[1] ? GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] : '') + cassetteNumber(m[2]) })],
-  [cmd(`mẫu\\s+(${LET_RX})\\s*-?\\s*${NUM_RX}`), (m) => ({ type: 'cassette', code: GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] + cassetteNumber(m[2]) })],
+  [cmd(`${CASS_RX}\\s+(?:số\\s+|number\\s+)?(?:(${LET_RX})\\s*-?\\s*)?${NUM_RX}(?:\\s+là(?=\\s|$))?`), (m) => ({ type: 'cassette', code: (m[1] ? GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] : '') + cassetteNumber(m[2]) })],
+  [cmd(`mẫu\\s+(${LET_RX})\\s*-?\\s*${NUM_RX}(?:\\s+là(?=\\s|$))?`), (m) => ({ type: 'cassette', code: GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] + cassetteNumber(m[2]) })],
   [cmd(`(?:${CASS_RX}|khối|mẫu)\\s+(?:tiếp(?:\\s+theo)?|kế\\s+tiếp|next)|next\\s+(?:cassette|block)`), () => ({ type: 'nextCassette' })],
   [cmd('(?:quay\\s+(?:lại|về)|về|trở\\s+lại)\\s+(?:phần\\s+)?mô\\s+tả|phần\\s+mô\\s+tả|back\\s+to\\s+description'), () => ({ type: 'body' })],
   [cmd('dấu\\s+chấm\\s+phẩy|semicolon'), () => ({ type: 'punct', text: ';' })],
@@ -727,7 +727,8 @@ const GROSS_COMMANDS = [
   [cmd('mở\\s+ngoặc|open\\s+(?:paren|parenthesis|bracket)'), () => ({ type: 'punct', text: '(' })],
   [cmd('đóng\\s+ngoặc|close\\s+(?:paren|parenthesis|bracket)'), () => ({ type: 'punct', text: ')' })],
   [cmd('gạch\\s+đầu\\s+dòng|bullet'), () => ({ type: 'bullet' })],
-  [cmd('xuống\\s+dòng|new\\s+line'), () => ({ type: 'newline' })],
+  // "XXX ne ne Ex Ex Ex": cách bộ nhận dạng iPhone đã viết "xuống dòng" (quan sát thực tế)
+  [cmd('xuống\\s+(?:dòng|giòng|ròng)|xxx(?:\\s+(?:ne|ex))*|new\\s+line'), () => ({ type: 'newline' })],
   [cmd('đoạn\\s+mới|sang\\s+đoạn(?:\\s+mới)?|new\\s+paragraph'), () => ({ type: 'para' })],
   [cmd('(?:xoá|xóa)\\s+câu(?:\\s+(?:cuối|vừa\\s+rồi|trước))?|hoàn\\s+tác|scratch\\s+that|undo\\s+that'), () => ({ type: 'undo' })],
   [cmd('tạm\\s+dừng(?:\\s+ghi)?|pause\\s+dictation'), () => ({ type: 'pause' })],
@@ -771,11 +772,13 @@ export function parseDictation(input) {
     let before = rest.slice(0, best.m.index);
     // dấu câu tự thêm của bộ nhận dạng ngay trước lệnh dấu câu → bỏ (lệnh thay thế nó)
     if (op.type === 'punct') before = before.replace(/[\s.,;:!?]+$/u, '');
+    before = before.replace(/^[\s.,;:]+/u, '');
     if (before.trim()) ops.push({ type: 'text', text: before.trim() });
     ops.push(op);
     // dấu câu tự thêm ngay sau lệnh → bỏ
     rest = rest.slice(best.m.index + best.m[0].length).replace(/^[\s.,;:!?]+/u, '');
   }
+  rest = rest.replace(/^[\s.,;:]+/u, '');
   if (rest.trim()) ops.push({ type: 'text', text: rest.trim() });
   return ops;
 }
@@ -899,6 +902,13 @@ export function addCassette(doc, { inlineMarker = true } = {}) {
   doc.cassettes.push({ code, text: '', pathcode: doc.pathcode || '' });
   if (doc.oneShot) { doc.target = -1; doc.oneShot = false; }
   return doc.cassettes.length - 1;
+}
+
+/** Xem trước tức thì: áp phần đang nghe (chưa chốt) lên bản sao — không đụng văn bản thật. */
+export function previewDictation(doc, volatile, opts = {}) {
+  const d = { ...grossSnapshot(doc), history: [] };
+  applyDictation(d, parseDictation(volatile), opts);
+  return d;
 }
 
 export function grossReportText(doc, lang = 'vi') {

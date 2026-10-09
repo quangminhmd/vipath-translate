@@ -1132,17 +1132,23 @@ function updateGrossHint() {
     ? (SR ? 'Bộ nhận dạng của trình duyệt: nhanh, nhưng Chrome gửi âm thanh lên máy chủ Google. Không đọc thông tin định danh người bệnh.' : 'Trình duyệt này không có nhận dạng giọng nói — dùng Whisper.')
     : `Whisper chạy trên máy (${w.name}) — không gửi âm thanh đi đâu; mỗi câu hiện ra sau khi bạn ngừng nói ~0,6 giây. Nói “cát xét A1”, “xuống dòng”, “xoá câu”… — bấm “Lệnh giọng nói” để xem đủ.`;
 }
-const grTargetLabel = () => (G.doc.target < 0 ? 'Mô tả' : 'Cát xét ' + cassetteLabel(G.doc.cassettes[G.doc.target]) + (G.doc.oneShot ? ' (ghi chú xong quay lại mô tả)' : ''));
+const grTargetLabel = () => {
+  const d = grPreviewing() ? previewDictation(G.doc, G.volatile, grOpts()) : G.doc;
+  return d.target < 0 ? 'Mô tả' : 'Cát xét ' + cassetteLabel(d.cassettes[d.target]) + (d.oneShot ? ' (ghi chú xong quay lại mô tả)' : '');
+};
 const setGrStatus = (t) => { $('#gr-status').textContent = t; };
 function grListening() { setGrStatus((G.paused ? 'Tạm dừng — nói “tiếp tục ghi” hoặc bấm ▶' : `Đang nghe · ${grTargetLabel()}`) + (G.heard ? ` · Nghe: “${G.heard.slice(-80)}”` : '')); }
 
+/** Đang nghe (chưa chốt) → hiển thị bản xem trước đã áp lệnh, để cát xét / dấu câu hiện tức thì. */
+const grPreviewing = () => G.running && !G.paused && G.asrMode === 'web' && !!G.volatile;
 function renderGross() {
-  const d = G.doc;
+  const previewing = grPreviewing();
+  const d = previewing ? previewDictation(G.doc, G.volatile, grOpts()) : G.doc;
   const live = (i) => (G.running && d.target === i ? `<span class="gr-live${G.paused ? ' paused' : ''}"></span>` : '');
-  const vol = (i) => (d.target === i && !G.paused ? esc(G.volatile) : '');
+  const vol = (i) => (!previewing && G.asrMode !== 'web' && d.target === i && !G.paused ? esc(G.volatile) : '');
   const block = (i, head, text, ph) => `<div class="gr-block${d.target === i ? ' active' : ''}" data-gi="${i}">
     <div class="gr-head">${head}${live(i)}<span class="grow"></span>${d.target === i ? '' : '<button class="btn ghost tiny" data-gr-target>Ghi vào đây</button>'}${i >= 0 ? '<button class="btn ghost tiny" data-gr-del title="Xoá cát xét">✕</button>' : ''}</div>
-    <textarea rows="${i < 0 ? 4 : 2}" placeholder="${ph}" data-gr-text>${esc(text)}</textarea><div class="gr-vol">${vol(i)}</div></div>`;
+    <textarea rows="${i < 0 ? 4 : 2}" placeholder="${ph}" data-gr-text${previewing ? ' readonly class="gr-live-text"' : ''}>${esc(text)}</textarea><div class="gr-vol">${vol(i)}</div></div>`;
   $('#gr-doc').innerHTML = block(-1, 'MÔ TẢ ĐẠI THỂ', d.body, 'Bấm micro rồi đọc: “Bệnh phẩm gồm ba mảnh, kích thước…”')
     + d.cassettes.map((c, i) => block(i, `<span class="gr-code">${c.pathcode ? `<span class="gr-pc">${esc(c.pathcode)}</span> · ` : ''}${esc(c.code)}</span>`, c.text, 'Vị trí lấy mẫu…')).join('')
     + (d.cassettes.length ? '' : '<div class="note">Cát xét: nói “cát xét A1”, “cát xét tiếp theo”… hoặc bấm Cát xét +. Danh sách cát xét được ghép vào cuối mô tả.</div>');
@@ -1152,6 +1158,7 @@ function renderGross() {
   if (act && G.running) act.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 function renderGrossVolatile() {
+  if (G.asrMode === 'web' && G.running) { renderGross(); if (G.running) grListening(); return; }
   const el = $(`#gr-doc .gr-block[data-gi="${G.doc.target}"] .gr-vol`);
   if (el) el.textContent = G.paused ? '' : G.volatile;
 }

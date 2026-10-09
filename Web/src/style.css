@@ -217,6 +217,7 @@ td .user { color: var(--eosin); font-size: 11px; font-weight: 600; margin-left: 
 .gr-block textarea:focus { outline: none; }
 .gr-vol { font-size: var(--gr-size, 19px); font-style: italic; color: var(--muted); }
 .gr-vol:empty { display: none; }
+.gr-block textarea.gr-live-text { color: var(--ink); opacity: .85; }
 .gr-live { width: 8px; height: 8px; border-radius: 50%; background: var(--danger); animation: pulse .8s infinite alternate; }
 .gr-live.paused { background: var(--warn); animation: none; }
 .gr-bar { position: sticky; bottom: 0; z-index: 4; min-width: 0; max-width: 100%; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px 14px;
