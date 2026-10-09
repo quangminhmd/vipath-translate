@@ -247,23 +247,26 @@ final class WhisperStatus {
     private(set) var loadingCompute: WhisperRunner.Compute?
     private(set) var loadingSince: Date?
     private(set) var lastError: String?
+    /// Đã nạp xong, đang chạy thử một đoạn ngắn để lượt nhận dạng thật đầu tiên không bị chậm.
+    private(set) var warming = false
 
     func isLoaded(_ m: WhisperModelChoice, _ c: WhisperRunner.Compute) -> Bool { loaded == m && compute == c }
 
     fileprivate func begin(_ m: WhisperModelChoice, _ c: WhisperRunner.Compute) {
-        loading = m; loadingCompute = c; loadingSince = Date(); lastError = nil
+        loading = m; loadingCompute = c; loadingSince = Date(); lastError = nil; warming = false
         if loaded != nil { loaded = nil; compute = nil }      // mô hình cũ đã bị bỏ khi bắt đầu nạp
     }
+    fileprivate func startWarming() { warming = true }
     fileprivate func finished(_ m: WhisperModelChoice, _ c: WhisperRunner.Compute) {
-        loaded = m; compute = c; loading = nil; loadingCompute = nil; loadingSince = nil
+        loaded = m; compute = c; loading = nil; loadingCompute = nil; loadingSince = nil; warming = false
     }
     /// Mô hình nạp lỗi gần nhất (để chỉ hiện lỗi ở đúng dòng mô hình đó)
     private(set) var failedModel: WhisperModelChoice?
     fileprivate func failed(_ m: WhisperModelChoice, _ message: String?) {
-        loading = nil; loadingCompute = nil; loadingSince = nil; lastError = message; failedModel = message == nil ? nil : m
+        loading = nil; loadingCompute = nil; loadingSince = nil; warming = false; lastError = message; failedModel = message == nil ? nil : m
     }
     fileprivate func cleared() {
-        loaded = nil; compute = nil; loading = nil; loadingCompute = nil; loadingSince = nil; lastError = nil; failedModel = nil
+        loaded = nil; compute = nil; loading = nil; loadingCompute = nil; loadingSince = nil; warming = false; lastError = nil; failedModel = nil
     }
 }
 
@@ -348,6 +351,7 @@ nonisolated final class WhisperRunner: @unchecked Sendable {
                                       load: true,
                                       download: false)
         let k: WhisperKit
+        let t0 = Date()
         do {
             k = try await WhisperKit(config)
         } catch {
@@ -364,7 +368,28 @@ nonisolated final class WhisperRunner: @unchecked Sendable {
             return true
         }
         if !current { throw CancellationError() }
-        await MainActor.run { WhisperStatus.shared.finished(m, c) }
+        let loadSeconds = Date().timeIntervalSince(t0)
+        await MainActor.run { WhisperStatus.shared.startWarming() }
+        let warm = await Self.warmUp(k)
+        guard lock.withLock({ gen == generation }) else { throw CancellationError() }
+        await MainActor.run {
+            WhisperStatus.shared.finished(m, c)
+            LoadTimings.shared.record(LoadTimings.key(m, c), load: loadSeconds, warm: warm)
+        }
+    }
+
+    /// Nhận dạng thử 1 giây tiếng ồn nhẹ (tối đa 4 token): Core ML cấp phát bộ đệm và chuẩn bị
+    /// Neural Engine/GPU ở đây, nên câu đọc đầu tiên ở tab Đại thể hiện chữ ngay.
+    private static func warmUp(_ k: WhisperKit) async -> Double {
+        let t0 = Date()
+        var g = SystemRandomNumberGenerator()
+        let noise = (0..<16_000).map { _ in Float.random(in: -0.01...0.01, using: &g) }
+        let options = DecodingOptions(task: .transcribe, language: "en", temperature: 0,
+                                      temperatureFallbackCount: 0, sampleLength: 4,
+                                      usePrefillPrompt: true, detectLanguage: false,
+                                      withoutTimestamps: true)
+        _ = try? await k.transcribe(audioArray: noise, decodeOptions: options)
+        return Date().timeIntervalSince(t0)
     }
 
     /// - promptText: gợi ý thuật ngữ (vd. danh sách thuật ngữ GPB) để Whisper viết đúng chính tả

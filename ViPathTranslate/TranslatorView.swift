@@ -121,7 +121,7 @@ struct TranslatorView: View {
                     .foregroundStyle(vm.loadedModel == nil ? Color.secondary : Color.green)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(vm.loadedModel?.shortName ?? "Chưa nạp mô hình").font(.subheadline.bold())
-                    Text(vm.isLoading ? "Đang nạp… \(Int(vm.loadProgress * 100))%"
+                    Text(vm.isLoading ? vm.loadStageText
                          : vm.loadedModel == nil ? "Chạm để chọn và nạp" : "Sẵn sàng · chạy trên máy")
                         .font(.caption).foregroundStyle(.secondary)
                 }
@@ -495,7 +495,7 @@ private struct ModelPickerSheet: View {
                     Section {
                         if vm.isLoading {
                             ProgressView(value: vm.loadProgress) {
-                                Text("Đang nạp \(vm.selectedModel.shortName)… \(Int(vm.loadProgress * 100))%")
+                                Text("\(vm.selectedModel.shortName) · \(vm.loadStageText)")
                             }
                         }
                         if let err = vm.errorText, !vm.isLoading {

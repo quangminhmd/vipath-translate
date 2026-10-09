@@ -48,8 +48,9 @@ struct ViPathTranslateApp: App {
             .environment(router)
             .task {
                 // "Tự nạp khi mở app" (tab Cài đặt): nạp mô hình dịch + Whisper đã chọn
-                if UserDefaults.standard.bool(forKey: "autoLoadModels") {
-                    await ModelLoader.loadAll(vm: viewModel, gross: gross, compute: transcribe.whisperCompute)
+                if ModelLoader.autoLoadEnabled {
+                    await ModelLoader.loadAll(vm: viewModel, gross: gross, compute: transcribe.whisperCompute,
+                                              first: router.tab)
                 }
             }
         }

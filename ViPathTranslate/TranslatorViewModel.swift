@@ -99,6 +99,17 @@ final class TranslatorViewModel {
     var loadedModel: ModelChoice?
     var isLoading = false
     var loadProgress: Double = 0
+    enum LoadStage { case download, weights, warmup }
+    var loadStage: LoadStage = .download
+    @ObservationIgnored private var weightsStart: Date?
+    /// "Đang tải 45%" / "Đang nạp…" / "Đang làm nóng…"
+    var loadStageText: String {
+        switch loadStage {
+        case .download: loadProgress > 0 && loadProgress < 1 ? "Đang tải \(Int(loadProgress * 100))%" : "Đang nạp…"
+        case .weights: "Đang nạp…"
+        case .warmup: "Đang làm nóng…"
+        }
+    }
 
     // Trạng thái dịch
     var isTranslating = false
@@ -182,11 +193,22 @@ final class TranslatorViewModel {
         loadProgress = 0
         loadedModel = nil   // engine bỏ container cũ ngay khi bắt đầu nạp
         UserDefaults.standard.set(selectedModel.rawValue, forKey: "model")
+        loadStage = .download
+        let model = selectedModel
+        let started = Date()
+        weightsStart = nil           // bỏ phần thời gian tải về (chỉ đo thời gian nạp)
         do {
-            try await engine.load(selectedModel) { p in
-                Task { @MainActor in self.loadProgress = p }
+            try await engine.load(model) { p in
+                Task { @MainActor in
+                    self.loadProgress = p
+                    if p >= 1, self.weightsStart == nil { self.weightsStart = Date(); self.loadStage = .weights }
+                }
             }
-            loadedModel = selectedModel
+            let loadSeconds = Date().timeIntervalSince(weightsStart ?? started)
+            loadStage = .warmup
+            let warm = await engine.warmUp()
+            loadedModel = model
+            LoadTimings.shared.record(LoadTimings.key(model), load: loadSeconds, warm: warm)
         } catch {
             loadedModel = nil
             errorText = "Không nạp được mô hình: \(error.localizedDescription)"

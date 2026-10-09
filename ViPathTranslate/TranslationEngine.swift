@@ -146,6 +146,22 @@ actor TranslationEngine {
         }
     }
 
+    /// Chạy thử 1 lượt rất ngắn ngay sau khi nạp: Metal biên dịch kernel và cấp phát bộ đệm ở đây,
+    /// nên lượt dịch thật đầu tiên không bị chậm. Trả về số giây.
+    func warmUp() async -> Double {
+        guard let container else { return 0 }
+        let t0 = Date()
+        _ = try? await container.perform { context in
+            let tokens = context.tokenizer.encode(text: "Hello, world.")
+            let input = LMInput(tokens: MLXArray(tokens.map(Int32.init)))
+            let parameters = GenerateParameters(maxTokens: 2, temperature: 0.0)
+            let stream = try MLXLMCommon.generate(input: input, parameters: parameters, context: context)
+            for await _ in stream { if Task.isCancelled { break } }
+            return 0
+        }
+        return Date().timeIntervalSince(t0)
+    }
+
     func unload() {
         container = nil
         loaded = nil

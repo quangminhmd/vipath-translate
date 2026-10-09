@@ -1,5 +1,50 @@
 import SwiftUI
 
+// MARK: - Thời gian nạp (đo trên máy, lưu lại để so sánh)
+
+@MainActor @Observable
+final class LoadTimings {
+    static let shared = LoadTimings()
+    struct Entry: Codable, Equatable { var load: Double; var warm: Double; var at: Date }
+    private(set) var latest: [String: Entry] = [:]
+    private(set) var previous: [String: Entry] = [:]
+    /// Lần "Nạp mô hình" gần nhất: tổng thời gian + nạp song song hay lần lượt.
+    private(set) var lastBatch: (seconds: Double, parallel: Bool)?
+
+    private init() {
+        let d = UserDefaults.standard
+        if let a = d.data(forKey: "loadTimings.latest"), let v = try? JSONDecoder().decode([String: Entry].self, from: a) { latest = v }
+        if let a = d.data(forKey: "loadTimings.previous"), let v = try? JSONDecoder().decode([String: Entry].self, from: a) { previous = v }
+    }
+
+    static func key(_ m: ModelChoice) -> String { "t:\(m.rawValue)" }
+    static func key(_ m: WhisperModelChoice, _ c: WhisperRunner.Compute) -> String { "w:\(m.rawValue):\(c.rawValue)" }
+
+    func record(_ key: String, load: Double, warm: Double) {
+        if let old = latest[key] { previous[key] = old }
+        latest[key] = Entry(load: load, warm: warm, at: Date())
+        let d = UserDefaults.standard
+        d.set(try? JSONEncoder().encode(latest), forKey: "loadTimings.latest")
+        d.set(try? JSONEncoder().encode(previous), forKey: "loadTimings.previous")
+    }
+
+    func recordBatch(seconds: Double, parallel: Bool) { lastBatch = (seconds, parallel) }
+
+    /// "Nạp 4,2 s + làm nóng 0,8 s · lần trước 3:05"
+    func summary(_ key: String) -> String? {
+        guard let e = latest[key] else { return nil }
+        var s = "Nạp \(Self.format(e.load)) + làm nóng \(Self.format(e.warm))"
+        if let p = previous[key] { s += " · lần trước \(Self.format(p.load + p.warm))" }
+        return s
+    }
+
+    static func format(_ t: Double) -> String {
+        if t < 60 { return String(format: "%.1f s", t).replacingOccurrences(of: ".", with: ",") }
+        let s = Int(t.rounded())
+        return "\(s / 60):\(String(format: "%02d", s % 60))"
+    }
+}
+
 // MARK: - Nạp mô hình dùng chung cho mọi tab
 
 /// Nạp một lần cho cả app: mô hình dịch (tab Dịch, Phụ đề, Chép lời) + Whisper (Đại thể, Chép lời).
@@ -15,6 +60,11 @@ enum ModelLoader {
         return gross.engine.whisperModel(for: gross.language)
     }
 
+    /// Mặc định BẬT: mở app là nạp nền ngay.
+    static var autoLoadEnabled: Bool {
+        UserDefaults.standard.object(forKey: "autoLoadModels") as? Bool ?? true
+    }
+
     /// Những gì còn cần nạp (để hiện trên nút).
     static func pending(vm: TranslatorViewModel, gross: GrossDictationController,
                         compute: WhisperRunner.Compute) -> [String] {
@@ -25,13 +75,39 @@ enum ModelLoader {
         return out
     }
 
-    /// Nạp lần lượt (không cùng lúc để đỡ tốn RAM): mô hình dịch rồi Whisper.
+    /// Nạp song song khi Whisper chạy trên Neural Engine (khác phần cứng với mô hình dịch trên GPU)
+    /// và mô hình dịch không quá lớn; mô hình ≥ 9B hoặc Whisper trên GPU → nạp lần lượt cho an toàn RAM/GPU.
+    static func canParallel(vm: TranslatorViewModel, compute: WhisperRunner.Compute) -> Bool {
+        compute == .neuralEngine && vm.selectedModel.requiredFreeBytes < UInt64(6 * 1_073_741_824)
+    }
+
+    /// - first: tab đang mở → mô hình tab đó cần được nạp trước (khi phải nạp lần lượt).
     static func loadAll(vm: TranslatorViewModel, gross: GrossDictationController,
-                        compute: WhisperRunner.Compute) async {
-        if vm.loadedModel != vm.selectedModel, !vm.isLoading, !vm.isTranslating { await vm.loadModel() }
+                        compute: WhisperRunner.Compute, first: AppTab = .translate) async {
+        let t0 = Date()
+        let needTranslation = vm.loadedModel != vm.selectedModel && !vm.isLoading && !vm.isTranslating
+        var whisper: WhisperModelChoice?
         if let wm = preferredWhisper(gross: gross), WhisperModelStore.shared.isReady(wm),
-           !WhisperRunner.shared.isLoaded(wm, compute) {
-            try? await WhisperRunner.shared.load(wm, compute: compute)
+           !WhisperRunner.shared.isLoaded(wm, compute) { whisper = wm }
+        guard needTranslation || whisper != nil else { return }
+
+        let loadTranslation: @MainActor () async -> Void = { if needTranslation { await vm.loadModel() } }
+        let loadWhisper: @MainActor () async -> Void = {
+            if let wm = whisper { try? await WhisperRunner.shared.load(wm, compute: compute) }
+        }
+        let parallel = needTranslation && whisper != nil && canParallel(vm: vm, compute: compute)
+        if parallel {
+            // Mô hình dịch bắt đầu trước (kiểm tra RAM trống khi chưa có gì khác chiếm), Whisper chạy song song.
+            async let t: Void = loadTranslation()
+            async let w: Void = loadWhisper()
+            _ = await (t, w)
+        } else if first == .gross || first == .transcribe {
+            await loadWhisper(); await loadTranslation()
+        } else {
+            await loadTranslation(); await loadWhisper()
+        }
+        if needTranslation && whisper != nil {
+            LoadTimings.shared.recordBatch(seconds: Date().timeIntervalSince(t0), parallel: parallel)
         }
     }
 }
@@ -50,7 +126,7 @@ struct TranslationModelStatusRow: View {
                 Text(vm.selectedModel.shortName).font(.subheadline.bold())
                 if vm.isLoading {
                     ProgressView().controlSize(.mini)
-                    Text("Đang nạp \(Int(vm.loadProgress * 100))%").font(.caption).foregroundStyle(.secondary)
+                    Text(vm.loadStageText).font(.caption).foregroundStyle(.secondary)
                 } else if vm.loadedModel == vm.selectedModel {
                     Label("Đã nạp", systemImage: "checkmark.circle.fill").font(.caption).foregroundStyle(.green)
                 } else {
@@ -65,6 +141,9 @@ struct TranslationModelStatusRow: View {
                 }
             }
             if vm.isLoading { ProgressView(value: vm.loadProgress) }
+            if !vm.isLoading, let t = LoadTimings.shared.summary(LoadTimings.key(vm.selectedModel)) {
+                Text(t).font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
+            }
             if !compact, let e = vm.errorText, !vm.isLoading {
                 Text(e).font(.caption2).foregroundStyle(.red)
             }
@@ -102,6 +181,9 @@ struct WhisperModelStatusRow: View {
                 .controlSize(.small)
                 .disabled(status.loading != nil)
             }
+            if status.loading != model, let t = LoadTimings.shared.summary(LoadTimings.key(model, tc.whisperCompute)) {
+                Text(t).font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
+            }
             if let e = status.lastError, status.loading == nil, status.failedModel == model {
                 Text(e).font(.caption2).foregroundStyle(.red)
             }
@@ -123,7 +205,7 @@ struct WhisperModelStatusRow: View {
                     ProgressView().controlSize(.mini)
                     TimelineView(.periodic(from: since, by: 1)) { ctx in
                         let s = Int(ctx.date.timeIntervalSince(since))
-                        Text("Đang nạp · \(status.loadingCompute?.label ?? "") \(s / 60):\(String(format: "%02d", s % 60))")
+                        Text("\(status.warming ? "Đang làm nóng" : "Đang nạp") · \(status.loadingCompute?.label ?? "") \(s / 60):\(String(format: "%02d", s % 60))")
                             .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                     }
                 }
@@ -160,7 +242,7 @@ struct SettingsView: View {
     @Environment(TranslatorViewModel.self) private var vm
     @Environment(TranscribeController.self) private var tc
     @Environment(GrossDictationController.self) private var gross
-    @AppStorage("autoLoadModels") private var autoLoad = false
+    @AppStorage("autoLoadModels") private var autoLoad = true
     @AppStorage("preloadWhisper") private var preloadWhisper = ""
     @State private var loadingAll = false
 
@@ -180,7 +262,7 @@ struct SettingsView: View {
                     Button {
                         loadingAll = true
                         Task {
-                            await ModelLoader.loadAll(vm: vm, gross: gross, compute: tc.whisperCompute)
+                            await ModelLoader.loadAll(vm: vm, gross: gross, compute: tc.whisperCompute, first: .settings)
                             loadingAll = false
                         }
                     } label: {
@@ -197,8 +279,15 @@ struct SettingsView: View {
                     }
                     .disabled(pending.isEmpty || loadingAll || vm.isLoading || WhisperStatus.shared.loading != nil)
                     Toggle("Tự nạp khi mở app", isOn: $autoLoad)
+                    if let b = LoadTimings.shared.lastBatch {
+                        LabeledContent("Lần nạp gần nhất",
+                                       value: "\(LoadTimings.format(b.seconds)) · \(b.parallel ? "song song" : "lần lượt")")
+                            .font(.footnote)
+                    }
                 } footer: {
-                    Text("Một nút nạp chung cho các tab. Mô hình dịch và Whisper được nạp lần lượt để tiết kiệm RAM.")
+                    Text(ModelLoader.canParallel(vm: vm, compute: tc.whisperCompute)
+                         ? "Whisper chạy trên Neural Engine, mô hình dịch trên GPU → nạp song song. Khi tự nạp, mô hình của tab đang mở được ưu tiên."
+                         : "Đang nạp lần lượt (Whisper trên GPU hoặc mô hình dịch ≥ 9B) để an toàn RAM. Khi tự nạp, mô hình của tab đang mở được nạp trước.")
                 }
 
                 Section {
