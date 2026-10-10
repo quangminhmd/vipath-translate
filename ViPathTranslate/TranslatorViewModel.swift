@@ -116,6 +116,8 @@ final class TranslatorViewModel {
     var currentSegment: Int?
     var tokensPerSecond: Double = 0
     var errorText: String?
+    /// Cảnh báo RAM sát giới hạn sau khi nạp (vẫn dùng được).
+    var memoryWarning: String?
 
     // Chiều dịch
     var directionMode: DirectionMode = .auto {
@@ -190,6 +192,7 @@ final class TranslatorViewModel {
     func loadModel() async {
         isLoading = true
         errorText = nil
+        memoryWarning = nil
         loadProgress = 0
         loadedModel = nil   // engine bỏ container cũ ngay khi bắt đầu nạp
         UserDefaults.standard.set(selectedModel.rawValue, forKey: "model")
@@ -198,7 +201,7 @@ final class TranslatorViewModel {
         let started = Date()
         weightsStart = nil           // bỏ phần thời gian tải về (chỉ đo thời gian nạp)
         do {
-            try await engine.load(model) { p in
+            memoryWarning = try await engine.load(model) { p in
                 Task { @MainActor in
                     self.loadProgress = p
                     if p >= 1, self.weightsStart == nil { self.weightsStart = Date(); self.loadStage = .weights }

@@ -22,35 +22,44 @@ actor TranslationEngine {
     /// iOS Simulator không có GPU Metal mà MLX cần, gọi sớm sẽ làm app crash ngay khi mở.
     private var memoryConfigured = false
 
+    /// Trả về cảnh báo (nil = RAM thoải mái) khi RAM còn trống thấp hơn mức khuyến nghị nhưng vẫn trên mức sàn.
+    @discardableResult
     func load(_ choice: ModelChoice,
-              progress: @Sendable @escaping (Double) -> Void) async throws {
+              progress: @Sendable @escaping (Double) -> Void) async throws -> String? {
         #if targetEnvironment(simulator)
         throw EngineError.simulator
         #else
-        if loaded == choice, container != nil { return }
+        if loaded == choice, container != nil { return nil }
         if !memoryConfigured {
             // Giữ bộ nhớ đệm GPU nhỏ để chừa RAM cho KV cache, tránh bị iOS đóng app.
             Memory.cacheLimit = 64 * 1024 * 1024
             memoryConfigured = true
         }
+        let hadModel = container != nil
         container = nil
         loaded = nil
         Memory.clearCache()
+        if hadModel { try? await Task.sleep(for: .milliseconds(400)) }   // chờ iOS thu hồi mô hình cũ
 
-        // Kiểm tra RAM còn trống: mô hình 9B/12B sát giới hạn của iPhone 12 GB,
-        // báo lỗi rõ ràng thay vì để iOS đóng app giữa chừng.
+        // Kiểm tra RAM còn trống: mô hình 9B/12B sát giới hạn của iPhone 12 GB.
         var available = UInt64(os_proc_available_memory())
         if available > 0, available < choice.requiredFreeBytes {
             // Whisper (PhoWhisper / turbo) đang giữ ~1–2 GB → tự đóng để nhường RAM cho mô hình dịch;
             // tab Đại thể / Chép lời / Phụ đề sẽ tự nạp lại khi bấm mic.
-            if WhisperRunner.shared.hasLoadedModel { WhisperRunner.shared.unload() }
-            Memory.clearCache()
-            try? await Task.sleep(for: .milliseconds(500))   // chờ iOS thu hồi bộ nhớ vừa trả
-            available = UInt64(os_proc_available_memory())
+            if WhisperRunner.shared.hasLoadedModel {
+                WhisperRunner.shared.unload()
+                Memory.clearCache()
+                try? await Task.sleep(for: .milliseconds(500))
+                available = UInt64(os_proc_available_memory())
+            }
         }
-        if available > 0, available < choice.requiredFreeBytes {
+        var warning: String?
+        if available > 0, available < choice.minFreeBytes {
             throw EngineError.insufficientMemory(needGB: Double(choice.requiredFreeBytes) / 1_073_741_824,
                                                  freeGB: Double(available) / 1_073_741_824)
+        } else if available > 0, available < choice.requiredFreeBytes {
+            warning = String(format: "Sát giới hạn RAM (còn %.1f / khuyến nghị %.1f GB): nếu app bị đóng khi dịch văn bản dài, hãy chia đoạn ngắn hơn hoặc chọn mô hình nhỏ hơn.",
+                             Double(available) / 1_073_741_824, Double(choice.requiredFreeBytes) / 1_073_741_824)
         }
         if choice.needsCustomArchitecture {
             await HunyuanRegistration.register()
@@ -67,6 +76,7 @@ actor TranslationEngine {
             progress(p.fractionCompleted)
         }
         loaded = choice
+        return warning
         #endif
     }
 
@@ -183,7 +193,7 @@ actor TranslationEngine {
         var errorDescription: String? {
             switch self {
             case .insufficientMemory(let need, let free):
-                String(format: "Không đủ RAM: mô hình cần ≈%.1f GB nhưng app chỉ còn %.1f GB. Đã tự đóng Whisper nhưng vẫn thiếu — hãy đóng các app khác (vuốt tắt hẳn) rồi nạp lại, hoặc chọn mô hình nhỏ hơn.", need, free)
+                String(format: "Không đủ RAM: mô hình cần ≈%.1f GB nhưng app chỉ còn %.1f GB. Hãy đóng các app khác (vuốt tắt hẳn), tắt Whisper rồi nạp lại, hoặc chọn mô hình nhỏ hơn.", need, free)
             case .notLoaded: "Chưa nạp mô hình."
             case .simulator: "MLX không chạy trên iOS Simulator — hãy chạy app trên iPhone thật để dịch."
             }

@@ -491,7 +491,7 @@ private struct ModelPickerSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                if vm.isLoading || vm.errorText != nil {
+                if vm.isLoading || vm.errorText != nil || vm.memoryWarning != nil {
                     Section {
                         if vm.isLoading {
                             ProgressView(value: vm.loadProgress) {
@@ -500,6 +500,9 @@ private struct ModelPickerSheet: View {
                         }
                         if let err = vm.errorText, !vm.isLoading {
                             Text(err).font(.footnote).foregroundStyle(.red)
+                        }
+                        if let w = vm.memoryWarning, !vm.isLoading {
+                            Text(w).font(.footnote).foregroundStyle(.orange)
                         }
                     }
                 }

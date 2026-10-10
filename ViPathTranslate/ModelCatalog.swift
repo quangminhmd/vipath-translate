@@ -83,6 +83,21 @@ enum ModelChoice: String, CaseIterable, Identifiable, Codable {
         return UInt64(gb * 1_073_741_824)
     }
 
+    /// Mức sàn tuyệt đối: dưới mức này chắc chắn không nạp nổi → từ chối.
+    /// Giữa sàn và `requiredFreeBytes` vẫn cho nạp (kèm cảnh báo): trọng số MLX được ánh xạ
+    /// từ tệp nên iOS thường cấp thêm khi cần — Qwen 9B vẫn chạy được ở mức ~6 GB còn trống.
+    var minFreeBytes: UInt64 {
+        let gb: Double = switch self {
+        case .qwen35_2b: 1.4
+        case .translateGemma4b: 2.0
+        case .qwen35_4b: 2.6
+        case .hunyuanMT7b: 3.6
+        case .qwen35_9b: 5.0
+        case .translateGemma12b: 5.6
+        }
+        return UInt64(gb * 1_073_741_824)
+    }
+
     enum DeviceFit { case ok, tight, tooBig }
 
     /// Mức phù hợp với RAM của máy này.

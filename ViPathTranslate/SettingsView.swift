@@ -153,6 +153,9 @@ struct TranslationModelStatusRow: View {
             if !compact, let e = vm.errorText, !vm.isLoading {
                 Text(e).font(.caption2).foregroundStyle(.red)
             }
+            if !compact, let w = vm.memoryWarning, !vm.isLoading, vm.loadedModel == vm.selectedModel {
+                Text(w).font(.caption2).foregroundStyle(.orange)
+            }
         }
     }
 }
