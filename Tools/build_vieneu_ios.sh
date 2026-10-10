@@ -10,11 +10,13 @@
 #    2. Tải mã nguồn audio.cpp + sea-g2p (ghim đúng commit đã kiểm thử)
 #    3. Build sea-g2p (Rust) → Frameworks/SeaG2P.xcframework   (thư viện tĩnh)
 #    4. Build audio.cpp (C API, chỉ họ VieNeu, CPU) → Frameworks/AudioCpp.xcframework
+#       (kèm AudioCpp.framework.dSYM để App Store Connect giải mã báo cáo crash)
 #    5. Tải mô hình VieNeu-TTS v3 Turbo Q8_0 + giọng mặc định + từ điển sea_g2p.bin
 #       → ViPathTranslate/Resources/VieNeu/   (Xcode tự đóng gói vào app)
 #    6. Gắn 2 XCFramework vào dự án Xcode (HÃY THOÁT XCODE TRƯỚC KHI CHẠY)
 #
 #  Chạy lại an toàn: bước nào đã xong sẽ được bỏ qua (xoá build/vieneu để làm lại).
+#  Chỉ dựng lại AudioCpp (vd. để có dSYM):  bash Tools/build_vieneu_ios.sh --audiocpp
 # =============================================================================
 set -euo pipefail
 
@@ -35,6 +37,9 @@ step() { printf "\n\033[1;34m▶ %s\033[0m\n" "$*"; }
 ok()   { printf "  \033[32m✓\033[0m %s\n" "$*"; }
 die()  { printf "\n\033[1;31m✗ %s\033[0m\n  Xem chi tiết: %s\n" "$*" "$LOG"; exit 1; }
 run()  { "$@" >>"$LOG" 2>&1 || die "Lệnh thất bại: $*"; }
+
+ONLY_AUDIOCPP=0
+[[ "${1:-}" == "--audiocpp" ]] && ONLY_AUDIOCPP=1
 
 [[ "$(uname -s)" == "Darwin" ]] || die "Script này chạy trên macOS."
 [[ "$(uname -m)" == "arm64" ]] || echo "  (cảnh báo: Mac không phải Apple Silicon — vẫn thử tiếp)"
@@ -139,6 +144,8 @@ EOF2
 AUDIOCPP_LIB=""
 build_audiocpp() { # sdk  → đặt AUDIOCPP_LIB = đường dẫn libaudiocpp đã build
   local sdk=$1 bdir="$WORK/audiocpp-$1" arch
+  # Bản build cũ không có thông tin gỡ lỗi (-g) → không tạo được dSYM → build lại
+  [[ -f "$bdir/.done" && ! -f "$bdir/.debuginfo" ]] && rm -rf "$bdir"
   # Bật lệnh SIMD cho phép nhân Q8_0 nhanh (cross-compile nên ggml không tự dò được).
   # iPhone 18 (A20): armv8.6 + dotprod + i8mm + fp16. Simulator: an toàn cho mọi Mac M-series.
   if [[ $sdk == iphoneos ]]; then arch="armv8.6-a+dotprod+i8mm+fp16"; else arch="armv8.4-a+dotprod+fp16"; fi
@@ -154,6 +161,7 @@ build_audiocpp() { # sdk  → đặt AUDIOCPP_LIB = đường dẫn libaudiocpp 
       -DCMAKE_PROJECT_INCLUDE="$SHIM" \
       -DGGML_CPU_ARM_ARCH="$arch" \
       -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_C_FLAGS="-g" -DCMAKE_CXX_FLAGS="-g" \
       -DAUDIOCPP_BUILD_C_API=ON \
       -DAUDIOCPP_MODEL_SET=custom -DAUDIOCPP_MODELS=vieneu_v3_turbo \
       -DAUDIOCPP_DEPLOYMENT_BUILD=ON \
@@ -163,7 +171,7 @@ build_audiocpp() { # sdk  → đặt AUDIOCPP_LIB = đường dẫn libaudiocpp 
       -DENGINE_ENABLE_CUDA=OFF -DENGINE_ENABLE_HIP=OFF \
       -DENGINE_BUILD_EXAMPLES=OFF -DENGINE_BUILD_TESTS=OFF
     run cmake --build "$bdir" --target audiocpp -j "$(sysctl -n hw.ncpu)"
-    touch "$bdir/.done"
+    touch "$bdir/.done" "$bdir/.debuginfo"
   fi
   # file thật (không phải symlink)
   local lib; lib="$(find "$bdir" -name 'libaudiocpp*.dylib' -type f | head -1)"
@@ -171,10 +179,19 @@ build_audiocpp() { # sdk  → đặt AUDIOCPP_LIB = đường dẫn libaudiocpp 
   AUDIOCPP_LIB="$lib"
 }
 make_framework() { # dylib  platform(iPhoneOS|iPhoneSimulator)  outdir
-  local lib=$1 plat=$2 out=$3/AudioCpp.framework
-  rm -rf "$out"; mkdir -p "$out/Headers" "$out/Modules"
+  local lib=$1 plat=$2 out=$3/AudioCpp.framework dsym=$3/AudioCpp.framework.dSYM
+  rm -rf "$out" "$dsym"; mkdir -p "$out/Headers" "$out/Modules"
   cp "$lib" "$out/AudioCpp"
   install_name_tool -id @rpath/AudioCpp.framework/AudioCpp "$out/AudioCpp"
+  # dSYM: gom thông tin gỡ lỗi từ các tệp .o (UUID trùng với tệp nhị phân), rồi bỏ phần
+  # gỡ lỗi khỏi tệp nhị phân trong app (strip -S giữ nguyên UUID và các ký hiệu xuất).
+  run xcrun dsymutil "$out/AudioCpp" -o "$dsym"
+  run xcrun strip -S "$out/AudioCpp"
+  local u1 u2
+  u1="$(xcrun dwarfdump --uuid "$out/AudioCpp" | awk '{print $2}')"
+  u2="$(xcrun dwarfdump --uuid "$dsym" | awk '{print $2}')"
+  [[ -n "$u1" && "$u1" == "$u2" ]] || die "UUID của dSYM ($u2) không khớp AudioCpp ($u1)."
+  ok "dSYM $plat · UUID $u1"
   cp "$WORK/audio.cpp/include/audiocpp.h" "$out/Headers/"
   cat > "$out/Modules/module.modulemap" <<'EOF'
 framework module AudioCpp {
@@ -197,17 +214,27 @@ EOF
 </dict></plist>
 EOF
 }
+# XCFramework cũ (chưa kèm dSYM) → dựng lại
+if [[ -d "$OUT_FW/AudioCpp.xcframework" && ! -d "$OUT_FW/AudioCpp.xcframework/ios-arm64/dSYMs" ]]; then
+  echo "  AudioCpp.xcframework chưa có dSYM → dựng lại"
+  rm -rf "$OUT_FW/AudioCpp.xcframework"
+fi
 if [[ ! -d "$OUT_FW/AudioCpp.xcframework" ]]; then
   build_audiocpp iphoneos;        LIB_IOS="$AUDIOCPP_LIB"
   build_audiocpp iphonesimulator; LIB_SIM="$AUDIOCPP_LIB"
   make_framework "$LIB_IOS" iPhoneOS        "$WORK/fw-ios"
   make_framework "$LIB_SIM" iPhoneSimulator "$WORK/fw-sim"
+  # -debug-symbols cần đường dẫn tuyệt đối; Xcode tự chép dSYM này vào bản Archive
   run xcodebuild -create-xcframework \
-    -framework "$WORK/fw-ios/AudioCpp.framework" \
-    -framework "$WORK/fw-sim/AudioCpp.framework" \
+    -framework "$WORK/fw-ios/AudioCpp.framework" -debug-symbols "$WORK/fw-ios/AudioCpp.framework.dSYM" \
+    -framework "$WORK/fw-sim/AudioCpp.framework" -debug-symbols "$WORK/fw-sim/AudioCpp.framework.dSYM" \
     -output "$OUT_FW/AudioCpp.xcframework"
 fi
-ok "Frameworks/AudioCpp.xcframework ($(du -sh "$OUT_FW/AudioCpp.xcframework" | cut -f1))"
+ok "Frameworks/AudioCpp.xcframework ($(du -sh "$OUT_FW/AudioCpp.xcframework" | cut -f1), kèm dSYM)"
+if [[ $ONLY_AUDIOCPP == 1 ]]; then
+  printf "\n\033[1;32m✔ Xong AudioCpp.\033[0m Trong Xcode: Product → Clean Build Folder (⇧⌘K), rồi Archive lại.\n\n"
+  exit 0
+fi
 
 # -----------------------------------------------------------------------------
 step "5/6 Tải mô hình VieNeu-TTS v3 Turbo (≈190 MB) + từ điển sea-g2p (≈63 MB)"
@@ -226,6 +253,11 @@ ok "ViPathTranslate/Resources/VieNeu ($(du -sh "$OUT_RES" | cut -f1))"
 
 # -----------------------------------------------------------------------------
 step "6/6 Gắn XCFramework vào dự án Xcode"
+if grep -q "D10000000000000000000001" "$ROOT/ViPathTranslate.xcodeproj/project.pbxproj"; then
+  ok "Đã gắn từ trước — bỏ qua"
+  printf "\n\033[1;32m✔ Xong.\033[0m Trong Xcode: Product → Clean Build Folder (⇧⌘K), rồi chạy / Archive lại.\n\n"
+  exit 0
+fi
 if pgrep -xq Xcode; then
   echo "  ⚠️  Xcode đang mở. Hãy THOÁT Xcode (⌘Q) rồi nhấn Enter để tiếp tục…"
   read -r _
