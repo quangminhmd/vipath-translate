@@ -240,9 +240,7 @@ final class TranslatorViewModel {
         let dir = direction
         outputDirection = dir
         let style = glossary.styleGuide
-        // Mô hình lớn: đoạn ngắn hơn → prompt + KV cache nhỏ hơn, ít nguy cơ bị iOS đóng app.
-        let maxChars = (loadedModel?.isLarge ?? false) ? 600 : 900
-        segments = Segmenter.split(text, maxChars: maxChars).map {
+        segments = Segmenter.split(text).map {
             TranslatedSegment(id: $0.id, source: $0.text, passthrough: $0.passthrough,
                               hits: $0.passthrough ? [] : glossary.hits(in: $0.text, direction: dir))
         }

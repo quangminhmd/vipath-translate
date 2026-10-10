@@ -100,16 +100,11 @@ actor TranslationEngine {
             : PromptBuilder.translateGemmaRaw(text: text, hits: hits, direction: direction)
 
         return try await container.perform { context in
-            // Mô hình lớn: KV cache nén 8-bit sau 256 token đầu (giảm ~½ RAM ngữ cảnh, gần như không đổi bản dịch)
-            // và nạp prompt theo khối 256 token để đỉnh RAM lúc đọc đoạn dài thấp hơn.
-            let parameters = model.isLarge
-                ? GenerateParameters(maxTokens: maxTokens,
-                                     kvBits: 8, quantizedKVStart: 256,
-                                     temperature: 0.0, repetitionPenalty: 1.05,
-                                     prefillStepSize: 256)
-                : GenerateParameters(maxTokens: maxTokens,
-                                     temperature: 0.0,      // dịch: tất định
-                                     repetitionPenalty: 1.05)
+            // Không nén KV cache / không chia nhỏ prefill: Qwen3.5 chỉ có ¼ số lớp dùng KV cache (còn lại là
+            // DeltaNet) và mỗi đoạn ≤ 900 ký tự nên KV vốn nhỏ — nén chỉ làm chậm mà gần như không tiết kiệm RAM.
+            let parameters = GenerateParameters(maxTokens: maxTokens,
+                                                temperature: 0.0,      // dịch: tất định
+                                                repetitionPenalty: 1.05)
             let input: LMInput
             switch family {
             case .qwen:
@@ -159,7 +154,6 @@ actor TranslationEngine {
                 }
             }
             stats.text = PromptBuilder.clean(output)
-            if model.isLarge { Memory.clearCache() }   // trả ngay bộ đệm của đoạn vừa dịch trước đoạn sau
             if stats.tokensPerSecond <= 0, let first = firstChunkAt {
                 let generated = context.tokenizer.encode(text: output).count
                 let genSeconds = max(Date().timeIntervalSince(first), 0.001)
