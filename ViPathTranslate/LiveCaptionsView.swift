@@ -71,7 +71,19 @@ struct LiveCaptionsView: View {
                     ForEach(LiveCaptionsController.engines(for: cc.direction)) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
-                Text(cc.engine.detail).font(.caption).foregroundStyle(.secondary)
+                if cc.engine != .apple {
+                    Toggle(isOn: $cc.hybridPreview) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Hiện chữ tức thì (Apple + \(cc.engine.title))").font(.subheadline)
+                            Text(cc.hybridPreview
+                                 ? "Apple hiện chữ và bản ⚡ ngay khi đang nói; \(cc.engine.title) thay bằng bản chính xác sau mỗi lần ngừng."
+                                 : "Chỉ \(cc.engine.title): chữ hiện sau mỗi lần người nói ngừng.")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                } else {
+                    Text(cc.engine.detail).font(.caption).foregroundStyle(.secondary)
+                }
                 if let wm = cc.whisperModel {
                     WhisperModelStatusRow(model: wm)
                 }

@@ -133,6 +133,20 @@ final class LiveCaptionsController {
     private var inputFinished = false
     /// Thông tin Whisper (đoạn n · x s âm thanh → y s nhận dạng)
     var whisperInfo = ""
+
+    /// PhoWhisper / Whisper + Apple song song: Apple hiện chữ (và bản ⚡) tức thì khi đang nói,
+    /// Whisper thay bằng bản chính xác sau mỗi lần ngừng. Tắt → xem trước bằng chính Whisper.
+    var hybridPreview: Bool = UserDefaults.standard.object(forKey: "captionsHybridPreview") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(hybridPreview, forKey: "captionsHybridPreview") }
+    }
+    private var hybridActive = false
+    private var appleFinal = ""
+    private var appleVolatile = ""
+    private var appleCommitted = 0
+    private var appleCuts: [Int] = []
+    private var appleWords: [Substring] {
+        (appleFinal + " " + appleVolatile).split(whereSeparator: \.isWhitespace)
+    }
     /// Chiều của phiên đang chạy (cố định từ lúc bấm Bắt đầu).
     private var dir: TranslationDirection = .enToVi
     /// Tiếng Việt: bộ nhận dạng giữ chữ ở dạng tạm đến khi dừng → tự chốt khi người nói ngừng.
@@ -334,7 +348,7 @@ final class LiveCaptionsController {
         if let ch = chunker {
             // Whisper: nhận dạng nốt đoạn cuối trước khi dừng
             partialLoop?.cancel()
-            if let rest = ch.flush() { chunkQueue.append(rest) }
+            if let rest = ch.flush() { queueChunk(rest) }
             startChunkWorker()
             status = "Đang nhận dạng nốt…"
             await chunkTask?.value
@@ -367,6 +381,8 @@ final class LiveCaptionsController {
         chunkQueue = []
         chunker = nil
         liveWhisper = nil
+        hybridActive = false
+        appleFinal = ""; appleVolatile = ""; appleCommitted = 0; appleCuts = []
         isRunning = false
         volatileText = ""
         volatileFast = ""
@@ -583,15 +599,50 @@ final class LiveCaptionsController {
             liveWhisper = model
             let ch = VoiceChunker(maxSeconds: 6) { samples in Task { @MainActor in self.enqueueChunk(samples) } }
             chunker = ch
+            // Apple chạy song song chỉ để hiện chữ + bản ⚡ tức thì; không được thì xem trước bằng Whisper
+            hybridActive = false; appleFinal = ""; appleVolatile = ""; appleCommitted = 0; appleCuts = []
+            var apple: (any CaptionRecognizer)?
+            if hybridPreview, await EnglishTranscriber.requestAuthorization() {
+                let onResult: @Sendable (String, Bool) -> Void = { text, isFinal in
+                    Task { @MainActor in self.handleApple(text, isFinal: isFinal) }
+                }
+                do {
+                    if dir == .enToVi {
+                        let t = EnglishTranscriber()
+                        apple = t
+                        try await t.start(status: { _ in }, onResult: onResult)
+                    } else {
+                        let t = LiveDictationRecognizer()
+                        apple = t
+                        try await t.start(language: .vi, vocabulary: [], status: { _ in }, onResult: onResult)
+                    }
+                } catch {
+                    await apple?.finish()
+                    apple = nil
+                }
+                if let a = apple, a.analyzerFormat == nil { await a.finish(); apple = nil }
+            }
+            guard !stopping else { await apple?.finish(); await teardown(); status = "Đã dừng"; return false }
+            transcriber = apple           // stop()/teardown() kết thúc nó như bộ nhận dạng thường
+            hybridActive = apple != nil
             let audio: AudioSource = (source == .microphone) ? MicrophoneSource() : BroadcastSource()
-            try await audio.start(format: DictationMicrophone.recordFormat) { buffer in ch.feed(buffer) }
+            if let apple, let format = apple.analyzerFormat {
+                // một nguồn âm thanh, hai đường: định dạng Apple → Apple; chuyển 16 kHz float → Whisper
+                let toWhisper = BufferConverter(target: DictationMicrophone.recordFormat)
+                try await audio.start(format: format) { buffer in
+                    apple.feed(buffer)
+                    if let w = toWhisper.convert(buffer) { ch.feed(w) }
+                }
+            } else {
+                try await audio.start(format: DictationMicrophone.recordFormat) { buffer in ch.feed(buffer) }
+            }
             self.audio = audio
-            status = "Đang nghe · \(model.title)"
+            status = "Đang nghe · \(model.title)" + (hybridActive ? " + xem trước Apple" : "")
             whisperInfo = "Đã nạp \(model.title) — chữ hiện sau mỗi lần người nói ngừng"
             if source == .broadcast, !BroadcastSource.isBroadcastLive {
                 status = "Chờ phát sóng: vuốt mở Trung tâm điều khiển → giữ nút Ghi màn hình → chọn ViPath"
             }
-            startPartialLoop(ch)
+            if !hybridActive { startPartialLoop(ch) }
             return true
         } catch {
             errorText = "Không nạp được \(model.title): \(error.localizedDescription)"
@@ -618,8 +669,42 @@ final class LiveCaptionsController {
 
     private func enqueueChunk(_ samples: [Float]) {
         guard isRunning else { return }
-        chunkQueue.append(samples)
+        queueChunk(samples)
         startChunkWorker()
+    }
+
+    /// Gửi một đoạn cho Whisper; ghi lại số từ Apple đã nghe tới lúc này (phần xem trước của đoạn đó).
+    private func queueChunk(_ samples: [Float]) {
+        chunkQueue.append(samples)
+        if hybridActive { appleCuts.append(appleWords.count) }
+    }
+
+    /// Kết quả Apple (song song với Whisper) — chỉ dùng cho chữ xám + bản ⚡ khi đang nói.
+    private func handleApple(_ text: String, isFinal: Bool) {
+        guard isRunning, hybridActive else { return }
+        if isFinal {
+            let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !t.isEmpty { appleFinal = appleFinal.isEmpty ? t : appleFinal + " " + t }
+            appleVolatile = ""
+        } else {
+            appleVolatile = text
+        }
+        updateHybridPreview()
+    }
+
+    /// Xem trước = phần Apple nghe được mà Whisper chưa nhận dạng xong.
+    private func updateHybridPreview() {
+        guard hybridActive else { return }
+        let words = appleWords
+        let rest = words.dropFirst(min(appleCommitted, words.count)).joined(separator: " ")
+        volatileText = rest
+        if rest.isEmpty { volatileFast = "" } else { translateVolatile() }
+    }
+
+    /// Whisper vừa xong một đoạn → phần xem trước Apple của đoạn đó được thay bằng chữ Whisper.
+    private func advanceAppleCut() {
+        guard hybridActive, !appleCuts.isEmpty else { return }
+        appleCommitted = max(appleCommitted, appleCuts.removeFirst())
     }
 
     /// Mỗi ~0,9 s: Whisper rảnh → nhận dạng đoạn đang nói dở → hiện chữ xám + bản ⚡ trước khi câu chốt.
@@ -666,12 +751,16 @@ final class LiveCaptionsController {
                     whisperInfo = String(format: "%.1f s âm thanh → %.1f s nhận dạng", audioSec, Date().timeIntervalSince(t0))
                     volatileText = ""
                     volatileFast = ""
+                    advanceAppleCut()
                     if !clean.isEmpty {
                         acceptFinal(clean)
                         // đoạn kết thúc vì người nói ngừng (không phải bị cắt ở 6 s) → chốt câu ngay
                         if audioSec < 5.8 { flushPending() }
                     }
+                    updateHybridPreview()
                 } catch {
+                    advanceAppleCut()
+                    updateHybridPreview()
                     whisperInfo = "Lỗi Whisper: \(error.localizedDescription)"
                 }
             }
