@@ -1,6 +1,32 @@
 import SwiftUI
+import UIKit
 
-enum AppTab: Hashable { case translate, gross, captions, settings, transcribe, glossary, saved }
+enum AppTab: Hashable, CaseIterable {
+    case translate, captions, transcribe, gross, glossary, saved, settings
+
+    var title: String {
+        switch self {
+        case .translate: "Dịch"
+        case .captions: "Phụ đề"
+        case .transcribe: "Chép lời"
+        case .gross: "Đại thể"
+        case .glossary: "Thuật ngữ"
+        case .saved: "Đã lưu"
+        case .settings: "Cài đặt"
+        }
+    }
+    var icon: String {
+        switch self {
+        case .translate: "character.book.closed"
+        case .captions: "captions.bubble"
+        case .transcribe: "waveform"
+        case .gross: "scissors"
+        case .glossary: "text.book.closed"
+        case .saved: "tray.full"
+        case .settings: "gearshape"
+        }
+    }
+}
 
 /// Chuyển tab từ trong app (vd. Đại thể → Dịch sang tiếng Anh).
 @MainActor
@@ -29,19 +55,7 @@ struct ViPathTranslateApp: App {
 
     var body: some Scene {
         WindowGroup {
-            TabView(selection: $router.tab) {
-                Tab("Dịch", systemImage: "character.book.closed", value: AppTab.translate) { TranslatorView() }
-                Tab("Phụ đề", systemImage: "captions.bubble", value: AppTab.captions) { LiveCaptionsView() }
-                Tab("Chép lời", systemImage: "waveform", value: AppTab.transcribe) { TranscribeView() }
-                Tab("Đại thể", systemImage: "scissors", value: AppTab.gross) { GrossDictationView() }
-                Tab("Thuật ngữ", systemImage: "text.book.closed", value: AppTab.glossary) { GlossaryView() }
-                    .badge(TermSuggestionStore.shared.pending.count)
-                Tab("Đã lưu", systemImage: "tray.full", value: AppTab.saved) { SavedListView() }
-                Tab("Cài đặt", systemImage: "gearshape", value: AppTab.settings) { SettingsView() }
-            }
-            // iPad: thanh bên (sidebar) hiện đủ mọi tab, không bị gom vào "Thêm"; iPhone giữ thanh tab dưới
-            .tabViewStyle(.sidebarAdaptable)
-            .tabBarMinimizeBehavior(.onScrollDown)
+            RootView()
             .environment(viewModel)
             .environment(typing)
             .environment(captions)
@@ -69,6 +83,60 @@ struct ViPathTranslateApp: App {
             } else if UserDefaults.standard.bool(forKey: "liveTyping") {
                 typing.textChanged(viewModel.input)   // dịch bù các câu bị dừng giữa chừng
             }
+        }
+    }
+}
+
+/// iPhone (và iPad khi chia đôi màn hình hẹp): thanh tab dưới.
+/// iPad màn hình rộng: thanh bên luôn hiện ĐỦ 7 mục — không gom vào "Thêm", không phải mở menu.
+struct RootView: View {
+    @Environment(AppRouter.self) private var router
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    @State private var columns: NavigationSplitViewVisibility = .all
+
+    private var useSidebar: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad && sizeClass == .regular
+    }
+
+    var body: some View {
+        @Bindable var router = router
+        if useSidebar {
+            NavigationSplitView(columnVisibility: $columns) {
+                List(selection: Binding<AppTab?>(get: { router.tab }, set: { if let t = $0 { router.tab = t } })) {
+                    ForEach(AppTab.allCases, id: \.self) { t in
+                        Label(t.title, systemImage: t.icon)
+                            .badge(t == .glossary ? TermSuggestionStore.shared.pending.count : 0)
+                            .tag(t as AppTab?)
+                    }
+                }
+                .navigationTitle("ViPath")
+                .navigationSplitViewColumnWidth(min: 200, ideal: 230, max: 280)
+            } detail: {
+                Self.content(for: router.tab)
+                    .id(router.tab)
+            }
+            .navigationSplitViewStyle(.balanced)
+        } else {
+            TabView(selection: $router.tab) {
+                ForEach(AppTab.allCases, id: \.self) { t in
+                    Tab(t.title, systemImage: t.icon, value: t) { Self.content(for: t) }
+                        .badge(t == .glossary ? TermSuggestionStore.shared.pending.count : 0)
+                }
+            }
+            .tabBarMinimizeBehavior(.onScrollDown)
+        }
+    }
+
+    @ViewBuilder
+    static func content(for tab: AppTab) -> some View {
+        switch tab {
+        case .translate: TranslatorView()
+        case .captions: LiveCaptionsView()
+        case .transcribe: TranscribeView()
+        case .gross: GrossDictationView()
+        case .glossary: GlossaryView()
+        case .saved: SavedListView()
+        case .settings: SettingsView()
         }
     }
 }
