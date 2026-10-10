@@ -23,11 +23,11 @@
       "specular": true
     },
     {
-      "name": "Scope",
+      "name": "Cell",
       "layers": [
         {
-          "name": "scope",
-          "image-name": "scope.svg",
+          "name": "cell",
+          "image-name": "cell.svg",
           "glass": true
         }
       ],
