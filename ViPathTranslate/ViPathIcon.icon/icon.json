@@ -4,16 +4,16 @@
   },
   "groups": [
     {
-      "name": "Glyph",
+      "name": "Spark",
       "layers": [
         {
-          "name": "glyph",
-          "image-name": "glyph.svg",
+          "name": "spark",
+          "image-name": "spark.svg",
           "glass": true
         }
       ],
       "shadow": {
-        "kind": "neutral",
+        "kind": "layer-color",
         "opacity": 0.5
       },
       "translucency": {
@@ -23,30 +23,30 @@
       "specular": true
     },
     {
-      "name": "Eosin",
+      "name": "Scope",
       "layers": [
         {
-          "name": "eosin",
-          "image-name": "eosin.svg",
+          "name": "scope",
+          "image-name": "scope.svg",
           "glass": true
         }
       ],
       "shadow": {
-        "kind": "layer-color",
-        "opacity": 0.5
+        "kind": "neutral",
+        "opacity": 0.3
       },
       "translucency": {
-        "enabled": true,
-        "value": 0.45
+        "enabled": false,
+        "value": 0
       },
       "specular": true
     },
     {
-      "name": "Hematoxylin",
+      "name": "Front",
       "layers": [
         {
-          "name": "hematoxylin",
-          "image-name": "hematoxylin.svg",
+          "name": "front",
+          "image-name": "front.svg",
           "glass": true
         }
       ],
@@ -56,7 +56,26 @@
       },
       "translucency": {
         "enabled": true,
-        "value": 0.3
+        "value": 0.25
+      },
+      "specular": true
+    },
+    {
+      "name": "Back",
+      "layers": [
+        {
+          "name": "back",
+          "image-name": "back.svg",
+          "glass": true
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": true,
+        "value": 0.15
       },
       "specular": true
     }
