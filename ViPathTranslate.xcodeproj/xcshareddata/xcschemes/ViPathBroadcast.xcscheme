@@ -18,6 +18,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B80000000000000000000002"
                BuildableName = "ViPathBroadcast.appex"
+               BlueprintName = "ViPathBroadcast"
                ReferencedContainer = "container:ViPathTranslate.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>

@@ -374,8 +374,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = ViPath;
-				INFOPLIST_KEY_NSCameraUsageDescription = "ViPath dùng máy ảnh để quét tài liệu, slide và trích chữ ngay trên máy.";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSCameraUsageDescription = "ViPath dùng máy ảnh để quét tài liệu, slide và trích chữ ngay trên máy.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "ViPath dùng micro để nhận dạng lời giảng và lời đọc mô tả đại thể khi cắt lọc, ngay trên máy.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nhận dạng giọng nói chạy trên máy, không gửi dữ liệu ra ngoài.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -409,8 +409,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = ViPath;
-				INFOPLIST_KEY_NSCameraUsageDescription = "ViPath dùng máy ảnh để quét tài liệu, slide và trích chữ ngay trên máy.";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSCameraUsageDescription = "ViPath dùng máy ảnh để quét tài liệu, slide và trích chữ ngay trên máy.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "ViPath dùng micro để nhận dạng lời giảng và lời đọc mô tả đại thể khi cắt lọc, ngay trên máy.";
 				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Nhận dạng giọng nói chạy trên máy, không gửi dữ liệu ra ngoài.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
