@@ -304,6 +304,9 @@ nonisolated final class WhisperRunner: @unchecked Sendable {
         lock.withLock { loaded == m && loadedCompute == c && kit != nil }
     }
 
+    /// Đang giữ một mô hình Whisper trong bộ nhớ (bất kể loại nào).
+    var hasLoadedModel: Bool { lock.withLock { kit != nil } }
+
     /// Lượt nạp đang chạy — nơi khác xin nạp đúng mô hình + phần cứng đó thì chờ chung, không nạp lại từ đầu.
     private var inFlight: (m: WhisperModelChoice, c: Compute, task: Task<Void, Error>)?
 

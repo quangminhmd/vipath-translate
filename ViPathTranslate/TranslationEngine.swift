@@ -39,7 +39,15 @@ actor TranslationEngine {
 
         // Kiểm tra RAM còn trống: mô hình 9B/12B sát giới hạn của iPhone 12 GB,
         // báo lỗi rõ ràng thay vì để iOS đóng app giữa chừng.
-        let available = UInt64(os_proc_available_memory())
+        var available = UInt64(os_proc_available_memory())
+        if available > 0, available < choice.requiredFreeBytes {
+            // Whisper (PhoWhisper / turbo) đang giữ ~1–2 GB → tự đóng để nhường RAM cho mô hình dịch;
+            // tab Đại thể / Chép lời / Phụ đề sẽ tự nạp lại khi bấm mic.
+            if WhisperRunner.shared.hasLoadedModel { WhisperRunner.shared.unload() }
+            Memory.clearCache()
+            try? await Task.sleep(for: .milliseconds(500))   // chờ iOS thu hồi bộ nhớ vừa trả
+            available = UInt64(os_proc_available_memory())
+        }
         if available > 0, available < choice.requiredFreeBytes {
             throw EngineError.insufficientMemory(needGB: Double(choice.requiredFreeBytes) / 1_073_741_824,
                                                  freeGB: Double(available) / 1_073_741_824)
@@ -175,7 +183,7 @@ actor TranslationEngine {
         var errorDescription: String? {
             switch self {
             case .insufficientMemory(let need, let free):
-                String(format: "Không đủ RAM: mô hình cần ≈%.1f GB nhưng app chỉ còn %.1f GB. Hãy đóng Whisper (tab Chép lời) và các app khác, hoặc chọn mô hình nhỏ hơn.", need, free)
+                String(format: "Không đủ RAM: mô hình cần ≈%.1f GB nhưng app chỉ còn %.1f GB. Đã tự đóng Whisper nhưng vẫn thiếu — hãy đóng các app khác (vuốt tắt hẳn) rồi nạp lại, hoặc chọn mô hình nhỏ hơn.", need, free)
             case .notLoaded: "Chưa nạp mô hình."
             case .simulator: "MLX không chạy trên iOS Simulator — hãy chạy app trên iPhone thật để dịch."
             }

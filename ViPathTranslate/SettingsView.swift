@@ -70,7 +70,8 @@ enum ModelLoader {
                         compute: WhisperRunner.Compute) -> [String] {
         var out: [String] = []
         if vm.loadedModel != vm.selectedModel { out.append(vm.selectedModel.shortName) }
-        if let wm = preferredWhisper(gross: gross), WhisperModelStore.shared.isReady(wm),
+        if vm.selectedModel.requiredFreeBytes < UInt64(6 * 1_073_741_824),
+           let wm = preferredWhisper(gross: gross), WhisperModelStore.shared.isReady(wm),
            !WhisperStatus.shared.isLoaded(wm, compute) { out.append(wm.title) }
         return out
     }
@@ -91,6 +92,9 @@ enum ModelLoader {
         var whisper: WhisperModelChoice?
         if let wm = preferredWhisper(gross: gross), WhisperModelStore.shared.isReady(wm),
            !WhisperRunner.shared.isLoaded(wm, compute) { whisper = wm }
+        // Mô hình dịch ≥ 9B gần hết RAM của app → không nạp sẵn Whisper (tab cần thì tự nạp khi bấm mic)
+        if needTranslation || vm.loadedModel == vm.selectedModel,
+           vm.selectedModel.requiredFreeBytes >= UInt64(6 * 1_073_741_824) { whisper = nil }
         guard needTranslation || whisper != nil else { return }
 
         let loadTranslation: @MainActor () async -> Void = { if needTranslation { await vm.loadModel() } }
