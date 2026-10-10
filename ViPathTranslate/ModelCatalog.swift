@@ -17,7 +17,6 @@ enum ModelChoice: String, CaseIterable, Identifiable, Codable {
     case qwen35_9b       = "mlx-community/Qwen3.5-9B-4bit"
     case qwen35_2b       = "mlx-community/Qwen3.5-2B-4bit"
     case hunyuanMT7b     = "mlx-community/Hunyuan-MT-7B-4bit"
-    case translateGemma12b = "mlx-community/translategemma-12b-it-4bit"
 
     enum Family { case qwen, translateGemma, hunyuanMT }
 
@@ -25,7 +24,7 @@ enum ModelChoice: String, CaseIterable, Identifiable, Codable {
 
     var family: Family {
         switch self {
-        case .translateGemma4b, .translateGemma12b: .translateGemma
+        case .translateGemma4b: .translateGemma
         case .hunyuanMT7b: .hunyuanMT
         default: .qwen
         }
@@ -38,7 +37,6 @@ enum ModelChoice: String, CaseIterable, Identifiable, Codable {
         case .qwen35_9b: "Qwen3.5 9B"
         case .qwen35_2b: "Qwen3.5 2B"
         case .hunyuanMT7b: "Hunyuan-MT 7B"
-        case .translateGemma12b: "TranslateGemma 12B"
         }
     }
 
@@ -49,7 +47,6 @@ enum ModelChoice: String, CaseIterable, Identifiable, Codable {
         case .qwen35_9b: "6,0 GB"
         case .qwen35_2b: "≈1,5 GB"
         case .hunyuanMT7b: "4,2 GB"
-        case .translateGemma12b: "6,6 GB"
         }
     }
 
@@ -65,8 +62,6 @@ enum ModelChoice: String, CaseIterable, Identifiable, Codable {
             "Nhanh, nhẹ pin; dùng khi cần dịch nháp."
         case .hunyuanMT7b:
             "Mô hình chuyên dịch của Tencent (WMT25), câu văn rất tự nhiên. Ít làm theo glossary hơn Qwen — nên bật bước kiểm tra thuật ngữ."
-        case .translateGemma12b:
-            "Bản lớn của TranslateGemma, chất lượng dịch cao hơn 4B rõ rệt. Nặng nhất máy chạy được: đóng các mô hình Whisper trước khi nạp."
         }
     }
 
@@ -78,7 +73,6 @@ enum ModelChoice: String, CaseIterable, Identifiable, Codable {
         case .qwen35_4b: 3.5
         case .hunyuanMT7b: 4.7
         case .qwen35_9b: 6.5
-        case .translateGemma12b: 7.1
         }
         return UInt64(gb * 1_073_741_824)
     }
@@ -93,15 +87,9 @@ enum ModelChoice: String, CaseIterable, Identifiable, Codable {
         case .qwen35_4b: 2.6
         case .hunyuanMT7b: 3.6
         case .qwen35_9b: 5.0
-        // 12B: trọng số 6,6 GB được nạp hết vào RAM → cần ít nhất trọng số + 0,2 GB, nếu không iOS đóng app giữa lúc nạp
-        // (đã gặp trên iPhone 18 Pro Max: còn 6,0 GB → văng).
-        case .translateGemma12b: 6.8
         }
         return UInt64(gb * 1_073_741_824)
     }
-
-    /// Mô hình lớn (Qwen 9B, TranslateGemma 12B): dịch theo đoạn ngắn hơn, nén KV cache để không vượt RAM.
-    var isLarge: Bool { requiredFreeBytes >= UInt64(6 * 1_073_741_824) }
 
     enum DeviceFit { case ok, tight, tooBig }
 
@@ -110,10 +98,8 @@ enum ModelChoice: String, CaseIterable, Identifiable, Codable {
         let need = Double(requiredFreeBytes) / 1_073_741_824
         let (okMax, tightMax): (Double, Double) =
             DeviceMemory.gb >= 10 ? (99, 99)      // 12 GB: chạy được mọi mô hình trong danh mục
-            : DeviceMemory.gb >= 7 ? (3.6, 5.0)   // 8 GB: ≤ 4B thoải mái, 7B sát giới hạn, 9B/12B không
+            : DeviceMemory.gb >= 7 ? (3.6, 5.0)   // 8 GB: ≤ 4B thoải mái, 7B sát giới hạn, 9B không
             : (2.1, 2.8)                          // ≤ 6 GB: chỉ mô hình nhỏ
-        // iPhone 12 GB chỉ cấp cho app ≈ 7 GB → 12B (cần ≈ 7,1 GB trống) thường không nạp được.
-        if self == .translateGemma12b, DeviceMemory.gb >= 10 { return .tight }
         return need <= okMax ? .ok : need <= tightMax ? .tight : .tooBig
     }
 
@@ -121,8 +107,6 @@ enum ModelChoice: String, CaseIterable, Identifiable, Codable {
     var deviceFitNote: String? {
         switch deviceFit {
         case .ok: nil
-        case .tight where self == .translateGemma12b:
-            "Cần ≈ 6,8 GB RAM trống; iPhone \(DeviceMemory.label) thường chỉ cấp cho app ≈ 7 GB nên hay bị từ chối. Xem RAM còn trống ở mục Bộ nhớ."
         case .tight: "Sát giới hạn \(DeviceMemory.label) — đóng các app khác trước khi nạp"
         case .tooBig: "Không đủ RAM trên máy này (\(DeviceMemory.label))"
         }

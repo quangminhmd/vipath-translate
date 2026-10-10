@@ -90,9 +90,10 @@ Tất cả là bản 4-bit trên `mlx-community`. Qwen3.5 và TranslateGemma đ�
 | **Qwen3.5-4B** (mặc định) | 3,0 GB | 3,5 GB | ✅ | ✅ | ✕ | Theo glossary tốt nhất trong nhóm nhẹ |
 | Hunyuan-MT-7B | 4,2 GB | 4,7 GB | ✅ | ⚠︎ | ✕ | Chuyên dịch, rất tốt chiều Việt ↔ Anh |
 | Qwen3.5-9B | 6,0 GB | 6,5 GB | ✅ | ✕ | ✕ | Chất lượng cao, chậm hơn |
-| TranslateGemma-12B | 6,6 GB | 7,1 GB | ✅ | ✕ | ✕ | Bản dịch hay nhất trên máy, không hợp phụ đề |
 
 ✅ phù hợp · ⚠︎ sát giới hạn (đóng các app khác trước khi nạp) · ✕ không đủ RAM.
+
+TranslateGemma-12B (6,6 GB) đã bỏ khỏi bản iOS: iOS chỉ cấp cho app ≈ 7 GB trên iPhone 12 GB, không đủ chỗ cho 12B cộng phần nền của app. Vẫn dùng được trên Mac/PC qua bản web (máy chủ cục bộ).
 
 Trong app:
 - **Danh sách chọn mô hình** (tab Dịch) hiện cảnh báo cam cho mô hình ⚠︎, làm mờ và khoá mô hình ✕. Tab **Cài đặt** ẩn hẳn mô hình ✕.

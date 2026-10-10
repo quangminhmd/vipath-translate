@@ -41,7 +41,7 @@ actor TranslationEngine {
         Memory.clearCache()
         if hadModel { try? await Task.sleep(for: .milliseconds(400)) }   // chờ iOS thu hồi mô hình cũ
 
-        // Kiểm tra RAM còn trống: mô hình 9B/12B sát giới hạn của iPhone 12 GB.
+        // Kiểm tra RAM còn trống: mô hình 9B sát giới hạn của iPhone 12 GB.
         var available = UInt64(os_proc_available_memory())
         if available > 0, available < choice.requiredFreeBytes {
             // Whisper (PhoWhisper / turbo) đang giữ ~1–2 GB → tự đóng để nhường RAM cho mô hình dịch;
