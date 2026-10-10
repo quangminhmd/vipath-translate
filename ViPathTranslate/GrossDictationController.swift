@@ -385,6 +385,24 @@ final class GrossDictationController {
     private var partialTask: Task<Void, Never>?
     /// Apple: số từ của câu "đang nghe" đã được chốt sớm tại chỗ ngừng nói
     private var committedWords = 0
+
+    /// Whisper + Apple song song: Apple hiện chữ tức thì khi đang nói (xem trước), Whisper thay bằng bản
+    /// chính xác sau mỗi lần ngừng. Tắt → xem trước bằng chính Whisper (chậm hơn).
+    var hybridPreview: Bool = UserDefaults.standard.object(forKey: "grossHybridPreview") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(hybridPreview, forKey: "grossHybridPreview") }
+    }
+    /// Chữ Apple nghe được trong phiên (phần đã chốt + phần đang nghe)
+    private var appleFinal = ""
+    private var appleVolatile = ""
+    /// Số từ Apple đã được Whisper "thay thế" (đoạn Whisper tương ứng đã nhận dạng xong)
+    private var appleCommitted = 0
+    /// Mốc số từ Apple tại lúc mỗi đoạn được gửi cho Whisper (theo thứ tự)
+    private var appleCuts: [Int] = []
+    private var hybridActive = false
+
+    private var appleWords: [Substring] {
+        (appleFinal + " " + appleVolatile).split(whereSeparator: \.isWhitespace)
+    }
     private var gate: SilenceGate?
 
     var templateID: String = UserDefaults.standard.string(forKey: "grossTemplate") ?? "biopsy" {
@@ -492,13 +510,40 @@ final class GrossDictationController {
             whisperInfo = "Đã nạp \(model.title) — đọc rồi ngừng nhẹ, chữ sẽ hiện sau mỗi đoạn"
             let ch = VoiceChunker { samples in Task { @MainActor in self.enqueueChunk(samples) } }
             chunker = ch
+            // Apple chạy song song chỉ để hiện chữ tức thì; không được thì quay về xem trước bằng Whisper
+            appleFinal = ""; appleVolatile = ""; appleCommitted = 0; appleCuts = []; hybridActive = false
+            var apple: LiveDictationRecognizer?
+            if hybridPreview, await EnglishTranscriber.requestAuthorization() {
+                let r = LiveDictationRecognizer()
+                do {
+                    try await r.start(language: language, vocabulary: Array(Set(GrossParser.vocabulary + corrections.map(\.to))),
+                                      status: { _ in },
+                                      onResult: { text, isFinal in Task { @MainActor in self.handleApple(text, isFinal: isFinal) } })
+                    if r.analyzerFormat != nil { apple = r } else { await r.finish() }
+                } catch {
+                    await r.finish()
+                }
+            }
+            guard !stopping else { await apple?.finish(); await teardown(); status = "Đã dừng"; return }
+            recognizer = apple
+            hybridActive = apple != nil
             let url = keepAudio ? newAudioURL() : nil
             let m = DictationMicrophone()
-            try await m.start(format: DictationMicrophone.recordFormat, recordTo: url) { buffer in ch.feed(buffer) }
+            if let apple, let format = apple.analyzerFormat {
+                // một micro, hai đường: định dạng của Apple → Apple; chuyển sang 16 kHz float → Whisper
+                let toWhisper = BufferConverter(target: DictationMicrophone.recordFormat)
+                try await m.start(format: format, recordTo: url) { buffer in
+                    apple.feed(buffer)
+                    if let w = toWhisper.convert(buffer) { ch.feed(w) }
+                }
+            } else {
+                try await m.start(format: DictationMicrophone.recordFormat, recordTo: url) { buffer in ch.feed(buffer) }
+            }
             mic = m
             if let url { appendAudio(url) }
+            engineLabel = hybridActive ? "\(model.title) + xem trước Apple" : model.title
             status = "Đang nghe (\(model.title)) · \(targetLabel)"
-            startPartialLoop(ch)
+            if !hybridActive { startPartialLoop(ch) }
         } catch {
             errorText = "Không nạp được \(model.title): \(error.localizedDescription)"
             await teardown()
@@ -509,8 +554,49 @@ final class GrossDictationController {
     private func enqueueChunk(_ samples: [Float]) {
         // vẫn nhận dạng khi đang tạm dừng để nghe được lệnh "tiếp tục ghi" (các câu khác bị bỏ qua)
         guard isRunning else { return }
-        chunkQueue.append(samples)
+        queueChunk(samples)
         startChunkWorker()
+    }
+
+    /// Gửi một đoạn cho Whisper; ghi lại số từ Apple đã nghe tới lúc này (phần xem trước của đoạn đó).
+    private func queueChunk(_ samples: [Float]) {
+        chunkQueue.append(samples)
+        if hybridActive { appleCuts.append(appleWords.count) }
+    }
+
+    /// Kết quả Apple (song song với Whisper): chỉ dùng để hiện chữ xem trước tức thì.
+    private func handleApple(_ text: String, isFinal: Bool) {
+        guard isRunning, hybridActive else { return }
+        if isFinal {
+            let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !t.isEmpty { appleFinal = appleFinal.isEmpty ? t : appleFinal + " " + t }
+            appleVolatile = ""
+        } else {
+            appleVolatile = text
+        }
+        updateHybridPreview()
+    }
+
+    /// Xem trước = phần Apple nghe được mà Whisper chưa nhận dạng xong (áp lệnh lên bản sao, không đụng văn bản thật).
+    private func updateHybridPreview() {
+        guard hybridActive else { return }
+        let words = appleWords
+        let rest = words.dropFirst(min(appleCommitted, words.count)).joined(separator: " ")
+        volatileText = rest
+        if !isPaused, !rest.isEmpty {
+            preview = GrossParser.preview(doc, volatile: carry.isEmpty ? rest : carry + " " + rest,
+                                          corrections: corrections,
+                                          cassetteReturn: cassetteReturn, inlineMarker: inlineMarker)
+        } else {
+            preview = nil
+        }
+        updateStatus()
+    }
+
+    /// Whisper vừa xong một đoạn → phần xem trước Apple của đoạn đó được thay bằng chữ Whisper.
+    private func advanceAppleCut() {
+        guard hybridActive, !appleCuts.isEmpty else { return }
+        appleCommitted = max(appleCommitted, appleCuts.removeFirst())
     }
 
     /// Whisper đôi khi đọc lại nguyên danh sách gợi ý khi đoạn âm thanh quá ngắn → bỏ.
@@ -569,8 +655,12 @@ final class GrossDictationController {
                     let slowHint = (onGPU && took > audioSec * 0.6) ? " · chậm: thử Neural Engine" : ""
                     whisperInfo = String(format: "Đoạn %d · %.1f s âm thanh → %.1f s nhận dạng", chunkCount, audioSec, took)
                         + slowHint + " · " + (clean.isEmpty ? "(không có chữ)" : "“\(clean.suffix(60))”")
+                    advanceAppleCut()
                     if !clean.isEmpty { handle(clean, isFinal: true) }
+                    updateHybridPreview()
                 } catch {
+                    advanceAppleCut()
+                    updateHybridPreview()
                     whisperInfo = "Đoạn \(chunkCount): lỗi Whisper — \(error.localizedDescription)"
                     errorText = "Whisper không nhận dạng được: \(error.localizedDescription). Thử chuyển GPU ở tab Chép lời."
                 }
@@ -595,7 +685,7 @@ final class GrossDictationController {
         mic = nil
         if let ch = chunker {
             // Whisper: nhận dạng nốt đoạn cuối trước khi dừng
-            if let rest = ch.flush() { chunkQueue.append(rest) }
+            if let rest = ch.flush() { queueChunk(rest) }
             startChunkWorker()
             status = "Đang nhận dạng nốt…"
             await chunkTask?.value
@@ -615,6 +705,8 @@ final class GrossDictationController {
         gate = nil
         committedWords = 0
         carry = ""
+        hybridActive = false
+        appleFinal = ""; appleVolatile = ""; appleCommitted = 0; appleCuts = []
         partialLoop?.cancel()
         partialLoop = nil
         partialTask = nil

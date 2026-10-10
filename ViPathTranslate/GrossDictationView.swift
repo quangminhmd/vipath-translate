@@ -143,7 +143,10 @@ struct GrossDictationView: View {
                         .font(.caption).foregroundStyle(.green)
                 }
             }
-            Text(ctl.engine.detail).font(.caption2).foregroundStyle(.secondary)
+            Text(ctl.engine != .apple && ctl.hybridPreview
+                 ? "Chữ hiện ngay khi nói (Apple, xem trước) · \(ctl.engine.title) thay bằng bản chính xác sau mỗi lần ngừng ~1 s."
+                 : ctl.engine.detail)
+                .font(.caption2).foregroundStyle(.secondary)
         }
         .padding(10)
         .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 10))
@@ -331,6 +334,7 @@ struct GrossDictationView: View {
                 }
                 .disabled(!ctl.canRewrite)
                 Toggle("Giữ bản ghi âm của phiên", isOn: Binding(get: { ctl.keepAudio }, set: { ctl.keepAudio = $0 }))
+                Toggle("PhoWhisper/Whisper: hiện chữ tức thì bằng Apple", isOn: Binding(get: { ctl.hybridPreview }, set: { ctl.hybridPreview = $0 }))
                 Toggle("Ghi chú cát xét xong quay lại mô tả", isOn: Binding(get: { ctl.cassetteReturn }, set: { ctl.cassetteReturn = $0 }))
                 Toggle("Chèn mã “(A1)” vào mô tả", isOn: Binding(get: { ctl.inlineMarker }, set: { ctl.inlineMarker = $0 }))
                 Toggle("Chữ lớn", isOn: $largeText)
