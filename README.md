@@ -63,22 +63,54 @@ App chờ người dùng ngừng gõ khoảng 0,7 giây rồi mới tách câu. 
 
 Extension chỉ lấy âm thanh của app (`.audioApp`), không lấy micro, nên giọng của chính anh không bị dịch. Extension cũng không chạy mô hình nào (giới hạn khoảng 50 MB RAM); nó chỉ ghi các khối âm thanh 0,5 giây vào App Group để app chính đọc. Nếu ViPath bị chuyển ra nền, app tạm dừng dịch và bỏ âm thanh cũ hơn 5 giây khi quay lại, để phụ đề luôn bám sát thời gian thực.
 
-## Mô hình đề xuất cho iPhone 18 Pro Max (12 GB RAM)
+## iPhone hỗ trợ và mô hình theo RAM
 
-Tất cả đều đã có bản chuyển đổi sẵn trên `mlx-community` và thuộc loại mô hình được mlx-swift-lm 2.31.x hỗ trợ.
+App tối ưu cho **iPhone 18 Pro Max (12 GB RAM)** nhưng cài được trên các iPhone khác chạy **iOS 26 trở lên**. Điều quyết định là **RAM**: mô hình dịch phải nằm trọn trong bộ nhớ. App tự đọc RAM của máy (`DeviceMemory` trong `ModelCatalog.swift`) và điều chỉnh theo bảng dưới đây.
 
-| Mô hình | Dung lượng | Vai trò |
-|---|---|---|
-| **Qwen3.5-4B-4bit** ✅ | 3,0 GB | **Mặc định.** Làm theo chỉ dẫn glossary tốt nhất trong nhóm vừa RAM, đa ngôn ngữ mạnh, Apache 2.0 |
-| TranslateGemma-4B-it-4bit | 2,2 GB | Chuyên dịch thuật, câu văn tự nhiên; chèn glossary được nhưng tuân thủ kém hơn |
-| Qwen3.5-9B-4bit | 6,0 GB | Chất lượng cao nhất, nhưng gần giới hạn RAM cho một app → chỉ dùng cho đoạn ngắn, cần thử trên máy |
-| Qwen3.5-2B-4bit | ≈1,5 GB | Dịch nháp nhanh, ít tốn pin |
+### Dòng iPhone khuyến cáo
 
-**Không đưa vào app:**
-- **Hunyuan-MT-7B.** Có bản MLX nhưng mlx-swift-lm 2.31.3 chưa hỗ trợ kiến trúc `hunyuan_v1_dense`. Muốn dùng thì phải tự port sang Swift.
-- **TranslateGemma-12B** (6,6 GB) và các mô hình 27B. Nên chạy trên Mac.
+| Nhóm | Dòng máy | RAM | Mức dùng |
+|---|---|---|---|
+| ✅ **Khuyến cáo** | iPhone 18 Pro Max, 18 Pro · iPhone 17 Pro Max, 17 Pro | 12 GB | Đầy đủ: mọi mô hình trong danh mục, nạp song song mô hình dịch + Whisper |
+| ⚠︎ **Dùng được, giới hạn** | iPhone 16 Pro Max, 16 Pro, 16 Plus, 16 · iPhone 15 Pro Max, 15 Pro | 8 GB | Mô hình dịch ≤ 4B; Hunyuan-MT-7B sát giới hạn; luôn nạp lần lượt |
+| ✕ **Không khuyến cáo** | iPhone 15, 15 Plus và các đời trước có iOS 26 | ≤ 6 GB | Chỉ Qwen3.5-2B (TranslateGemma-4B sát giới hạn); phù hợp tra glossary, Dịch nhanh của Apple, nhận dạng giọng nói |
 
-**Cách chọn:** chạy cùng một bộ khoảng 50 đoạn đã có bản dịch chuẩn (từ Vitranslate/Claude) với Qwen3.5-4B và TranslateGemma-4B. So sánh số cảnh báo ⚠︎ mà app báo và chất lượng thuật ngữ IHC hay sinh học phân tử, rồi giữ mô hình tốt hơn làm mặc định.
+Không chắc máy có bao nhiêu RAM: mở tab **Dịch → chọn mô hình**, đầu danh sách ghi *“Máy này: … GB RAM”*. Các dòng máy khác (vd. iPhone 17, iPhone Air) xếp vào nhóm theo con số này.
+
+### Phân loại mô hình dịch theo RAM
+
+Tất cả là bản 4-bit trên `mlx-community`. Qwen3.5 và TranslateGemma được mlx-swift-lm 2.31.x hỗ trợ sẵn; Hunyuan-MT-7B dùng kiến trúc tự port (`HunyuanMT.swift`).
+
+| Mô hình | Dung lượng | RAM trống cần | 12 GB | 8 GB | ≤ 6 GB | Vai trò |
+|---|---|---|---|---|---|---|
+| Qwen3.5-2B | ≈1,5 GB | 2,0 GB | ✅ | ✅ | ✅ | Dịch nháp nhanh, ít tốn pin |
+| TranslateGemma-4B | 2,2 GB | 2,7 GB | ✅ | ✅ | ⚠︎ | Chuyên dịch, câu tự nhiên, nhanh — hợp phụ đề |
+| **Qwen3.5-4B** (mặc định) | 3,0 GB | 3,5 GB | ✅ | ✅ | ✕ | Theo glossary tốt nhất trong nhóm nhẹ |
+| Hunyuan-MT-7B | 4,2 GB | 4,7 GB | ✅ | ⚠︎ | ✕ | Chuyên dịch, rất tốt chiều Việt ↔ Anh |
+| Qwen3.5-9B | 6,0 GB | 6,5 GB | ✅ | ✕ | ✕ | Chất lượng cao, chậm hơn |
+| TranslateGemma-12B | 6,6 GB | 7,1 GB | ✅ | ✕ | ✕ | Bản dịch hay nhất trên máy, không hợp phụ đề |
+
+✅ phù hợp · ⚠︎ sát giới hạn (đóng các app khác trước khi nạp) · ✕ không đủ RAM.
+
+Trong app:
+- **Danh sách chọn mô hình** (tab Dịch) hiện cảnh báo cam cho mô hình ⚠︎, làm mờ và khoá mô hình ✕. Tab **Cài đặt** ẩn hẳn mô hình ✕.
+- **Nạp mô hình:** máy 12 GB nạp song song mô hình dịch (GPU) và Whisper (Neural Engine) khi mô hình dịch < 9B. Máy 8 GB trở xuống luôn nạp lần lượt. Mô hình đã chọn trước đó mà không đủ RAM sẽ không được tự nạp.
+- Trước khi nạp, app kiểm tra RAM còn trống (`os_proc_available_memory`) và báo lỗi rõ ràng thay vì để iOS đóng app.
+- **Phụ đề Việt → Anh — cấu hình gợi ý:** máy 12 GB chọn được PhoWhisper + Hunyuan-MT-7B hoặc PhoWhisper + TranslateGemma-4B; máy 8 GB chỉ có PhoWhisper + TranslateGemma-4B.
+
+Các thành phần sau chạy được trên mọi máy iOS 26 (không phụ thuộc bảng trên): PhoWhisper-medium (~560 MB), Whisper large-v3 turbo (~630 MB), nhận dạng giọng nói và Dịch nhanh của Apple (mô hình do iOS quản lý, không tính vào RAM của app). Máy đời cũ chạy chậm hơn.
+
+> Các ngưỡng trên được ước lượng theo dung lượng mô hình và mới đo thực tế trên iPhone 18 Pro Max. Nếu thử trên máy 8 GB thấy khác, chỉnh ngưỡng trong `ModelChoice.deviceFit`.
+
+### Điều kiện cài
+
+- **iOS 26 trở lên** (deployment target 26.0) và **Xcode 26/27** trên Mac.
+- **Tài khoản Apple Developer trả phí (khuyến cáo).** App dùng hai quyền *Increased Memory Limit* (cho phép app dùng nhiều RAM hơn — cần cho các mô hình lớn) và *App Groups* (phụ đề Zoom/Teams trên cùng iPhone).
+  - Với **Apple ID miễn phí**: phải tạm xoá hai entitlement này mới cài được; app hết hạn sau 7 ngày (cài lại bằng Xcode); thực tế chỉ dùng được mô hình 2B và không có phụ đề Zoom/Teams trên cùng máy.
+- **Cách cài:**
+  - *Cắm cáp vào Mac → Xcode ▶ (⌘R)* — xem mục dưới. Máy mới cần bật **Cài đặt → Quyền riêng tư & Bảo mật → Chế độ nhà phát triển**.
+  - *TestFlight* để cài cho đồng nghiệp không cần cáp (cần tài khoản trả phí).
+- **Dung lượng trống:** mô hình dịch 1,5–6,6 GB mỗi mô hình + Whisper ~0,6 GB mỗi mô hình. Lần đầu cần Internet để tải; sau đó chạy offline.
 
 ## Mở và chạy trong Xcode
 
@@ -86,7 +118,7 @@ Dự án đã kèm sẵn `ViPathTranslate.xcodeproj` (Xcode 26/27) với 2 targe
 
 1. Mở `ViPathTranslate.xcodeproj`. Lần build đầu, Xcode hỏi cho phép plugin **CudaBuild** của mlx-swift: chọn **Trust & Enable**.
 2. **Signing & Capabilities** (cả hai target): chọn *Team* của anh. Nếu đổi bundle ID thì đổi App Group trong `Config/*.entitlements` và `SharedAudio.appGroupID` cho khớp.
-   - *Increased Memory Limit* và *App Groups* cần tài khoản Apple Developer trả phí. Với Apple ID miễn phí, tạm xoá hai entitlement này để cài thử; mô hình 2B vẫn chạy, còn phụ đề Zoom/Teams trên cùng iPhone sẽ không dùng được.
+   - *Increased Memory Limit* và *App Groups* cần tài khoản Apple Developer trả phí (xem **Điều kiện cài** ở trên).
 3. Chọn iPhone thật làm đích chạy rồi bấm ▶.
 
 **Simulator:** dùng được để xem giao diện, tra glossary và thử phụ đề. Riêng việc nạp mô hình sẽ báo lỗi, vì MLX cần GPU Metal thật; app cố ý không khởi tạo MLX trên Simulator để tránh crash.
@@ -182,6 +214,7 @@ Văn bản ─► GPBSpeechNormalizer (1p/19q, pT1aN1b, p.R132H…) ─► sea-g
 
 - Bấm micro rồi đọc như đọc cho người ghi chép; nhận dạng tiếng Việt / tiếng Anh **trên máy** (Apple Speech, kèm từ vựng đại thể gợi ý).
 - Lệnh rảnh tay: “cát xét A1”, “mẫu bê hai”, “cát xét tiếp theo”, “quay lại mô tả”, “xuống dòng”, “dấu phẩy”, “xoá câu”, “tạm dừng” / “tiếp tục ghi”, “dừng ghi”.
+- **Sang ca mới không cần chạm màn hình:** “ca mới”, “chuyển ca”, “ca tiếp theo” — lưu ca đang đọc vào Đã lưu rồi mở trang mới; nói kèm “…, mã ca …” để đặt luôn pathcode ca mới. Hoặc bấm **Ca mới** cạnh ô Pathcode (khi đã dừng ghi).
 - Số đo tự chuẩn hoá: “bốn nhân ba nhân hai xăng ti mét” → 4 x 3 x 2 cm; “hai phân rưỡi” → 2,5 cm; “mười hai hạch” → 12 hạch. Chữ số chỉ được đổi khi đứng cạnh đơn vị, “nhân” hoặc danh từ đếm.
 - Danh sách cát xét ghép vào cuối: `CẮT LỌC – CÁT XÉT: A1: …`. Gợi ý cấu trúc mô tả theo loại bệnh phẩm (sinh thiết, túi mật, ruột thừa, tuyến giáp, vú, đại – trực tràng, tử cung).
 - Dùng được AirPods / tai nghe Bluetooth; màn hình không tự khoá khi đang ghi. Danh sách “Sửa lỗi nhận dạng” do bác sĩ tự thêm (vd. “các xi nôm” → carcinôm).
@@ -313,10 +346,10 @@ Script phát hiện một số thuật ngữ có nhiều bản dịch khác nhau
 
 ## Giới hạn hiện tại
 
-- **Chưa chạy thử trên iPhone thật.** Đã build sạch và mở được trên Simulator, nhưng phần dịch (MLX), tốc độ tok/s, RAM và nhiệt độ cần đo trên iPhone 18 Pro Max.
+- **Mới chạy thử trên iPhone 18 Pro Max.** Tốc độ, RAM và nhiệt độ trên iPhone 15/16 Pro Max (8 GB) và 17 Pro Max chưa được đo.
 - **Nhận dạng thuật ngữ hiếm khi nghe** (ví dụ "pleomorphic xanthoastrocytoma", "SMARCB1") chưa được kiểm chứng. Nếu bước nhận dạng nghe sai thì bước dịch cũng sai theo. Apple cho phép gợi ý từ vựng (contextual strings) với `DictationTranscriber`, theo phản ánh trên diễn đàn thì `SpeechTranscriber` chưa hỗ trợ. Đây là hướng cải thiện tiếp theo.
 - **Định dạng âm thanh của ReplayKit** (endianness, tần số lấy mẫu) và bộ nhớ của extension cần kiểm tra trên máy thật.
-- **Phụ đề chỉ nghe tiếng Anh.** `SpeechTranscriber` chưa nhận dạng tiếng Việt, nên chiều Việt → Anh chỉ có ở tab Dịch.
+- **Phụ đề Việt → Anh** dùng bộ nhận dạng tiếng Việt của Apple (chốt câu theo chỗ ngừng nói) hoặc PhoWhisper / Whisper turbo; độ trễ thực tế cần đo thêm với bài giảng dài.
 - **Bộ che định danh dựa trên quy tắc.** Bộ che bắt tốt các trường có nhãn và họ tên tiếng Việt phổ biến, nhưng có thể sót tên nước ngoài không có nhãn hoặc tên viết thường. Vì vậy màn hình xác nhận là bắt buộc; luôn đọc lại trước khi gửi.
 - **Chất lượng offline.** Mô hình 2–9B kém Claude ở câu phức. Bản dịch dùng cho hồ sơ bệnh án hoặc ấn phẩm vẫn cần bác sĩ duyệt.
 - **Chưa xử lý file.** Chưa đọc trực tiếp file .docx/.pptx/.pdf; hiện chỉ nhập hoặc dán văn bản.
