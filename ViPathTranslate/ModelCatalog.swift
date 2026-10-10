@@ -93,7 +93,9 @@ enum ModelChoice: String, CaseIterable, Identifiable, Codable {
         case .qwen35_4b: 2.6
         case .hunyuanMT7b: 3.6
         case .qwen35_9b: 5.0
-        case .translateGemma12b: 5.6
+        // 12B: trọng số 6,6 GB được nạp hết vào RAM → cần ít nhất trọng số + 0,2 GB, nếu không iOS đóng app giữa lúc nạp
+        // (đã gặp trên iPhone 18 Pro Max: còn 6,0 GB → văng).
+        case .translateGemma12b: 6.8
         }
         return UInt64(gb * 1_073_741_824)
     }
@@ -110,6 +112,8 @@ enum ModelChoice: String, CaseIterable, Identifiable, Codable {
             DeviceMemory.gb >= 10 ? (99, 99)      // 12 GB: chạy được mọi mô hình trong danh mục
             : DeviceMemory.gb >= 7 ? (3.6, 5.0)   // 8 GB: ≤ 4B thoải mái, 7B sát giới hạn, 9B/12B không
             : (2.1, 2.8)                          // ≤ 6 GB: chỉ mô hình nhỏ
+        // iPhone 12 GB chỉ cấp cho app ≈ 7 GB → 12B (cần ≈ 7,1 GB trống) thường không nạp được.
+        if self == .translateGemma12b, DeviceMemory.gb >= 10 { return .tight }
         return need <= okMax ? .ok : need <= tightMax ? .tight : .tooBig
     }
 
@@ -117,6 +121,8 @@ enum ModelChoice: String, CaseIterable, Identifiable, Codable {
     var deviceFitNote: String? {
         switch deviceFit {
         case .ok: nil
+        case .tight where self == .translateGemma12b:
+            "Cần ≈ 6,8 GB RAM trống; iPhone \(DeviceMemory.label) thường chỉ cấp cho app ≈ 7 GB nên hay bị từ chối. Xem RAM còn trống ở mục Bộ nhớ."
         case .tight: "Sát giới hạn \(DeviceMemory.label) — đóng các app khác trước khi nạp"
         case .tooBig: "Không đủ RAM trên máy này (\(DeviceMemory.label))"
         }
