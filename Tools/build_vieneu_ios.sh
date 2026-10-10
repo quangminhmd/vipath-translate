@@ -193,6 +193,21 @@ make_framework() { # dylib  platform(iPhoneOS|iPhoneSimulator)  outdir
   [[ -n "$u1" && "$u1" == "$u2" ]] || die "UUID của dSYM ($u2) không khớp AudioCpp ($u1)."
   ok "dSYM $plat · UUID $u1"
   cp "$WORK/audio.cpp/include/audiocpp.h" "$out/Headers/"
+  # Chú thích trong header gốc có "model_specs/*.json" → clang cảnh báo "'/*' within block
+  # comment" trong Xcode. Đổi "/*" nằm TRONG chú thích khối thành "/[*]" (không đổi mã).
+  /usr/bin/python3 - "$out/Headers/audiocpp.h" <<'PY'
+import sys
+p = sys.argv[1]
+s = open(p, encoding="utf-8").read()
+out, i = [], 0
+while True:
+    a = s.find("/*", i)
+    b = s.find("*/", a + 2) if a >= 0 else -1
+    if a < 0 or b < 0:
+        out.append(s[i:]); break
+    out.append(s[i:a + 2] + s[a + 2:b].replace("/*", "/[*]") + "*/"); i = b + 2
+open(p, "w", encoding="utf-8").write("".join(out))
+PY
   cat > "$out/Modules/module.modulemap" <<'EOF'
 framework module AudioCpp {
     umbrella header "audiocpp.h"
