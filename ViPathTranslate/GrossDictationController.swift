@@ -534,7 +534,7 @@ final class GrossDictationController {
                 let prompt = whisperPrompt
                 let job = Task {
                     let t = (try? await WhisperRunner.shared.transcribe(samples: snap.samples, language: lang,
-                                                                        promptText: prompt)) ?? ""
+                                                                        promptText: prompt, preview: true)) ?? ""
                     // đoạn đã được gửi đi nhận dạng chính thức trong lúc chờ → bỏ bản xem trước cũ
                     let clean = Self.dropPromptEcho(t)
                     if !clean.isEmpty, ch.currentGeneration == snap.generation, chunkTask == nil {
@@ -565,8 +565,10 @@ final class GrossDictationController {
                     let t = try await WhisperRunner.shared.transcribe(samples: s, language: lang, promptText: prompt)
                     let took = Date().timeIntervalSince(t0)
                     let clean = Self.dropPromptEcho(t)
-                    whisperInfo = String(format: "Đoạn %d · %.1f s âm thanh → %.1f s nhận dạng · ", chunkCount, audioSec, took)
-                        + (clean.isEmpty ? "(không có chữ)" : "“\(clean.suffix(60))”")
+                    let onGPU = UserDefaults.standard.string(forKey: "whisperCompute") == WhisperRunner.Compute.gpu.rawValue
+                    let slowHint = (onGPU && took > audioSec * 0.6) ? " · chậm: thử Neural Engine" : ""
+                    whisperInfo = String(format: "Đoạn %d · %.1f s âm thanh → %.1f s nhận dạng", chunkCount, audioSec, took)
+                        + slowHint + " · " + (clean.isEmpty ? "(không có chữ)" : "“\(clean.suffix(60))”")
                     if !clean.isEmpty { handle(clean, isFinal: true) }
                 } catch {
                     whisperInfo = "Đoạn \(chunkCount): lỗi Whisper — \(error.localizedDescription)"

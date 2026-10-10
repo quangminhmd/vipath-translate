@@ -458,17 +458,28 @@ nonisolated final class WhisperRunner: @unchecked Sendable {
 
     /// Nhận dạng một đoạn âm thanh ngắn (16 kHz mono) — dùng cho đọc chính tả trực tiếp ở tab Đại thể.
     @concurrent
-    func transcribe(samples: [Float], language: TranscriptLanguage, promptText: String?) async throws -> String {
+    /// - preview: bản xem trước khi đang nói — bỏ gợi ý thuật ngữ, không giải mã lại → nhanh nhất.
+    ///
+    /// Tốc độ: mỗi token gợi ý (prompt) phải chạy qua bộ giải mã một lượt trước khi ra chữ, nên gợi ý dài
+    /// (120 token) làm mỗi đoạn chậm thêm vài giây. Giải mã lại ở nhiệt độ cao (fallback, tối đa 5 lần)
+    /// cũng nhân thời gian lên khi câu khó nghe. Đọc chính tả trực tiếp: gợi ý ≤ 32 token, fallback ≤ 1.
+    func transcribe(samples: [Float], language: TranscriptLanguage, promptText: String?,
+                    preview: Bool = false) async throws -> String {
         guard let kit = lock.withLock({ kit }) else { throw CocoaError(.featureUnsupported) }
         guard Self.rms(samples) > 0.003 else { return "" }       // im lặng → không để Whisper "bịa" chữ
         var promptTokens: [Int]?
-        if let promptText, !promptText.isEmpty, let tok = kit.tokenizer {
+        if !preview, let promptText, !promptText.isEmpty, let tok = kit.tokenizer {
             let ids = tok.encode(text: " " + promptText).filter { $0 < tok.specialTokens.specialTokenBegin }
-            promptTokens = Array(ids.prefix(120))
+            promptTokens = Array(ids.prefix(32))
         }
+        // trần số token theo độ dài âm thanh (~4 từ/giây tiếng Việt) → không "bịa" lặp dài khi nhiễu
+        let seconds = Double(samples.count) / 16_000
+        let maxTokens = min(224, Int(seconds * 12) + 24)
         let options = DecodingOptions(task: .transcribe,
                                       language: language.languageCode,
                                       temperature: 0,
+                                      temperatureFallbackCount: preview ? 0 : 1,
+                                      sampleLength: maxTokens,
                                       usePrefillPrompt: true,
                                       detectLanguage: false,
                                       skipSpecialTokens: true,

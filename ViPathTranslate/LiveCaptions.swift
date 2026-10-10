@@ -633,7 +633,7 @@ final class LiveCaptionsController {
                 let prompt = whisperPrompt
                 let job = Task {
                     let t = (try? await WhisperRunner.shared.transcribe(samples: snap.samples, language: lang,
-                                                                        promptText: prompt)) ?? ""
+                                                                        promptText: prompt, preview: true)) ?? ""
                     let clean = dropPromptEcho(t, prompt: prompt)
                     // đoạn đã được gửi đi nhận dạng chính thức trong lúc chờ → bỏ bản xem trước cũ
                     if !clean.isEmpty, ch.currentGeneration == snap.generation, chunkTask == nil {
