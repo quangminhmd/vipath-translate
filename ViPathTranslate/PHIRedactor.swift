@@ -7,7 +7,9 @@ import Foundation
 /// Quy tắc (ICU regex, không phân biệt hoa thường với nhãn trường):
 ///  • Trường có nhãn: Họ tên / Bệnh nhân / Patient / Name; PID / Mã BN / MRN / Số hồ sơ;
 ///    Mã bệnh phẩm / Số GPB / Specimen / Accession; Ngày sinh / Năm sinh / DOB; Địa chỉ; SĐT; CCCD / CMND / Hộ chiếu.
-///  • Không nhãn: họ tên tiếng Việt bắt đầu bằng họ phổ biến (Nguyễn Văn A…), danh xưng + tên (Ông/Bà/Mr./Mrs.),
+///  • Nhãn và danh xưng phải đứng đầu từ ("Không" không chứa danh xưng "ông", "Mucoepidermoid" không chứa nhãn "PID").
+///  • Không nhãn: họ tên tiếng Việt bắt đầu bằng họ phổ biến (Nguyễn Văn A…; họ trùng từ thường như Cao, Mai, Hà
+///    cần đủ 3 chữ), tên không vắt qua dòng, danh xưng + tên (Ông/Bà/Mr./Mrs.),
 ///    mã bệnh phẩm dạng GPB-24-12345 / S24-01234, dãy 9–12 chữ số (CCCD, CMND, SĐT), hộ chiếu (C1234567),
 ///    email, ngày đầy đủ (12/03/1965, 1965-03-12).
 /// Bản Python tương đương để kiểm thử: Tools/test_redactor.py
@@ -80,6 +82,15 @@ enum PHIRedactor {
     // Tên riêng: chữ hoa đầu + chữ thường/dấu (Nguyễn Văn A, Smith)
     private static let capWord = #"\p{Lu}[\p{Ll}\p{M}]*"#
 
+    /// Họ trùng từ thường ("Cao" = cao, "Mai" = ngày mai, "Hà"…) → cần đủ họ + 2 chữ ("Cao Văn Minh"),
+    /// tránh che nhầm ô bảng "Cao Lớn". Các họ còn lại: họ + 1–3 chữ.
+    private static let ambiguousFamilies: Set<String> = ["Cao", "Mai", "Hà", "Lý", "Lâm", "Thái", "Tô", "Châu", "Tăng",
+                                                         "Lương", "Kiều", "Hồ", "Tạ", "Lưu"]
+
+    /// Ngày đứng sau các cụm này là ngày truy cập / cập nhật tài liệu, không phải định danh.
+    private static let documentDateCues = ["truy cập", "cập nhật", "ban hành", "phiên bản", "accessed", "updated",
+                                           "published", "retrieved", "version"]
+
     // Chỉ đọc sau khi khởi tạo; NSRegularExpression không đổi trạng thái → dùng chung an toàn.
     private static let rules: [Rule] = {
         func r(_ kind: Kind, _ pattern: String, ci: Bool = true) -> Rule {
@@ -91,20 +102,24 @@ enum PHIRedactor {
         let stop = #"(?=\s*(?:[\n,;|]|\s{2,}|$|\s-\s|\s(?i:tuổi|giới|nam|nữ|sinh|PID|mã|age|sex|DOB)\b))"#
         let nameValue = #"(\p{Lu}[^\n,;|]{1,59}?)"# + stop
         let code = #"([A-Za-z0-9][A-Za-z0-9\-/\.]{1,23}[A-Za-z0-9])"#
-        let name = "(" + capWord + "(?:\\s+" + capWord + "){0,4})"
-        let families = familyNames.joined(separator: "|")
+        // Tên người không vắt qua dòng (ô bảng "Tăng / Tăng" trên các dòng liền nhau) → chỉ khoảng trắng ngang.
+        let gap = "[ \\t]+"
+        let name = "(" + capWord + "(?:" + gap + capWord + "){0,4})"
+        let families = familyNames.filter { !ambiguousFamilies.contains($0) }.joined(separator: "|")
+        let ambiguous = ambiguousFamilies.sorted().joined(separator: "|")
         return [
             // ---- Trường có nhãn (ưu tiên trước) ----
-            r(.name, #"(?i:họ\s+và\s+tên|họ\s+tên|tên\s+bệnh\s+nhân|tên\s+BN|bệnh\s+nhân|BN|patient(?:'s)?\s+name|patient|name)\s*[:：]\s*"# + nameValue, ci: false),
-            r(.pid, #"(?:PID|mã\s+BN|mã\s+bệnh\s+nhân|mã\s+y\s+tế|mã\s+hồ\s+sơ|số\s+hồ\s+sơ|số\s+bệnh\s+án|số\s+vào\s+viện|MRN|hospital\s+(?:number|no\.?)|medical\s+record\s+(?:number|no\.?))"# + sep + code),
-            r(.specimen, #"(?:mã\s+bệnh\s+phẩm|mã\s+GPB|số\s+GPB|mã\s+tiêu\s+bản|số\s+tiêu\s+bản|mã\s+mẫu|specimen\s+(?:ID|number|no\.?)|accession(?:\s+(?:number|no\.?))?|case\s+(?:ID|number|no\.?)|lab\s+(?:ID|no\.?))"# + sep + code),
+            r(.name, #"(?<![\p{L}])(?i:họ\s+và\s+tên|họ\s+tên|tên\s+bệnh\s+nhân|tên\s+BN|bệnh\s+nhân|BN|patient(?:'s)?\s+name|patient|name)\s*[:：]\s*"# + nameValue, ci: false),
+            r(.pid, #"(?<![\p{L}])(?:PID|mã\s+BN|mã\s+bệnh\s+nhân|mã\s+y\s+tế|mã\s+hồ\s+sơ|số\s+hồ\s+sơ|số\s+bệnh\s+án|số\s+vào\s+viện|MRN|hospital\s+(?:number|no\.?)|medical\s+record\s+(?:number|no\.?))"# + sep + code),
+            r(.specimen, #"(?<![\p{L}])(?:mã\s+bệnh\s+phẩm|mã\s+GPB|số\s+GPB|mã\s+tiêu\s+bản|số\s+tiêu\s+bản|mã\s+mẫu|specimen\s+(?:ID|number|no\.?)|accession(?:\s+(?:number|no\.?))?|case\s+(?:ID|number|no\.?)|lab\s+(?:ID|no\.?))"# + sep + code),
             r(.dob, #"(?<![\p{L}])(?:ngày\s+sinh|năm\s+sinh|sinh\s+ngày|sinh\s+năm|NS|DOB|date\s+of\s+birth|born(?:\s+on)?)"# + sep + #"(\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4}|\d{4}-\d{2}-\d{2}|(?:19|20)\d{2})"#),
-            r(.address, #"(?:địa\s+chỉ|address)\s*[:：]\s*([^\n]{3,120})"#),
-            r(.phone, #"(?:SĐT|SDT|điện\s+thoại|phone|tel|mobile)"# + sep + #"(\+?\d[\d\s.\-]{7,14}\d)"#),
-            r(.idDoc, #"(?:CCCD|CMND|CMT|căn\s+cước|passport|hộ\s+chiếu|ID\s+card)(?:\s+(?:số|no\.?))?"# + sep + #"([A-Z0-9]{6,12})"#),
+            r(.address, #"(?<![\p{L}])(?:địa\s+chỉ|address)\s*[:：]\s*([^\n]{3,120})"#),
+            r(.phone, #"(?<![\p{L}])(?:SĐT|SDT|điện\s+thoại|phone|tel|mobile)"# + sep + #"(\+?\d[\d\s.\-]{7,14}\d)"#),
+            r(.idDoc, #"(?<![\p{L}])(?:CCCD|CMND|CMT|căn\s+cước|passport|hộ\s+chiếu|ID\s+card)(?:\s+(?:số|no\.?))?"# + sep + #"([A-Z0-9]{6,12})"#),
             // ---- Không nhãn ----
-            r(.name, "(?:[Ôô]ng|[Bb]à|anh|[Cc]hị|cô|chú|bác|cháu|Mr\\.?|Mrs\\.?|Ms\\.?|Miss)\\s+" + name, ci: false),
-            r(.name, "(?<![\\p{L}])((?:" + families + ")(?:\\s+" + capWord + "){1,3})(?![\\p{L}])", ci: false),
+            r(.name, "(?<![\\p{L}])(?:[Ôô]ng|[Bb]à|anh|[Cc]hị|cô|chú|bác|cháu|Mr\\.?|Mrs\\.?|Ms\\.?|Miss)" + gap + name, ci: false),
+            r(.name, "(?<![\\p{L}])((?:" + families + ")(?:" + gap + capWord + "){1,3})(?![\\p{L}])", ci: false),
+            r(.name, "(?<![\\p{L}])((?:" + ambiguous + ")(?:" + gap + capWord + "){2,3})(?![\\p{L}])", ci: false),
             r(.email, #"([A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,})"#),
             r(.specimen, #"(?<![A-Za-z0-9])([A-Z]{1,6}[\-/]?\d{2}[\-/.]\d{3,7})(?![A-Za-z0-9])"#, ci: false),
             r(.idDoc, #"(?<![A-Za-z0-9])([A-Z]\d{7,8})(?![A-Za-z0-9])"#, ci: false),
@@ -150,6 +165,11 @@ enum PHIRedactor {
                 guard value.count >= 2, !value.hasPrefix("[") else { continue }
                 if rule.kind == .name,
                    notNames.contains(where: { value == $0 || value.hasPrefix($0 + " ") }) { continue }
+                if rule.kind == .date {
+                    let from = max(0, range.location - 24)
+                    let lead = ns.substring(with: NSRange(location: from, length: range.location - from)).lowercased()
+                    if documentDateCues.contains(where: lead.contains) { continue }
+                }
                 out.replaceCharacters(in: range, with: placeholder(for: value, kind: rule.kind))
             }
             text = out as String

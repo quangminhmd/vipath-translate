@@ -12,6 +12,10 @@ const CASES = [
   ["Đại thể: Bệnh phẩm cắt thùy giáp phải kích thước 4 x 3 x 2 cm. Vi thể: carcinôm nhú tuyến giáp, biến thể nang. Hóa mô miễn dịch: CD20 (+), CD3 (-), Ki-67 80%. IDH1 p.R132H; đồng mất đoạn 1p/19q; pT1aN1b; BRAF V600E; ICD-O 8260/3. Tham khảo WHO 2021, Châu Âu, Hà Nội.", [], ["CD20", "Ki-67", "p.R132H", "1p/19q", "pT1aN1b", "V600E", "8260/3", "WHO 2021", "Châu Âu", "Hà Nội", "4 x 3 x 2 cm"]],
   ["The patient is a 62-year-old woman. Sections show diffuse large B-cell lymphoma, Hans classification non-GCB.", [], ["62-year-old", "Hans", "non-GCB"]],
   ["BN: Phạm Minh Tuấn, nam, NS 1978, số vào viện 24012345, tiêu bản B24.5678 nhuộm HE.", ["Phạm Minh Tuấn", "1978", "24012345", "B24.5678"], ["nhuộm HE"]],
+  // Báo nhầm thật trên tài liệu WHO vú (Sổ tay, 11/10): thiếu ranh giới từ, họ trùng từ thường, ngày truy cập, tên vắt dòng
+  ["Papillary carcinoma Không Carcinôm Thường không Trong. Mucoepidermoid carcinoma; Epidemiology.", [], ["Không Carcinôm", "Thường", "Mucoepidermoid", "Epidemiology"]],
+  ["Nhân Cao Lớn; Độ Cao Thay đổi. WHO Online, truy cập 08/10/2026. Cập nhật: 8/10/2026.\nTăng\nTăng\nTăng", [], ["Cao Lớn", "Cao Thay", "08/10/2026", "8/10/2026", "Tăng\nTăng"]],
+  ["Người bệnh Cao Văn Minh nhập viện; ông Lâm khám lại.", ["Cao Văn Minh", "Lâm"], []],
 ];
 for (const [text, gone, kept] of CASES) {
   const r = L.redactPHI(text);

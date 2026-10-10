@@ -364,7 +364,13 @@ const FAMILIES = ['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Huỳnh', 'P
   'Lương', 'Tăng', 'Kiều', 'Triệu'];
 const NOT_NAMES = ['Hà Nội', 'Hà Tĩnh', 'Hà Giang', 'Hà Nam', 'Châu Âu', 'Châu Á', 'Châu Phi', 'Châu Mỹ', 'Cao Bằng',
   'Thái Bình', 'Thái Nguyên', 'Hồ Chí Minh', 'Lâm Đồng', 'Đồng Nai'];
+// Họ trùng từ thường (Cao = cao, Mai = ngày mai…) → cần đủ họ + 2 chữ
+const AMBIGUOUS = ['Cao', 'Mai', 'Hà', 'Lý', 'Lâm', 'Thái', 'Tô', 'Châu', 'Tăng', 'Lương', 'Kiều', 'Hồ', 'Tạ', 'Lưu'];
+// Ngày đứng sau các cụm này là ngày truy cập / cập nhật tài liệu, không phải định danh
+const DOC_DATE_CUES = ['truy cập', 'cập nhật', 'ban hành', 'phiên bản', 'accessed', 'updated', 'published', 'retrieved', 'version'];
 const CAP = '\\p{Lu}[\\p{Ll}\\p{M}]*';
+const GAP = '[ \\t]+'; // tên không vắt qua dòng
+const WB = '(?<![\\p{L}])'; // nhãn / danh xưng phải đứng đầu từ ("Không" không chứa "ông", "Mucoepidermoid" không chứa "PID")
 const SEP = '\\s*[:：#]?\\s*';
 // JS không có nhóm cờ (?i:…) → viết dạng [Tt]… cho nhãn trường cần phân biệt hoa thường ở phần giá trị
 const STOP = '(?=\\s*(?:[\\n,;|]|\\s{2,}|$|\\s-\\s|\\s(?:[Tt]uổi|[Gg]iới|[Nn]am|[Nn]ữ|[Ss]inh|PID|[Mm]ã|[Aa]ge|[Ss]ex|DOB)(?![\\p{L}])))';
@@ -382,15 +388,16 @@ const ci = (src) => {
 };
 
 const PHI_RULES = [
-  ['TÊN', ci('(?:họ\\s+và\\s+tên|họ\\s+tên|tên\\s+bệnh\\s+nhân|tên\\s+BN|bệnh\\s+nhân|BN|patient\'?s?\\s+name|patient|name)') + '\\s*[:：]\\s*' + NAME_VALUE, 'gu'],
-  ['PID', '(?:PID|mã\\s+BN|mã\\s+bệnh\\s+nhân|mã\\s+y\\s+tế|mã\\s+hồ\\s+sơ|số\\s+hồ\\s+sơ|số\\s+bệnh\\s+án|số\\s+vào\\s+viện|MRN|hospital\\s+(?:number|no\\.?)|medical\\s+record\\s+(?:number|no\\.?))' + SEP + CODE, 'giu'],
-  ['MÃ_BP', '(?:mã\\s+bệnh\\s+phẩm|mã\\s+GPB|số\\s+GPB|mã\\s+tiêu\\s+bản|số\\s+tiêu\\s+bản|mã\\s+mẫu|specimen\\s+(?:ID|number|no\\.?)|accession(?:\\s+(?:number|no\\.?))?|case\\s+(?:ID|number|no\\.?)|lab\\s+(?:ID|no\\.?))' + SEP + CODE, 'giu'],
+  ['TÊN', WB + ci('(?:họ\\s+và\\s+tên|họ\\s+tên|tên\\s+bệnh\\s+nhân|tên\\s+BN|bệnh\\s+nhân|BN|patient\'?s?\\s+name|patient|name)') + '\\s*[:：]\\s*' + NAME_VALUE, 'gu'],
+  ['PID', WB + '(?:PID|mã\\s+BN|mã\\s+bệnh\\s+nhân|mã\\s+y\\s+tế|mã\\s+hồ\\s+sơ|số\\s+hồ\\s+sơ|số\\s+bệnh\\s+án|số\\s+vào\\s+viện|MRN|hospital\\s+(?:number|no\\.?)|medical\\s+record\\s+(?:number|no\\.?))' + SEP + CODE, 'giu'],
+  ['MÃ_BP', WB + '(?:mã\\s+bệnh\\s+phẩm|mã\\s+GPB|số\\s+GPB|mã\\s+tiêu\\s+bản|số\\s+tiêu\\s+bản|mã\\s+mẫu|specimen\\s+(?:ID|number|no\\.?)|accession(?:\\s+(?:number|no\\.?))?|case\\s+(?:ID|number|no\\.?)|lab\\s+(?:ID|no\\.?))' + SEP + CODE, 'giu'],
   ['NGÀY_SINH', '(?<![\\p{L}])(?:ngày\\s+sinh|năm\\s+sinh|sinh\\s+ngày|sinh\\s+năm|NS|DOB|date\\s+of\\s+birth|born(?:\\s+on)?)' + SEP + '(\\d{1,2}[/\\-.]\\d{1,2}[/\\-.]\\d{2,4}|\\d{4}-\\d{2}-\\d{2}|(?:19|20)\\d{2})', 'giu'],
-  ['ĐỊA_CHỈ', '(?:địa\\s+chỉ|address)\\s*[:：]\\s*([^\\n]{3,120})', 'giu'],
-  ['SĐT', '(?:SĐT|SDT|điện\\s+thoại|phone|tel|mobile)' + SEP + '(\\+?\\d[\\d\\s.\\-]{7,14}\\d)', 'giu'],
-  ['GIẤY_TỜ', '(?:CCCD|CMND|CMT|căn\\s+cước|passport|hộ\\s+chiếu|ID\\s+card)(?:\\s+(?:số|no\\.?))?' + SEP + '([A-Z0-9]{6,12})', 'giu'],
-  ['TÊN', '(?:[Ôô]ng|[Bb]à|anh|[Cc]hị|cô|chú|bác|cháu|Mr\\.?|Mrs\\.?|Ms\\.?|Miss)\\s+(' + CAP + '(?:\\s+' + CAP + '){0,4})', 'gu'],
-  ['TÊN', '(?<![\\p{L}])((?:' + FAMILIES.join('|') + ')(?:\\s+' + CAP + '){1,3})(?![\\p{L}])', 'gu'],
+  ['ĐỊA_CHỈ', WB + '(?:địa\\s+chỉ|address)\\s*[:：]\\s*([^\\n]{3,120})', 'giu'],
+  ['SĐT', WB + '(?:SĐT|SDT|điện\\s+thoại|phone|tel|mobile)' + SEP + '(\\+?\\d[\\d\\s.\\-]{7,14}\\d)', 'giu'],
+  ['GIẤY_TỜ', WB + '(?:CCCD|CMND|CMT|căn\\s+cước|passport|hộ\\s+chiếu|ID\\s+card)(?:\\s+(?:số|no\\.?))?' + SEP + '([A-Z0-9]{6,12})', 'giu'],
+  ['TÊN', WB + '(?:[Ôô]ng|[Bb]à|anh|[Cc]hị|cô|chú|bác|cháu|Mr\\.?|Mrs\\.?|Ms\\.?|Miss)' + GAP + '(' + CAP + '(?:' + GAP + CAP + '){0,4})', 'gu'],
+  ['TÊN', WB + '((?:' + FAMILIES.filter((f) => !AMBIGUOUS.includes(f)).join('|') + ')(?:' + GAP + CAP + '){1,3})(?![\\p{L}])', 'gu'],
+  ['TÊN', WB + '((?:' + [...AMBIGUOUS].sort().join('|') + ')(?:' + GAP + CAP + '){2,3})(?![\\p{L}])', 'gu'],
   ['EMAIL', '([A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,})', 'giu'],
   ['MÃ_BP', '(?<![A-Za-z0-9])([A-Z]{1,6}[\\-/]?\\d{2}[\\-/.]\\d{3,7})(?![A-Za-z0-9])', 'gu'],
   ['GIẤY_TỜ', '(?<![A-Za-z0-9])([A-Z]\\d{7,8})(?![A-Za-z0-9])', 'gu'],
@@ -429,6 +436,7 @@ export function redactPHI(input, extraTerms = []) {
       const v = raw.trim();
       if (v.length < 2 || v.startsWith('[')) continue;
       if (kind === 'TÊN' && NOT_NAMES.some((n) => v === n || v.startsWith(n + ' '))) continue;
+      if (kind === 'NGÀY' && DOC_DATE_CUES.some((c) => text.slice(Math.max(0, s - 24), s).toLowerCase().includes(c))) continue;
       const lead = raw.length - raw.trimStart().length, trail = raw.length - raw.trimEnd().length;
       out = out.slice(0, s + lead) + ph(v, kind) + out.slice(e - trail);
     }

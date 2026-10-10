@@ -9,7 +9,12 @@ FAMILIES = ["Nguyễn", "Trần", "Lê", "Phạm", "Hoàng", "Huỳnh", "Phan", 
 # Địa danh / cụm thường gặp bắt đầu bằng họ — không che
 NOT_NAMES = ["Hà Nội", "Hà Tĩnh", "Hà Giang", "Hà Nam", "Châu Âu", "Châu Á", "Châu Phi", "Châu Mỹ",
              "Cao Bằng", "Thái Bình", "Thái Nguyên", "Hồ Chí Minh", "Lâm Đồng", "Đồng Nai"]
+# Họ trùng từ thường (Cao = cao, Mai = ngày mai…) → cần đủ họ + 2 chữ
+AMBIGUOUS = ["Cao", "Mai", "Hà", "Lý", "Lâm", "Thái", "Tô", "Châu", "Tăng", "Lương", "Kiều", "Hồ", "Tạ", "Lưu"]
+# Ngày đứng sau các cụm này là ngày truy cập / cập nhật tài liệu, không phải định danh
+DOC_DATE_CUES = ["truy cập", "cập nhật", "ban hành", "phiên bản", "accessed", "updated", "published", "retrieved", "version"]
 CAP = r"\p{Lu}[\p{Ll}\p{M}]*"
+GAP = r"[ \t]+"   # tên không vắt qua dòng
 SEP = r"\s*[:：#]?\s*"
 STOP = r"(?=\s*(?:[\n,;|]|\s{2,}|$|\s-\s|\s(?i:tuổi|giới|nam|nữ|sinh|PID|mã|age|sex|DOB)\b))"
 VALUE = r"([^\n,;|]{2,60}?)" + STOP
@@ -20,15 +25,16 @@ def R(kind, pat, ci=True):
     return (kind, re.compile(pat, re.I if ci else 0))
 
 RULES = [
-    R("TÊN", r"(?i:họ\s+và\s+tên|họ\s+tên|tên\s+bệnh\s+nhân|tên\s+BN|bệnh\s+nhân|BN|patient(?:'s)?\s+name|patient|name)\s*[:：]\s*" + NAME_VALUE, ci=False),
-    R("PID", r"(?:PID|mã\s+BN|mã\s+bệnh\s+nhân|mã\s+y\s+tế|mã\s+hồ\s+sơ|số\s+hồ\s+sơ|số\s+bệnh\s+án|số\s+vào\s+viện|MRN|hospital\s+(?:number|no\.?)|medical\s+record\s+(?:number|no\.?))" + SEP + CODE),
-    R("MÃ_BP", r"(?:mã\s+bệnh\s+phẩm|mã\s+GPB|số\s+GPB|mã\s+tiêu\s+bản|số\s+tiêu\s+bản|mã\s+mẫu|specimen\s+(?:ID|number|no\.?)|accession(?:\s+(?:number|no\.?))?|case\s+(?:ID|number|no\.?)|lab\s+(?:ID|no\.?))" + SEP + CODE),
+    R("TÊN", r"(?<![\p{L}])(?i:họ\s+và\s+tên|họ\s+tên|tên\s+bệnh\s+nhân|tên\s+BN|bệnh\s+nhân|BN|patient(?:'s)?\s+name|patient|name)\s*[:：]\s*" + NAME_VALUE, ci=False),
+    R("PID", r"(?<![\p{L}])(?:PID|mã\s+BN|mã\s+bệnh\s+nhân|mã\s+y\s+tế|mã\s+hồ\s+sơ|số\s+hồ\s+sơ|số\s+bệnh\s+án|số\s+vào\s+viện|MRN|hospital\s+(?:number|no\.?)|medical\s+record\s+(?:number|no\.?))" + SEP + CODE),
+    R("MÃ_BP", r"(?<![\p{L}])(?:mã\s+bệnh\s+phẩm|mã\s+GPB|số\s+GPB|mã\s+tiêu\s+bản|số\s+tiêu\s+bản|mã\s+mẫu|specimen\s+(?:ID|number|no\.?)|accession(?:\s+(?:number|no\.?))?|case\s+(?:ID|number|no\.?)|lab\s+(?:ID|no\.?))" + SEP + CODE),
     R("NGÀY_SINH", r"(?<![\p{L}])(?:ngày\s+sinh|năm\s+sinh|sinh\s+ngày|sinh\s+năm|NS|DOB|date\s+of\s+birth|born(?:\s+on)?)" + SEP + r"(\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4}|\d{4}-\d{2}-\d{2}|(?:19|20)\d{2})"),
-    R("ĐỊA_CHỈ", r"(?:địa\s+chỉ|address)\s*[:：]\s*([^\n]{3,120})"),
-    R("SĐT", r"(?:SĐT|SDT|điện\s+thoại|phone|tel|mobile)" + SEP + r"(\+?\d[\d\s.\-]{7,14}\d)"),
-    R("GIẤY_TỜ", r"(?:CCCD|CMND|CMT|căn\s+cước|passport|hộ\s+chiếu|ID\s+card)(?:\s+(?:số|no\.?))?" + SEP + r"([A-Z0-9]{6,12})"),
-    R("TÊN", r"(?:[Ôô]ng|[Bb]à|anh|[Cc]hị|cô|chú|bác|cháu|Mr\.?|Mrs\.?|Ms\.?|Miss)\s+(" + CAP + r"(?:\s+" + CAP + r"){0,4})", ci=False),
-    R("TÊN", r"(?<![\p{L}])((?:" + "|".join(FAMILIES) + r")(?:\s+" + CAP + r"){1,3})(?![\p{L}])", ci=False),
+    R("ĐỊA_CHỈ", r"(?<![\p{L}])(?:địa\s+chỉ|address)\s*[:：]\s*([^\n]{3,120})"),
+    R("SĐT", r"(?<![\p{L}])(?:SĐT|SDT|điện\s+thoại|phone|tel|mobile)" + SEP + r"(\+?\d[\d\s.\-]{7,14}\d)"),
+    R("GIẤY_TỜ", r"(?<![\p{L}])(?:CCCD|CMND|CMT|căn\s+cước|passport|hộ\s+chiếu|ID\s+card)(?:\s+(?:số|no\.?))?" + SEP + r"([A-Z0-9]{6,12})"),
+    R("TÊN", r"(?<![\p{L}])(?:[Ôô]ng|[Bb]à|anh|[Cc]hị|cô|chú|bác|cháu|Mr\.?|Mrs\.?|Ms\.?|Miss)" + GAP + "(" + CAP + r"(?:" + GAP + CAP + r"){0,4})", ci=False),
+    R("TÊN", r"(?<![\p{L}])((?:" + "|".join(f for f in FAMILIES if f not in AMBIGUOUS) + r")(?:" + GAP + CAP + r"){1,3})(?![\p{L}])", ci=False),
+    R("TÊN", r"(?<![\p{L}])((?:" + "|".join(sorted(AMBIGUOUS)) + r")(?:" + GAP + CAP + r"){2,3})(?![\p{L}])", ci=False),
     R("EMAIL", r"([A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,})"),
     R("MÃ_BP", r"(?<![A-Za-z0-9])([A-Z]{1,6}[\-/]?\d{2}[\-/.]\d{3,7})(?![A-Za-z0-9])", ci=False),
     R("GIẤY_TỜ", r"(?<![A-Za-z0-9])([A-Z]\d{7,8})(?![A-Za-z0-9])", ci=False),
@@ -57,6 +63,7 @@ def redact(text, extra=()):
             if len(v) < 2 or v.startswith("["): continue
             if kind == "TÊN" and any(v == n or v.startswith(n + " ") for n in NOT_NAMES): continue
             s, e = m.span(1)
+            if kind == "NGÀY" and any(c in text[max(0, s - 24):s].lower() for c in DOC_DATE_CUES): continue
             # cắt khoảng trắng cuối giống Swift (trimming) — giữ khoảng trắng ngoài giá trị
             raw = text[s:e]
             lead = len(raw) - len(raw.lstrip()); trail = len(raw) - len(raw.rstrip())
@@ -87,6 +94,13 @@ CASES = [
      [], ["62-year-old", "Hans", "non-GCB"]),
     ("BN: Phạm Minh Tuấn, nam, NS 1978, số vào viện 24012345, tiêu bản B24.5678 nhuộm HE.",
      ["Phạm Minh Tuấn", "1978", "24012345", "B24.5678"], ["nhuộm HE"]),
+    # Báo nhầm thật trên tài liệu WHO vú (Sổ tay, 11/10): thiếu ranh giới từ, họ trùng từ thường, ngày truy cập, tên vắt dòng
+    ("Papillary carcinoma Không Carcinôm Thường không Trong. Mucoepidermoid carcinoma; Epidemiology.",
+     [], ["Không Carcinôm", "Thường", "Mucoepidermoid", "Epidemiology"]),
+    ("Nhân Cao Lớn; Độ Cao Thay đổi. WHO Online, truy cập 08/10/2026. Cập nhật: 8/10/2026.\nTăng\nTăng\nTăng",
+     [], ["Cao Lớn", "Cao Thay", "08/10/2026", "8/10/2026", "Tăng\nTăng"]),
+    ("Người bệnh Cao Văn Minh nhập viện; ông Lâm khám lại.",
+     ["Cao Văn Minh", "Lâm"], []),
 ]
 
 fails = 0
