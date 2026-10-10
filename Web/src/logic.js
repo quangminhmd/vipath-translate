@@ -716,6 +716,10 @@ function cassetteNumber(s) {
 const cmd = (src) => new RegExp(GW_L + src + GW_R, 'iu');
 /** Thứ tự quan trọng: cụm dài trước ("dấu hai chấm" trước "dấu chấm"). */
 const GROSS_COMMANDS = [
+  // "ca mới" / "chuyển ca" / "ca tiếp theo" [, mã ca …] → lưu ca đang đọc, mở ca mới
+  [cmd('(?:(?:(?:chuyển|sang|bắt\\s+đầu|mở)\\s+)?ca\\s+(?:mới|tiếp(?:\\s+theo)?|kế(?:\\s+tiếp)?)|chuyển\\s+ca|new\\s+case|next\\s+case)'
+    + '(?:[\\s,.:]+(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$)?'),
+   (m) => ({ type: 'newCase', code: m[1] ? spokenCode(m[1]) : '' })],
   [cmd('(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$'), (m) => ({ type: 'pathcode', code: spokenCode(m[1]) })],
   [cmd(`${CASS_RX}[\\s,]+(?:số\\s+|number\\s+)?(?:(${LET_RX})[\\s,-]*)?${NUM_RX}(?:[\\s,]+là(?=\\s|$))?`), (m) => ({ type: 'cassette', code: (m[1] ? GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] : '') + cassetteNumber(m[2]) })],
   [cmd(`mẫu\\s+(${LET_RX})\\s*-?\\s*${NUM_RX}(?:\\s+là(?=\\s|$))?`), (m) => ({ type: 'cassette', code: GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] + cassetteNumber(m[2]) })],
@@ -830,7 +834,8 @@ function nextCode(doc) {
 }
 
 /**
- * Áp các lệnh của MỘT câu đọc vào văn bản. Trả về tín hiệu điều khiển ('pause' | 'resume' | 'stop').
+ * Áp các lệnh của MỘT câu đọc vào văn bản. Trả về tín hiệu điều khiển ('pause' | 'resume' | 'stop'
+ * | { newCase: <ảnh chụp ca vừa kết thúc> } — bộ điều khiển lưu ca đó).
  * `paused`: đang tạm dừng → chỉ nhận lệnh "tiếp tục ghi".
  */
 export function applyDictation(doc, ops, { paused = false, corrections = [], cassetteReturn = true, inlineMarker = true } = {}) {
@@ -879,6 +884,14 @@ export function applyDictation(doc, ops, { paused = false, corrections = [], cas
       case 'nextCassette': remember(); openCassette(nextCode(doc)); break;
       case 'body': remember(); doc.target = -1; doc.oneShot = false; break;
       case 'pathcode': remember(); if (op.code) setGrossPathcode(doc, op.code); break;
+      case 'newCase': {
+        closeNote();
+        const finished = grossSnapshot(doc);
+        Object.assign(doc, newGrossDoc(op.code || ''));   // lịch sử hoàn tác cũng bắt đầu lại
+        signals.push({ newCase: finished });
+        snap = grossSnapshot(doc); pushed = false; textSnap = null; gotNote = false;
+        break;
+      }
       case 'undo':
         // có chữ đọc trước lệnh trong cùng câu → chỉ xoá đoạn chữ đó; lệnh đứng riêng → xoá câu đọc trước
         if (textSnap) { Object.assign(doc, textSnap); textSnap = null; gotNote = false; }

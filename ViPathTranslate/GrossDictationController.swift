@@ -144,6 +144,15 @@ nonisolated final class DictationMicrophone: @unchecked Sendable {
     /// Tạm dừng ghi vào tệp (lúc trao đổi với KTV) — bản chép lại bằng Whisper sẽ không có đoạn này.
     func setRecording(_ on: Bool) { lock.withLock { recording = on } }
 
+    /// Chuyển sang ghi vào tệp mới (lệnh "ca mới" giữa lúc đang ghi): tệp cũ được đóng.
+    func rotate(to url: URL?) {
+        let f = url.flatMap {
+            try? AVAudioFile(forWriting: $0, settings: Self.recordFormat.settings,
+                             commonFormat: .pcmFormatFloat32, interleaved: false)
+        }
+        lock.withLock { file = f }
+    }
+
     static let recordFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: 16_000,
                                             channels: 1, interleaved: false)!
 
@@ -676,6 +685,7 @@ final class GrossDictationController {
             case .pause: isPaused = true; mic?.setRecording(false)
             case .resume: isPaused = false; mic?.setRecording(true)
             case .stop: Task { await stop() }
+            case .newCase(let finished): finishCase(finished)
             }
         }
         if isRunning {
@@ -730,13 +740,42 @@ final class GrossDictationController {
 
     // MARK: Lưu
 
+    /// Thông báo ngắn cho giao diện (vd. "Đã lưu ca … · ca mới") — `noticeCount` tăng mỗi lần có thông báo.
+    private(set) var notice = ""
+    private(set) var noticeCount = 0
+
+    /// Lệnh giọng nói "ca mới [, mã ca …]": lưu ca vừa đọc, bắt đầu ca mới — không cần chạm màn hình.
+    private func finishCase(_ s: GrossDoc.Snapshot) {
+        var old = GrossDoc(pathcode: s.pathcode)
+        old.restore(s)
+        let hasContent = !old.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !old.cassettes.isEmpty
+        let saved = hasContent ? save(old) : false
+        savedID = nil
+        // bản ghi âm thuộc ca cũ → bỏ; đang ghi thì chuyển sang tệp mới cho ca mới
+        if isRunning, let mic {
+            let url = keepAudio ? newAudioURL() : nil
+            mic.rotate(to: url)
+            removeAudio()
+            if let url { appendAudio(url) }
+        } else {
+            removeAudio()
+        }
+        let oldName = s.pathcode.isEmpty ? "ca trước" : "ca \(s.pathcode)"
+        let newName = doc.pathcode.isEmpty ? "ca mới — nói “mã ca …” để đặt pathcode" : "ca mới \(doc.pathcode)"
+        notice = (saved ? "Đã lưu \(oldName) · " : hasContent ? "⚠︎ Chưa lưu được \(oldName) · " : "") + newName
+        noticeCount += 1
+    }
+
     @discardableResult
-    func save() -> Bool {
-        let text = reportText
+    func save() -> Bool { save(doc) }
+
+    @discardableResult
+    private func save(_ d: GrossDoc) -> Bool {
+        let text = GrossParser.reportText(d, english: language == .en)
         guard !text.isEmpty else { return false }
-        let title = doc.pathcode.isEmpty
-            ? "Đại thể · " + SavedItem.autoTitle(doc.body.isEmpty ? text : doc.body)
-            : "Đại thể · " + doc.pathcode
+        let title = d.pathcode.isEmpty
+            ? "Đại thể · " + SavedItem.autoTitle(d.body.isEmpty ? text : d.body)
+            : "Đại thể · " + d.pathcode
         var item = SavedItem(kind: .gross, title: title, direction: language == .vi ? .viToEn : .enToVi,
                              engine: engineLabel.isEmpty ? "Đọc chính tả" : engineLabel,
                              source: text, translation: "")

@@ -14,10 +14,16 @@ nonisolated enum GrossOp: Equatable, Sendable {
     case cassette(String)
     case nextCassette, body
     case pathcode(String)
+    /// Lưu ca đang đọc và mở ca mới (kèm pathcode nếu có đọc)
+    case newCase(String)
     case pause, resume, stop
 }
 
-nonisolated enum GrossSignal: Equatable, Sendable { case pause, resume, stop }
+nonisolated enum GrossSignal: Equatable, Sendable {
+    case pause, resume, stop
+    /// Ca vừa kết thúc bằng lệnh "ca mới" — bộ điều khiển lưu ca này.
+    case newCase(GrossDoc.Snapshot)
+}
 
 nonisolated struct GrossCassette: Codable, Hashable, Sendable, Identifiable {
     var id = UUID()
@@ -38,7 +44,7 @@ nonisolated struct GrossCorrection: Codable, Hashable, Sendable, Identifiable {
 
 /// Văn bản đại thể đang đọc: phần mô tả + các cát xét. `target` = -1 → đang ghi vào phần mô tả.
 nonisolated struct GrossDoc: Sendable {
-    struct Snapshot: Sendable {
+    struct Snapshot: Sendable, Equatable {
         var body: String
         var cassettes: [GrossCassette]
         var target: Int
@@ -335,6 +341,10 @@ nonisolated enum GrossParser {
     /// Thứ tự quan trọng: cụm dài trước ("dấu hai chấm" trước "dấu chấm").
     /// Chỉ đọc sau khi khởi tạo; NSRegularExpression không đổi trạng thái → dùng chung an toàn.
     nonisolated(unsafe) private static let commands: [(NSRegularExpression, Maker)] = [
+        // "ca mới" / "chuyển ca" / "ca tiếp theo" [, mã ca …] → lưu ca đang đọc, mở ca mới
+        (cmd("(?:(?:(?:chuyển|sang|bắt\\s+đầu|mở)\\s+)?ca\\s+(?:mới|tiếp(?:\\s+theo)?|kế(?:\\s+tiếp)?)|chuyển\\s+ca|new\\s+case|next\\s+case)"
+             + "(?:[\\s,.:]+(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$)?"),
+         { g in .newCase(spokenCode(g[1] ?? "")) }),
         (cmd("(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$"),
          { g in .pathcode(spokenCode(g[1] ?? "")) }),
         (cmd("\(cassRx)[\\s,]+(?:số\\s+|number\\s+)?(?:(\(letRx))[\\s,-]*)?\(numRx)(?:[\\s,]+là(?=\\s|$))?"),
@@ -589,6 +599,12 @@ nonisolated enum GrossParser {
             case .pathcode(let code):
                 remember()
                 if !code.isEmpty { doc.setPathcode(code) }
+            case .newCase(let code):
+                closeNote()
+                let finished = doc.snapshot
+                doc = GrossDoc(pathcode: code)          // lịch sử hoàn tác cũng bắt đầu lại
+                signals.append(.newCase(finished))
+                snap = doc.snapshot; pushed = false; textSnap = nil; gotNote = false
             case .undo:
                 // có chữ đọc trước lệnh trong cùng câu → chỉ xoá đoạn chữ đó; lệnh đứng riêng → xoá câu đọc trước
                 if let ts = textSnap { doc.restore(ts); textSnap = nil; gotNote = false }

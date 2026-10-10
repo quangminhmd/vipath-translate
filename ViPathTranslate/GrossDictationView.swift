@@ -58,6 +58,7 @@ struct GrossDictationView: View {
                 }
             }
             .navigationTitle("Đại thể")
+            .onChange(of: ctl.noticeCount) { flash(ctl.notice, seconds: 3.5) }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
             .sheet(isPresented: $showHelp) { GrossCommandHelp() }
@@ -351,10 +352,10 @@ struct GrossDictationView: View {
         if vm.loadedModel != nil { vm.translate() }
     }
 
-    private func flash(_ s: String) {
+    private func flash(_ s: String, seconds: Double = 1.6) {
         withAnimation { toast = s }
         Task {
-            try? await Task.sleep(for: .seconds(1.6))
+            try? await Task.sleep(for: .seconds(seconds))
             withAnimation { toast = nil }
         }
     }
@@ -376,6 +377,7 @@ struct GrossCommandHelp: View {
     @Environment(\.dismiss) private var dismiss
     private let rows: [(String, String)] = [
         ("“mã ca gê pê bê hai bốn gạch …”", "Đặt pathcode cho ca (gõ hoặc quét mã vạch chính xác hơn)"),
+        ("“ca mới” · “ca mới, mã ca …” · “chuyển ca”", "Lưu ca đang đọc vào Đã lưu, mở trang mới (kèm pathcode nếu đọc) — không cần chạm màn hình"),
         ("“… chấm mực xanh, cát xét A1 diện cắt gần”", "Chèn (A1) vào mô tả, ghi “diện cắt gần” vào A1, rồi tự quay lại mô tả"),
         ("“cát xét A1”, “mẫu bê hai”, “cát xét số 3”", "Mở cát xét — câu kế tiếp là ghi chú của cát xét đó"),
         ("“cát xét tiếp theo”, “khối tiếp”", "Cát xét kế tiếp (A1 → A2)"),

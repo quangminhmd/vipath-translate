@@ -170,5 +170,22 @@ ok(L.parseDictation('mặt cắt sẫm màu 3 cm').every((o) => o.type === 'text
     L.applyDictation(d, L.parseDictation(chunk));
   ok(d.body === 'Túi mật màu xám (A1) (A2). Thành cơ dày.' && d.cassettes[0].text === 'Diện cắt gần.' && d.cassettes[1].text === 'Diện cắt xa.', 'whisper chunks ' + JSON.stringify(d));
 }
+// Lệnh "ca mới" — lưu ca đang đọc, mở ca mới (không chạm màn hình)
+{
+  const d = L.newGrossDoc('26-0001');
+  L.applyDictation(d, L.parseDictation('Túi mật dài 8 cm.'));
+  L.applyDictation(d, L.parseDictation('Cát xét A1 là diện cắt.'));
+  const sig = L.applyDictation(d, L.parseDictation('Ca mới, mã ca hai sáu gạch không không không hai.'));
+  const nc = sig.find((s) => s && s.newCase);
+  ok(nc && nc.newCase.pathcode === '26-0001' && nc.newCase.body.startsWith('Túi mật dài 8 cm') && nc.newCase.cassettes.length === 1, 'newCase snapshot ' + JSON.stringify(sig));
+  ok(d.body === '' && d.cassettes.length === 0 && d.history.length === 0 && d.pathcode !== '26-0001' && d.pathcode.length > 0, 'new doc after newCase ' + JSON.stringify(d));
+  const s2 = L.applyDictation(d, L.parseDictation('Ruột thừa dài 6 cm. chuyển ca'));
+  ok(s2.some((s) => s && s.newCase && s.newCase.body.startsWith('Ruột thừa dài 6 cm')) && d.body === '' && d.pathcode === '', 'text before "chuyển ca" stays in old case');
+  for (const t of ['ca mới', 'Ca tiếp theo.', 'sang ca mới', 'new case', 'next case, case number 12'])
+    ok(L.parseDictation(t).some((o) => o.type === 'newCase'), `"${t}" → newCase`);
+  ok(L.parseDictation('ca mới ruột thừa dài 6 cm').map((o) => o.type).join() === 'newCase,text', 'text after "ca mới" goes to new case');
+  ok(L.parseDictation('mã ca 26-12').every((o) => o.type !== 'newCase'), '"mã ca" alone is not newCase');
+  ok(L.parseDictation('mạch máu có cục máu đông').every((o) => o.type === 'text'), 'no false newCase');
+}
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đạt');
 process.exit(fails ? 1 : 0);

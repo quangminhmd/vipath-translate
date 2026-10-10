@@ -1194,7 +1194,11 @@ function grossFinal(text) {
   if (!t) return;
   G.heard = t;   // hiện câu máy nghe được (để biết lệnh có được nhận không)
   const signals = applyDictation(G.doc, parseDictation(t), { paused: G.paused, ...grOpts() });
-  for (const s of signals) { if (s === 'pause') G.paused = true; if (s === 'resume') G.paused = false; }
+  for (const s of signals) {
+    if (s === 'pause') G.paused = true;
+    if (s === 'resume') G.paused = false;
+    if (s && s.newCase) finishGrossCase(s.newCase);
+  }
   G.volatile = '';
   grPauseUI(); renderGross();
   if (signals.includes('stop')) stopGross(); else if (G.running) grListening();
@@ -1282,17 +1286,31 @@ async function runGrossQueue() {
 }
 
 const grossReport = () => grossReportText(G.doc, G.lang);
+/** Lệnh giọng nói "ca mới [, mã ca …]": lưu ca vừa đọc, mở ca mới — không cần chạm màn hình. */
+async function finishGrossCase(old) {
+  const has = old.body.trim() || old.cassettes.length;
+  let saved = false;
+  if (has) saved = await saveGross({ doc: old, quiet: true });
+  G.savedId = null;
+  $('#gr-label').value = G.doc.pathcode || '';
+  const oldName = old.pathcode ? 'ca ' + old.pathcode : 'ca trước';
+  const newName = G.doc.pathcode ? 'ca mới ' + G.doc.pathcode : 'ca mới — nói “mã ca …” để đặt pathcode';
+  toast((saved ? `Đã lưu ${oldName} · ` : has ? `⚠︎ Chưa lưu được ${oldName} · ` : '') + newName);
+}
 $('#gr-copy').addEventListener('click', () => copyText(grossReport()));
 $('#gr-save').addEventListener('click', saveGross);
-async function saveGross() {
-  const text = grossReport();
-  if (!text) { toast('Chưa có nội dung'); return; }
-  const label = G.doc.pathcode;
+async function saveGross(opts = {}) {
+  const doc = opts.doc || G.doc;
+  const text = grossReportText(doc, G.lang);
+  if (!text) { if (!opts.quiet) toast('Chưa có nội dung'); return false; }
+  const label = doc.pathcode;
   const item = { id: G.savedId || 'g' + Date.now(), kind: 'gross', createdAt: Date.now(), pathcode: label,
-    title: 'Đại thể · ' + (label || autoTitle(G.doc.body || text)), dir: G.lang === 'vi' ? 'viToEn' : 'enToVi', engine: G.engine || 'Đọc chính tả',
+    title: 'Đại thể · ' + (label || autoTitle(doc.body || text)), dir: G.lang === 'vi' ? 'viToEn' : 'enToVi', engine: G.engine || 'Đọc chính tả',
     source: text, translation: '' };
   G.savedId = item.id;
-  if (await idb.put('saved', item)) toast('Đã lưu vào tab Đã lưu');
+  const ok = await idb.put('saved', item);
+  if (ok && !opts.quiet) toast('Đã lưu vào tab Đã lưu');
+  return !!ok;
 }
 $('#gr-translate').addEventListener('click', () => {
   const text = grossReport();
@@ -1322,6 +1340,7 @@ $('#gr-help').addEventListener('click', () => modal(`<h3>Lệnh giọng nói</h3
     <span>“xoá câu”, “hoàn tác”</span><span>Bỏ câu vừa đọc</span>
     <span>“tạm dừng” / “tiếp tục ghi”</span><span>Ngừng nghe khi trao đổi với KTV</span>
     <span>“dừng ghi”</span><span>Kết thúc</span>
+    <span>“ca mới”, “ca mới, mã ca …”, “chuyển ca”</span><span>Lưu ca đang đọc vào Đã lưu, mở trang mới (kèm pathcode nếu đọc)</span>
   </div>
   <h3 style="margin-top:14px">Số đo tự chuẩn hoá</h3>
   <div class="kv small">

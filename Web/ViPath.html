@@ -1271,6 +1271,10 @@ function cassetteNumber(s) {
 const cmd = (src) => new RegExp(GW_L + src + GW_R, 'iu');
 /** Thứ tự quan trọng: cụm dài trước ("dấu hai chấm" trước "dấu chấm"). */
 const GROSS_COMMANDS = [
+  // "ca mới" / "chuyển ca" / "ca tiếp theo" [, mã ca …] → lưu ca đang đọc, mở ca mới
+  [cmd('(?:(?:(?:chuyển|sang|bắt\\s+đầu|mở)\\s+)?ca\\s+(?:mới|tiếp(?:\\s+theo)?|kế(?:\\s+tiếp)?)|chuyển\\s+ca|new\\s+case|next\\s+case)'
+    + '(?:[\\s,.:]+(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$)?'),
+   (m) => ({ type: 'newCase', code: m[1] ? spokenCode(m[1]) : '' })],
   [cmd('(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$'), (m) => ({ type: 'pathcode', code: spokenCode(m[1]) })],
   [cmd(`${CASS_RX}[\\s,]+(?:số\\s+|number\\s+)?(?:(${LET_RX})[\\s,-]*)?${NUM_RX}(?:[\\s,]+là(?=\\s|$))?`), (m) => ({ type: 'cassette', code: (m[1] ? GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] : '') + cassetteNumber(m[2]) })],
   [cmd(`mẫu\\s+(${LET_RX})\\s*-?\\s*${NUM_RX}(?:\\s+là(?=\\s|$))?`), (m) => ({ type: 'cassette', code: GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] + cassetteNumber(m[2]) })],
@@ -1385,7 +1389,8 @@ function nextCode(doc) {
 }
 
 /**
- * Áp các lệnh của MỘT câu đọc vào văn bản. Trả về tín hiệu điều khiển ('pause' | 'resume' | 'stop').
+ * Áp các lệnh của MỘT câu đọc vào văn bản. Trả về tín hiệu điều khiển ('pause' | 'resume' | 'stop'
+ * | { newCase: <ảnh chụp ca vừa kết thúc> } — bộ điều khiển lưu ca đó).
  * `paused`: đang tạm dừng → chỉ nhận lệnh "tiếp tục ghi".
  */
 function applyDictation(doc, ops, { paused = false, corrections = [], cassetteReturn = true, inlineMarker = true } = {}) {
@@ -1434,6 +1439,14 @@ function applyDictation(doc, ops, { paused = false, corrections = [], cassetteRe
       case 'nextCassette': remember(); openCassette(nextCode(doc)); break;
       case 'body': remember(); doc.target = -1; doc.oneShot = false; break;
       case 'pathcode': remember(); if (op.code) setGrossPathcode(doc, op.code); break;
+      case 'newCase': {
+        closeNote();
+        const finished = grossSnapshot(doc);
+        Object.assign(doc, newGrossDoc(op.code || ''));   // lịch sử hoàn tác cũng bắt đầu lại
+        signals.push({ newCase: finished });
+        snap = grossSnapshot(doc); pushed = false; textSnap = null; gotNote = false;
+        break;
+      }
       case 'undo':
         // có chữ đọc trước lệnh trong cùng câu → chỉ xoá đoạn chữ đó; lệnh đứng riêng → xoá câu đọc trước
         if (textSnap) { Object.assign(doc, textSnap); textSnap = null; gotNote = false; }
@@ -2686,7 +2699,11 @@ function grossFinal(text) {
   if (!t) return;
   G.heard = t;   // hiện câu máy nghe được (để biết lệnh có được nhận không)
   const signals = applyDictation(G.doc, parseDictation(t), { paused: G.paused, ...grOpts() });
-  for (const s of signals) { if (s === 'pause') G.paused = true; if (s === 'resume') G.paused = false; }
+  for (const s of signals) {
+    if (s === 'pause') G.paused = true;
+    if (s === 'resume') G.paused = false;
+    if (s && s.newCase) finishGrossCase(s.newCase);
+  }
   G.volatile = '';
   grPauseUI(); renderGross();
   if (signals.includes('stop')) stopGross(); else if (G.running) grListening();
@@ -2774,17 +2791,31 @@ async function runGrossQueue() {
 }
 
 const grossReport = () => grossReportText(G.doc, G.lang);
+/** Lệnh giọng nói "ca mới [, mã ca …]": lưu ca vừa đọc, mở ca mới — không cần chạm màn hình. */
+async function finishGrossCase(old) {
+  const has = old.body.trim() || old.cassettes.length;
+  let saved = false;
+  if (has) saved = await saveGross({ doc: old, quiet: true });
+  G.savedId = null;
+  $('#gr-label').value = G.doc.pathcode || '';
+  const oldName = old.pathcode ? 'ca ' + old.pathcode : 'ca trước';
+  const newName = G.doc.pathcode ? 'ca mới ' + G.doc.pathcode : 'ca mới — nói “mã ca …” để đặt pathcode';
+  toast((saved ? `Đã lưu ${oldName} · ` : has ? `⚠︎ Chưa lưu được ${oldName} · ` : '') + newName);
+}
 $('#gr-copy').addEventListener('click', () => copyText(grossReport()));
 $('#gr-save').addEventListener('click', saveGross);
-async function saveGross() {
-  const text = grossReport();
-  if (!text) { toast('Chưa có nội dung'); return; }
-  const label = G.doc.pathcode;
+async function saveGross(opts = {}) {
+  const doc = opts.doc || G.doc;
+  const text = grossReportText(doc, G.lang);
+  if (!text) { if (!opts.quiet) toast('Chưa có nội dung'); return false; }
+  const label = doc.pathcode;
   const item = { id: G.savedId || 'g' + Date.now(), kind: 'gross', createdAt: Date.now(), pathcode: label,
-    title: 'Đại thể · ' + (label || autoTitle(G.doc.body || text)), dir: G.lang === 'vi' ? 'viToEn' : 'enToVi', engine: G.engine || 'Đọc chính tả',
+    title: 'Đại thể · ' + (label || autoTitle(doc.body || text)), dir: G.lang === 'vi' ? 'viToEn' : 'enToVi', engine: G.engine || 'Đọc chính tả',
     source: text, translation: '' };
   G.savedId = item.id;
-  if (await idb.put('saved', item)) toast('Đã lưu vào tab Đã lưu');
+  const ok = await idb.put('saved', item);
+  if (ok && !opts.quiet) toast('Đã lưu vào tab Đã lưu');
+  return !!ok;
 }
 $('#gr-translate').addEventListener('click', () => {
   const text = grossReport();
@@ -2814,6 +2845,7 @@ $('#gr-help').addEventListener('click', () => modal(`<h3>Lệnh giọng nói</h3
     <span>“xoá câu”, “hoàn tác”</span><span>Bỏ câu vừa đọc</span>
     <span>“tạm dừng” / “tiếp tục ghi”</span><span>Ngừng nghe khi trao đổi với KTV</span>
     <span>“dừng ghi”</span><span>Kết thúc</span>
+    <span>“ca mới”, “ca mới, mã ca …”, “chuyển ca”</span><span>Lưu ca đang đọc vào Đã lưu, mở trang mới (kèm pathcode nếu đọc)</span>
   </div>
   <h3 style="margin-top:14px">Số đo tự chuẩn hoá</h3>
   <div class="kv small">
