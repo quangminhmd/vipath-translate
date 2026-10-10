@@ -1256,6 +1256,8 @@ const GROSS_LETTER = {
 };
 /** "cát xét" và các cách bộ nhận dạng hay viết sai: các xét, cát sét, ca-xét, cassette, khối nến… */
 // Whisper/PhoWhisper còn viết: "cắt xét", "cách xét", "cắt xe,", "khắc sét"… (quan sát thực tế)
+/** Từ khoá pathcode, kể cả cách bộ nhận dạng hay viết sai ("mã k", "mã cà", "mả ca"…). */
+const CODE_KW_RX = '(?:m[ãảạá]\\s+(?:ca|cà|cá|cả|cạ|ka|kha|k)|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?';
 const CASS_RX = '(?:(?:c|k|kh)[aáàảãạăắằẳẵặâấầẩẫậ](?:t|c|ch)?[\\s,-]*[xs][eéèẻẽẹêếềểễệ](?:t|c)?|cass?ett?e|khối\\s+nến|khuôn\\s+nến|block|blốc)';
 const LET_RX = Object.keys(GROSS_LETTER).sort((a, b) => b.length - a.length).map((k) => k.replace(' ', '\\s+')).join('|');
 const NUMW_RX = '(?:một|mốt|hai|ba|bà|bá|bả|bốn|tư|năm|lăm|sáu|bảy|bẩy|tám|chín|mười|mươi|linh|lẻ|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)';
@@ -1273,9 +1275,9 @@ const cmd = (src) => new RegExp(GW_L + src + GW_R, 'iu');
 const GROSS_COMMANDS = [
   // "ca mới" / "chuyển ca" / "ca tiếp theo" [, mã ca …] → lưu ca đang đọc, mở ca mới
   [cmd('(?:(?:(?:chuyển|sang|bắt\\s+đầu|mở)\\s+)?ca\\s+(?:mới|tiếp(?:\\s+theo)?|kế(?:\\s+tiếp)?)|chuyển\\s+ca|new\\s+case|next\\s+case)'
-    + '(?:[\\s,.:]+(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$)?'),
+    + `(?:[\\s,.:]+${CODE_KW_RX}[\\s:]+(.+)$)?`),
    (m) => ({ type: 'newCase', code: m[1] ? spokenCode(m[1]) : '' })],
-  [cmd('(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$'), (m) => ({ type: 'pathcode', code: spokenCode(m[1]) })],
+  [cmd(`${CODE_KW_RX}[\\s:]+(.+)$`), (m) => ({ type: 'pathcode', code: spokenCode(m[1]) })],
   [cmd(`${CASS_RX}[\\s,]+(?:số\\s+|number\\s+)?(?:(${LET_RX})[\\s,-]*)?${NUM_RX}(?:[\\s,]+là(?=\\s|$))?`), (m) => ({ type: 'cassette', code: (m[1] ? GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] : '') + cassetteNumber(m[2]) })],
   [cmd(`mẫu\\s+(${LET_RX})\\s*-?\\s*${NUM_RX}(?:\\s+là(?=\\s|$))?`), (m) => ({ type: 'cassette', code: GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] + cassetteNumber(m[2]) })],
   [cmd(`(?:${CASS_RX}|khối|mẫu)\\s+(?:tiếp(?:\\s+theo)?|kế\\s+tiếp|next)|next\\s+(?:cassette|block)`), () => ({ type: 'nextCassette' })],
@@ -1316,6 +1318,22 @@ function spokenCode(raw) {
     out += t.replace(/[^\p{L}\p{N}\-\/]/gu, '').toUpperCase();
   }
   return out;
+}
+
+// Lệnh bị cắt đôi ở chỗ ngừng nói: "mã ca" | (ngừng) | "bốn không không một".
+const DANGLING_CODE_RX = new RegExp(GW_L + '(' + CODE_KW_RX + ')[\\s,.:;]*$', 'iu');
+const DANGLING_CASS_RX = new RegExp('(?:^|[.,;:]\\s*)(' + CASS_RX + ')[\\s,.:;]*$', 'iu');
+/** Tách phần lệnh còn dở ở cuối câu → { keep, carry }; carry được ghép vào đầu đoạn sau. */
+function splitDangling(text) {
+  const s = (text || '').normalize('NFC');
+  for (const r of [DANGLING_CODE_RX, DANGLING_CASS_RX]) {
+    const m = r.exec(s);
+    if (m && m[1]) {
+      const at = m.index + m[0].indexOf(m[1]);
+      return { keep: s.slice(0, at).trim(), carry: m[1] };
+    }
+  }
+  return { keep: s, carry: '' };
 }
 
 /** Tách một câu đọc thành văn bản và lệnh. */
@@ -2602,7 +2620,7 @@ async function saveCaptions() {
 const G = {
   doc: newGrossDoc(), lang: store.get('grLang', 'vi'), asrMode: store.get('grAsr', 'whisper'),
   running: false, paused: false, volatile: '', rec: null, capture: null,
-  chunk: [], chunkLen: 0, silence: 0, speech: 0, queue: [], busy: false, savedId: null, engine: '',
+  chunk: [], chunkLen: 0, silence: 0, speech: 0, queue: [], busy: false, savedId: null, engine: '', carry: '', carryAt: 0,
   corrections: store.get('grCorrections', null) || GROSS_DEFAULT_CORRECTIONS,
 };
 if (!SR && G.asrMode === 'web') G.asrMode = 'whisper';
@@ -2638,7 +2656,7 @@ function updateGrossHint() {
     : `Whisper chạy trên máy (${w.name}) — không gửi âm thanh đi đâu; mỗi câu hiện ra sau khi bạn ngừng nói ~0,6 giây. Nói “cát xét A1”, “xuống dòng”, “xoá câu”… — bấm “Lệnh giọng nói” để xem đủ.`;
 }
 const grTargetLabel = () => {
-  const d = grPreviewing() ? previewDictation(G.doc, G.volatile, grOpts()) : G.doc;
+  const d = grPreviewing() ? previewDictation(G.doc, (G.carry ? G.carry + ' ' : '') + G.volatile, grOpts()) : G.doc;
   return d.target < 0 ? 'Mô tả' : 'Cát xét ' + cassetteLabel(d.cassettes[d.target]) + (d.oneShot ? ' (ghi chú xong quay lại mô tả)' : '');
 };
 const setGrStatus = (t) => { $('#gr-status').textContent = t; };
@@ -2648,7 +2666,7 @@ function grListening() { setGrStatus((G.paused ? 'Tạm dừng — nói “tiế
 const grPreviewing = () => G.running && !G.paused && G.asrMode === 'web' && !!G.volatile;
 function renderGross() {
   const previewing = grPreviewing();
-  const d = previewing ? previewDictation(G.doc, G.volatile, grOpts()) : G.doc;
+  const d = previewing ? previewDictation(G.doc, (G.carry ? G.carry + ' ' : '') + G.volatile, grOpts()) : G.doc;
   const live = (i) => (G.running && d.target === i ? `<span class="gr-live${G.paused ? ' paused' : ''}"></span>` : '');
   const vol = (i) => (!previewing && G.asrMode !== 'web' && d.target === i && !G.paused ? esc(G.volatile) : '');
   const block = (i, head, text, ph) => `<div class="gr-block${d.target === i ? ' active' : ''}" data-gi="${i}">
@@ -2698,7 +2716,17 @@ function grossFinal(text) {
   const t = (text || '').replace(/\[[^\]]*\]|\([^)]*\)/g, ' ').trim();   // Whisper: bỏ [Music]…
   if (!t) return;
   G.heard = t;   // hiện câu máy nghe được (để biết lệnh có được nhận không)
-  const signals = applyDictation(G.doc, parseDictation(t), { paused: G.paused, ...grOpts() });
+  // "mã ca" | (ngừng) | "bốn không không một": phần lệnh dở ở cuối đoạn trước được ghép vào đoạn này
+  let joined = t;
+  const signals = [];
+  if (G.carry) {
+    if (Date.now() - G.carryAt < 12000) joined = G.carry + ' ' + t;
+    else signals.push(...applyDictation(G.doc, parseDictation(G.carry), { paused: G.paused, ...grOpts() }));
+    G.carry = '';
+  }
+  const { keep, carry } = splitDangling(joined);
+  if (carry) { G.carry = carry; G.carryAt = Date.now(); }
+  if (keep) signals.push(...applyDictation(G.doc, parseDictation(keep), { paused: G.paused, ...grOpts() }));
   for (const s of signals) {
     if (s === 'pause') G.paused = true;
     if (s === 'resume') G.paused = false;
@@ -2710,6 +2738,7 @@ function grossFinal(text) {
 }
 
 async function startGross() {
+  G.carry = '';
   if (G.running) return;
   G.running = true; G.paused = false; G.volatile = ''; G.queue = [];
   $('#gr-mic').classList.add('on'); $('#gr-mic').setAttribute('aria-label', 'Dừng ghi'); grPauseUI();
@@ -2752,6 +2781,11 @@ async function stopGross() {
   G.rec = null;
   G.capture?.stop(); G.capture = null;
   if (G.chunkLen > 16000) pushGrossChunk();
+  // còn phần lệnh dở ("mã ca" chưa kèm mã) → ghi ra như chữ thường sau khi nhận dạng nốt
+  setTimeout(function flush() {
+    if (G.queue.length || G.busy) { setTimeout(flush, 300); return; }
+    if (G.carry) { applyDictation(G.doc, parseDictation(G.carry), grOpts()); G.carry = ''; renderGross(); }
+  }, 300);
   try { await G.wake?.release(); } catch { /* */ }
   G.volatile = ''; G.paused = false;
   $('#gr-mic').classList.remove('on'); $('#gr-mic').setAttribute('aria-label', 'Bắt đầu ghi'); grPauseUI();

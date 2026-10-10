@@ -311,6 +311,8 @@ nonisolated enum GrossParser {
     ]
     /// "cát xét" và các cách bộ nhận dạng hay viết sai: các xét, cát sét, ca-xét, cassette, khối nến…
     // Whisper/PhoWhisper còn viết: "cắt xét", "cách xét", "cắt xe,", "khắc sét"… (quan sát thực tế)
+    /// Từ khoá pathcode, kể cả cách bộ nhận dạng hay viết sai ("mã k", "mã cà", "mả ca"…).
+    private static let codeKwRx = "(?:m[ãảạá]\\s+(?:ca|cà|cá|cả|cạ|ka|kha|k)|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?"
     private static let cassRx = "(?:(?:c|k|kh)[aáàảãạăắằẳẵặâấầẩẫậ](?:t|c|ch)?[\\s,-]*[xs][eéèẻẽẹêếềểễệ](?:t|c)?|cass?ett?e|khối\\s+nến|khuôn\\s+nến|block|blốc)"
     private static let letRx = letters.keys.sorted { $0.count > $1.count }
         .map { $0.replacingOccurrences(of: " ", with: "\\s+") }.joined(separator: "|")
@@ -343,9 +345,9 @@ nonisolated enum GrossParser {
     nonisolated(unsafe) private static let commands: [(NSRegularExpression, Maker)] = [
         // "ca mới" / "chuyển ca" / "ca tiếp theo" [, mã ca …] → lưu ca đang đọc, mở ca mới
         (cmd("(?:(?:(?:chuyển|sang|bắt\\s+đầu|mở)\\s+)?ca\\s+(?:mới|tiếp(?:\\s+theo)?|kế(?:\\s+tiếp)?)|chuyển\\s+ca|new\\s+case|next\\s+case)"
-             + "(?:[\\s,.:]+(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$)?"),
+             + "(?:[\\s,.:]+\(codeKwRx)[\\s:]+(.+)$)?"),
          { g in .newCase(spokenCode(g[1] ?? "")) }),
-        (cmd("(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$"),
+        (cmd("\(codeKwRx)[\\s:]+(.+)$"),
          { g in .pathcode(spokenCode(g[1] ?? "")) }),
         (cmd("\(cassRx)[\\s,]+(?:số\\s+|number\\s+)?(?:(\(letRx))[\\s,-]*)?\(numRx)(?:[\\s,]+là(?=\\s|$))?"),
          { g in .cassette((g[1].map(letter) ?? "") + String(cassetteNumber(g[2] ?? ""))) }),
@@ -411,6 +413,26 @@ nonisolated enum GrossParser {
 
     private static let trailingPunctRx = rx("[\\s.,;:!?]+$", [])
     private static let leadingPunctRx = rx("^[\\s.,;:!?]+", [])
+
+    // Lệnh bị cắt đôi ở chỗ ngừng nói: "mã ca" | (ngừng) | "bốn không không một".
+    // Phần lệnh ở cuối đoạn được giữ lại và ghép vào đầu đoạn sau.
+    private static let danglingCodeRx = rx(L + "(" + codeKwRx + ")[\\s,.:;]*$")
+    private static let danglingCassRx = rx("(?:^|[.,;:]\\s*)(" + cassRx + ")[\\s,.:;]*$")
+
+    /// Tách phần lệnh còn dở ở cuối câu (chưa có mã pathcode / số cát xét) → (phần áp ngay, phần giữ lại).
+    static func splitDangling(_ text: String) -> (keep: String, carry: String) {
+        let s = text.precomposedStringWithCanonicalMapping
+        let ns = s as NSString
+        for r in [danglingCodeRx, danglingCassRx] {
+            if let m = r.firstMatch(in: s, range: NSRange(location: 0, length: ns.length)) {
+                let g = m.range(at: 1)
+                guard g.location != NSNotFound else { continue }
+                let keep = ns.substring(to: g.location).trimmingCharacters(in: .whitespacesAndNewlines)
+                return (keep, ns.substring(with: g))
+            }
+        }
+        return (s, "")
+    }
 
     /// Tách một câu đọc thành văn bản và lệnh.
     static func parse(_ input: String) -> [GrossOp] {

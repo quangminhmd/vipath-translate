@@ -187,5 +187,24 @@ ok(L.parseDictation('mặt cắt sẫm màu 3 cm').every((o) => o.type === 'text
   ok(L.parseDictation('mã ca 26-12').every((o) => o.type !== 'newCase'), '"mã ca" alone is not newCase');
   ok(L.parseDictation('mạch máu có cục máu đông').every((o) => o.type === 'text'), 'no false newCase');
 }
+// Lệnh pathcode bị cắt đôi ở chỗ ngừng nói (PhoWhisper) + cách viết sai "mã k"
+{
+  ok(L.parseDictation('mã k bốn không không một.').some((o) => o.type === 'pathcode' && o.code === '4001'), '"mã k" → pathcode');
+  ok(L.parseDictation('Mã cà hai sáu gạch không một').some((o) => o.type === 'pathcode' && o.code === '26-01'), '"mã cà" → pathcode');
+  let r = L.splitDangling('Túi mật dài 8 cm. Mã ca.');
+  ok(r.keep === 'Túi mật dài 8 cm.' && r.carry === 'Mã ca', 'dangling code ' + JSON.stringify(r));
+  const d = L.newGrossDoc();
+  L.applyDictation(d, L.parseDictation(r.keep));
+  L.applyDictation(d, L.parseDictation(r.carry + ' ' + 'bốn không không một.'));
+  ok(d.pathcode === '4001' && d.body === 'Túi mật dài 8 cm.', 'carry joins next chunk ' + JSON.stringify(d));
+  r = L.splitDangling('Ca mới, mã ca');
+  ok(r.keep === 'Ca mới,' && r.carry === 'mã ca', 'ca mới + dangling ' + JSON.stringify(r));
+  r = L.splitDangling('Cát xét');
+  ok(r.keep === '' && r.carry === 'Cát xét', 'dangling cassette alone');
+  r = L.splitDangling('gửi ba cát xét');
+  ok(r.carry === '', 'cassette word inside sentence is not carried');
+  r = L.splitDangling('Mã ca bốn không không một.');
+  ok(r.carry === '' && r.keep === 'Mã ca bốn không không một.', 'complete pathcode not carried');
+}
 console.log(fails ? `\n${fails} lỗi` : '\nTất cả đạt');
 process.exit(fails ? 1 : 0);

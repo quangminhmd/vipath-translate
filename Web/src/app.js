@@ -1097,7 +1097,7 @@ async function saveCaptions() {
 const G = {
   doc: newGrossDoc(), lang: store.get('grLang', 'vi'), asrMode: store.get('grAsr', 'whisper'),
   running: false, paused: false, volatile: '', rec: null, capture: null,
-  chunk: [], chunkLen: 0, silence: 0, speech: 0, queue: [], busy: false, savedId: null, engine: '',
+  chunk: [], chunkLen: 0, silence: 0, speech: 0, queue: [], busy: false, savedId: null, engine: '', carry: '', carryAt: 0,
   corrections: store.get('grCorrections', null) || GROSS_DEFAULT_CORRECTIONS,
 };
 if (!SR && G.asrMode === 'web') G.asrMode = 'whisper';
@@ -1133,7 +1133,7 @@ function updateGrossHint() {
     : `Whisper chạy trên máy (${w.name}) — không gửi âm thanh đi đâu; mỗi câu hiện ra sau khi bạn ngừng nói ~0,6 giây. Nói “cát xét A1”, “xuống dòng”, “xoá câu”… — bấm “Lệnh giọng nói” để xem đủ.`;
 }
 const grTargetLabel = () => {
-  const d = grPreviewing() ? previewDictation(G.doc, G.volatile, grOpts()) : G.doc;
+  const d = grPreviewing() ? previewDictation(G.doc, (G.carry ? G.carry + ' ' : '') + G.volatile, grOpts()) : G.doc;
   return d.target < 0 ? 'Mô tả' : 'Cát xét ' + cassetteLabel(d.cassettes[d.target]) + (d.oneShot ? ' (ghi chú xong quay lại mô tả)' : '');
 };
 const setGrStatus = (t) => { $('#gr-status').textContent = t; };
@@ -1143,7 +1143,7 @@ function grListening() { setGrStatus((G.paused ? 'Tạm dừng — nói “tiế
 const grPreviewing = () => G.running && !G.paused && G.asrMode === 'web' && !!G.volatile;
 function renderGross() {
   const previewing = grPreviewing();
-  const d = previewing ? previewDictation(G.doc, G.volatile, grOpts()) : G.doc;
+  const d = previewing ? previewDictation(G.doc, (G.carry ? G.carry + ' ' : '') + G.volatile, grOpts()) : G.doc;
   const live = (i) => (G.running && d.target === i ? `<span class="gr-live${G.paused ? ' paused' : ''}"></span>` : '');
   const vol = (i) => (!previewing && G.asrMode !== 'web' && d.target === i && !G.paused ? esc(G.volatile) : '');
   const block = (i, head, text, ph) => `<div class="gr-block${d.target === i ? ' active' : ''}" data-gi="${i}">
@@ -1193,7 +1193,17 @@ function grossFinal(text) {
   const t = (text || '').replace(/\[[^\]]*\]|\([^)]*\)/g, ' ').trim();   // Whisper: bỏ [Music]…
   if (!t) return;
   G.heard = t;   // hiện câu máy nghe được (để biết lệnh có được nhận không)
-  const signals = applyDictation(G.doc, parseDictation(t), { paused: G.paused, ...grOpts() });
+  // "mã ca" | (ngừng) | "bốn không không một": phần lệnh dở ở cuối đoạn trước được ghép vào đoạn này
+  let joined = t;
+  const signals = [];
+  if (G.carry) {
+    if (Date.now() - G.carryAt < 12000) joined = G.carry + ' ' + t;
+    else signals.push(...applyDictation(G.doc, parseDictation(G.carry), { paused: G.paused, ...grOpts() }));
+    G.carry = '';
+  }
+  const { keep, carry } = splitDangling(joined);
+  if (carry) { G.carry = carry; G.carryAt = Date.now(); }
+  if (keep) signals.push(...applyDictation(G.doc, parseDictation(keep), { paused: G.paused, ...grOpts() }));
   for (const s of signals) {
     if (s === 'pause') G.paused = true;
     if (s === 'resume') G.paused = false;
@@ -1205,6 +1215,7 @@ function grossFinal(text) {
 }
 
 async function startGross() {
+  G.carry = '';
   if (G.running) return;
   G.running = true; G.paused = false; G.volatile = ''; G.queue = [];
   $('#gr-mic').classList.add('on'); $('#gr-mic').setAttribute('aria-label', 'Dừng ghi'); grPauseUI();
@@ -1247,6 +1258,11 @@ async function stopGross() {
   G.rec = null;
   G.capture?.stop(); G.capture = null;
   if (G.chunkLen > 16000) pushGrossChunk();
+  // còn phần lệnh dở ("mã ca" chưa kèm mã) → ghi ra như chữ thường sau khi nhận dạng nốt
+  setTimeout(function flush() {
+    if (G.queue.length || G.busy) { setTimeout(flush, 300); return; }
+    if (G.carry) { applyDictation(G.doc, parseDictation(G.carry), grOpts()); G.carry = ''; renderGross(); }
+  }, 300);
   try { await G.wake?.release(); } catch { /* */ }
   G.volatile = ''; G.paused = false;
   $('#gr-mic').classList.remove('on'); $('#gr-mic').setAttribute('aria-label', 'Bắt đầu ghi'); grPauseUI();

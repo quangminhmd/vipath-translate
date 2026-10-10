@@ -701,6 +701,8 @@ const GROSS_LETTER = {
 };
 /** "cát xét" và các cách bộ nhận dạng hay viết sai: các xét, cát sét, ca-xét, cassette, khối nến… */
 // Whisper/PhoWhisper còn viết: "cắt xét", "cách xét", "cắt xe,", "khắc sét"… (quan sát thực tế)
+/** Từ khoá pathcode, kể cả cách bộ nhận dạng hay viết sai ("mã k", "mã cà", "mả ca"…). */
+const CODE_KW_RX = '(?:m[ãảạá]\\s+(?:ca|cà|cá|cả|cạ|ka|kha|k)|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?';
 const CASS_RX = '(?:(?:c|k|kh)[aáàảãạăắằẳẵặâấầẩẫậ](?:t|c|ch)?[\\s,-]*[xs][eéèẻẽẹêếềểễệ](?:t|c)?|cass?ett?e|khối\\s+nến|khuôn\\s+nến|block|blốc)';
 const LET_RX = Object.keys(GROSS_LETTER).sort((a, b) => b.length - a.length).map((k) => k.replace(' ', '\\s+')).join('|');
 const NUMW_RX = '(?:một|mốt|hai|ba|bà|bá|bả|bốn|tư|năm|lăm|sáu|bảy|bẩy|tám|chín|mười|mươi|linh|lẻ|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)';
@@ -718,9 +720,9 @@ const cmd = (src) => new RegExp(GW_L + src + GW_R, 'iu');
 const GROSS_COMMANDS = [
   // "ca mới" / "chuyển ca" / "ca tiếp theo" [, mã ca …] → lưu ca đang đọc, mở ca mới
   [cmd('(?:(?:(?:chuyển|sang|bắt\\s+đầu|mở)\\s+)?ca\\s+(?:mới|tiếp(?:\\s+theo)?|kế(?:\\s+tiếp)?)|chuyển\\s+ca|new\\s+case|next\\s+case)'
-    + '(?:[\\s,.:]+(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$)?'),
+    + `(?:[\\s,.:]+${CODE_KW_RX}[\\s:]+(.+)$)?`),
    (m) => ({ type: 'newCase', code: m[1] ? spokenCode(m[1]) : '' })],
-  [cmd('(?:mã\\s+ca|mã\\s+bệnh\\s+phẩm|mã\\s+giải\\s+phẫu\\s+bệnh|pathcode|path\\s+code|case\\s+number)(?:\\s+là)?[\\s:]+(.+)$'), (m) => ({ type: 'pathcode', code: spokenCode(m[1]) })],
+  [cmd(`${CODE_KW_RX}[\\s:]+(.+)$`), (m) => ({ type: 'pathcode', code: spokenCode(m[1]) })],
   [cmd(`${CASS_RX}[\\s,]+(?:số\\s+|number\\s+)?(?:(${LET_RX})[\\s,-]*)?${NUM_RX}(?:[\\s,]+là(?=\\s|$))?`), (m) => ({ type: 'cassette', code: (m[1] ? GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] : '') + cassetteNumber(m[2]) })],
   [cmd(`mẫu\\s+(${LET_RX})\\s*-?\\s*${NUM_RX}(?:\\s+là(?=\\s|$))?`), (m) => ({ type: 'cassette', code: GROSS_LETTER[m[1].toLowerCase().replace(/\s+/g, ' ')] + cassetteNumber(m[2]) })],
   [cmd(`(?:${CASS_RX}|khối|mẫu)\\s+(?:tiếp(?:\\s+theo)?|kế\\s+tiếp|next)|next\\s+(?:cassette|block)`), () => ({ type: 'nextCassette' })],
@@ -761,6 +763,22 @@ export function spokenCode(raw) {
     out += t.replace(/[^\p{L}\p{N}\-\/]/gu, '').toUpperCase();
   }
   return out;
+}
+
+// Lệnh bị cắt đôi ở chỗ ngừng nói: "mã ca" | (ngừng) | "bốn không không một".
+const DANGLING_CODE_RX = new RegExp(GW_L + '(' + CODE_KW_RX + ')[\\s,.:;]*$', 'iu');
+const DANGLING_CASS_RX = new RegExp('(?:^|[.,;:]\\s*)(' + CASS_RX + ')[\\s,.:;]*$', 'iu');
+/** Tách phần lệnh còn dở ở cuối câu → { keep, carry }; carry được ghép vào đầu đoạn sau. */
+export function splitDangling(text) {
+  const s = (text || '').normalize('NFC');
+  for (const r of [DANGLING_CODE_RX, DANGLING_CASS_RX]) {
+    const m = r.exec(s);
+    if (m && m[1]) {
+      const at = m.index + m[0].indexOf(m[1]);
+      return { keep: s.slice(0, at).trim(), carry: m[1] };
+    }
+  }
+  return { keep: s, carry: '' };
 }
 
 /** Tách một câu đọc thành văn bản và lệnh. */

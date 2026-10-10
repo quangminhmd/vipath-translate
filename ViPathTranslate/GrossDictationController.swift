@@ -599,6 +599,7 @@ final class GrossDictationController {
             await chunkTask?.value
         }
         await recognizer?.finish()       // nhận nốt câu cuối
+        flushCarry()
         await teardown()
         status = "Đã dừng"
     }
@@ -611,6 +612,7 @@ final class GrossDictationController {
         chunker = nil
         gate = nil
         committedWords = 0
+        carry = ""
         partialLoop?.cancel()
         partialLoop = nil
         partialTask = nil
@@ -642,7 +644,8 @@ final class GrossDictationController {
             volatileText = text
             let rest = Self.words(text, after: committedWords)
             if !isPaused, !rest.isEmpty {
-                preview = GrossParser.preview(doc, volatile: rest, corrections: corrections,
+                preview = GrossParser.preview(doc, volatile: carry.isEmpty ? rest : carry + " " + rest,
+                                              corrections: corrections,
                                               cassetteReturn: cassetteReturn, inlineMarker: inlineMarker)
             } else {
                 preview = nil
@@ -677,7 +680,32 @@ final class GrossDictationController {
         apply(rest)
     }
 
+    /// Phần lệnh còn dở của đoạn trước ("mã ca" chưa kèm mã) — ghép vào đầu đoạn kế tiếp.
+    private var carry = ""
+    private var carryAt = Date.distantPast
+
     private func apply(_ text: String) {
+        var t = text
+        if !carry.isEmpty {
+            // đoạn sau đến quá muộn → coi phần giữ lại là chữ thường
+            if Date().timeIntervalSince(carryAt) < 12 { t = carry + " " + t } else { applyNow(carry) }
+            carry = ""
+        }
+        let (keep, c) = GrossParser.splitDangling(t)
+        if !c.isEmpty { carry = c; carryAt = Date() }
+        if !keep.isEmpty { applyNow(keep) }
+        if !carry.isEmpty, isRunning { status = "Nghe: “\(carry)” — đọc tiếp mã…" }
+    }
+
+    /// Đã dừng ghi mà còn phần lệnh dở → ghi ra như chữ thường.
+    private func flushCarry() {
+        guard !carry.isEmpty else { return }
+        let c = carry
+        carry = ""
+        applyNow(c)
+    }
+
+    private func applyNow(_ text: String) {
         let signals = GrossParser.apply(GrossParser.parse(text), to: &doc, paused: isPaused, corrections: corrections,
                                         cassetteReturn: cassetteReturn, inlineMarker: inlineMarker)
         for s in signals {
@@ -820,8 +848,13 @@ final class GrossDictationController {
             // để MỘT lần Hoàn tác quay về đúng bản trước khi chép lại.
             var fresh = GrossDoc(pathcode: doc.pathcode)
             var paused = false
-            for line in collector.all {
-                for sig in GrossParser.apply(GrossParser.parse(line), to: &fresh, paused: paused, corrections: corrections,
+            var pending = ""      // "mã ca" ở cuối đoạn → ghép vào đoạn sau
+            for line in collector.all + [""] {
+                let joined = pending.isEmpty ? line : pending + " " + line
+                let (keep, c) = line.isEmpty ? (joined, "") : GrossParser.splitDangling(joined)
+                pending = c
+                guard !keep.isEmpty else { continue }
+                for sig in GrossParser.apply(GrossParser.parse(keep), to: &fresh, paused: paused, corrections: corrections,
                                              cassetteReturn: cassetteReturn, inlineMarker: inlineMarker) {
                     if sig == .pause { paused = true } else if sig == .resume { paused = false }
                 }
