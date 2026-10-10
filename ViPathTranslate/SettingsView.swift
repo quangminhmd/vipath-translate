@@ -318,6 +318,8 @@ struct SettingsView: View {
                     Text("Dịch · dùng cho Dịch, Phụ đề, Chép lời")
                 }
 
+                MemorySection()
+
                 Section {
                     Picker("Nạp sẵn", selection: whisperChoice) {
                         Text("Không").tag("none")
@@ -366,6 +368,65 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Cài đặt")
+        }
+    }
+}
+
+// MARK: - Bộ nhớ
+
+/// RAM app đang dùng / còn trống (cập nhật mỗi giây) và mức cao nhất theo từng tab.
+struct MemorySection: View {
+    @State private var mon = MemoryMonitor.shared
+
+    var body: some View {
+        @Bindable var mon = mon
+        Section {
+            let used = Double(mon.footprint), total = Double(max(mon.limit, 1))
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("App đang dùng").font(.subheadline)
+                    Spacer()
+                    Text(MemoryMonitor.gb(mon.footprint)).font(.subheadline.monospacedDigit().bold())
+                }
+                ProgressView(value: min(used / total, 1))
+                    .tint(used / total > 0.85 ? .red : used / total > 0.7 ? .orange : .green)
+                HStack {
+                    Text("Còn trống \(MemoryMonitor.gb(mon.available))")
+                    Spacer()
+                    Text("Giới hạn ≈ \(MemoryMonitor.gb(mon.limit))")
+                }
+                .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+            }
+            if !mon.peakByTab.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Cao nhất theo tab").font(.caption).foregroundStyle(.secondary)
+                    ForEach(AppTab.allCases.filter { mon.peakByTab[$0] != nil }, id: \.self) { t in
+                        HStack {
+                            Label(t.title, systemImage: t.icon).font(.footnote)
+                            Spacer()
+                            Text(MemoryMonitor.gb(mon.peakByTab[t] ?? 0)).font(.footnote.monospacedDigit())
+                        }
+                    }
+                }
+            }
+            if mon.warningCount > 0, let at = mon.lastWarning {
+                Text("iOS cảnh báo sắp hết bộ nhớ: \(mon.warningCount) lần · gần nhất \(at.formatted(date: .omitted, time: .shortened))"
+                     + (mon.lastWarningAction.map { " — \($0)" } ?? ""))
+                    .font(.caption).foregroundStyle(.orange)
+            }
+            Toggle(isOn: $mon.releaseOnTabLeave) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Đóng Whisper khi rời tab giọng nói")
+                    Text("Rời Đại thể / Phụ đề / Chép lời sang tab khác (không đang ghi âm) → trả 1–2 GB RAM. Lần sau bấm mic phải nạp lại vài giây.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Button("Đặt lại số đo") { mon.resetPeaks() }
+                .font(.footnote)
+        } header: {
+            Text("Bộ nhớ")
+        } footer: {
+            Text("Luôn bật: khi iOS báo sắp hết bộ nhớ, app tự xoá bộ đệm GPU và đóng Whisper nếu tab đang mở không dùng đến. Bộ nhận dạng Apple chạy trong tiến trình của hệ thống, không tính vào RAM của app và được giải phóng ngay khi dừng ghi âm.")
         }
     }
 }

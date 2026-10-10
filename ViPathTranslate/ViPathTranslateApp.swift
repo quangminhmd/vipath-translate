@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import UIKit
 
@@ -53,6 +54,26 @@ struct ViPathTranslateApp: App {
         _transcribe = State(initialValue: TranscribeController(vm: vm))
     }
 
+    /// Các tab dùng Whisper.
+    private static let speechTabs: Set<AppTab> = [.gross, .captions, .transcribe]
+
+    /// Đang ghi âm / chép lời bằng Whisper ở đâu đó → không được đóng Whisper.
+    private var speechBusy: Bool {
+        gross.isRunning || gross.isRewriting || captions.isRunning || transcribe.isBusy || transcribe.isPreloading
+    }
+
+    /// iOS báo sắp hết bộ nhớ: trả bộ đệm GPU; đóng Whisper nếu tab đang mở không dùng nó.
+    private func handleMemoryWarning() {
+        var actions: [String] = []
+        if !Self.speechTabs.contains(router.tab), !speechBusy, WhisperRunner.shared.hasLoadedModel {
+            WhisperRunner.shared.unload()
+            actions.append("đã đóng Whisper")
+        }
+        actions.append("đã xoá bộ đệm GPU")
+        MemoryMonitor.shared.recordWarning(action: actions.joined(separator: ", "))
+        Task { await viewModel.releaseGPUCache() }
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()
@@ -62,7 +83,20 @@ struct ViPathTranslateApp: App {
             .environment(transcribe)
             .environment(gross)
             .environment(router)
+            .onChange(of: router.tab) { old, new in
+                MemoryMonitor.shared.tabChanged(to: new)
+                // Tuỳ chọn trong Cài đặt → Bộ nhớ: rời hẳn nhóm tab giọng nói → đóng Whisper.
+                if MemoryMonitor.shared.releaseOnTabLeave,
+                   Self.speechTabs.contains(old), !Self.speechTabs.contains(new),
+                   !speechBusy, WhisperRunner.shared.hasLoadedModel {
+                    WhisperRunner.shared.unload()
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in
+                handleMemoryWarning()
+            }
             .task {
+                MemoryMonitor.shared.tabChanged(to: router.tab)   // bắt đầu đo RAM từ lúc mở app
                 // "Tự nạp khi mở app" (tab Cài đặt): nạp mô hình dịch + Whisper đã chọn
                 if ModelLoader.autoLoadEnabled {
                     await ModelLoader.loadAll(vm: viewModel, gross: gross, compute: transcribe.whisperCompute,

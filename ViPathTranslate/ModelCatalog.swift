@@ -98,6 +98,9 @@ enum ModelChoice: String, CaseIterable, Identifiable, Codable {
         return UInt64(gb * 1_073_741_824)
     }
 
+    /// Mô hình lớn (Qwen 9B, TranslateGemma 12B): dịch theo đoạn ngắn hơn, nén KV cache để không vượt RAM.
+    var isLarge: Bool { requiredFreeBytes >= UInt64(6 * 1_073_741_824) }
+
     enum DeviceFit { case ok, tight, tooBig }
 
     /// Mức phù hợp với RAM của máy này.

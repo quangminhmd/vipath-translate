@@ -219,6 +219,11 @@ final class TranslatorViewModel {
         isLoading = false
     }
 
+    /// Trả bộ đệm GPU của mô hình dịch (gọi khi iOS báo sắp hết bộ nhớ).
+    func releaseGPUCache() async {
+        await engine.releaseCache()
+    }
+
     func pasteFromClipboard() {
         if let s = UIPasteboard.general.string { input = s }
     }
@@ -235,7 +240,9 @@ final class TranslatorViewModel {
         let dir = direction
         outputDirection = dir
         let style = glossary.styleGuide
-        segments = Segmenter.split(text).map {
+        // Mô hình lớn: đoạn ngắn hơn → prompt + KV cache nhỏ hơn, ít nguy cơ bị iOS đóng app.
+        let maxChars = (loadedModel?.isLarge ?? false) ? 600 : 900
+        segments = Segmenter.split(text, maxChars: maxChars).map {
             TranslatedSegment(id: $0.id, source: $0.text, passthrough: $0.passthrough,
                               hits: $0.passthrough ? [] : glossary.hits(in: $0.text, direction: dir))
         }

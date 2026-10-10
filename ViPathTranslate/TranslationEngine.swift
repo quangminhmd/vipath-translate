@@ -100,9 +100,16 @@ actor TranslationEngine {
             : PromptBuilder.translateGemmaRaw(text: text, hits: hits, direction: direction)
 
         return try await container.perform { context in
-            let parameters = GenerateParameters(maxTokens: maxTokens,
-                                                temperature: 0.0,      // dịch: tất định
-                                                repetitionPenalty: 1.05)
+            // Mô hình lớn: KV cache nén 8-bit sau 256 token đầu (giảm ~½ RAM ngữ cảnh, gần như không đổi bản dịch)
+            // và nạp prompt theo khối 256 token để đỉnh RAM lúc đọc đoạn dài thấp hơn.
+            let parameters = model.isLarge
+                ? GenerateParameters(maxTokens: maxTokens,
+                                     kvBits: 8, quantizedKVStart: 256,
+                                     temperature: 0.0, repetitionPenalty: 1.05,
+                                     prefillStepSize: 256)
+                : GenerateParameters(maxTokens: maxTokens,
+                                     temperature: 0.0,      // dịch: tất định
+                                     repetitionPenalty: 1.05)
             let input: LMInput
             switch family {
             case .qwen:
@@ -152,6 +159,7 @@ actor TranslationEngine {
                 }
             }
             stats.text = PromptBuilder.clean(output)
+            if model.isLarge { Memory.clearCache() }   // trả ngay bộ đệm của đoạn vừa dịch trước đoạn sau
             if stats.tokensPerSecond <= 0, let first = firstChunkAt {
                 let generated = context.tokenizer.encode(text: output).count
                 let genSeconds = max(Date().timeIntervalSince(first), 0.001)
@@ -162,6 +170,11 @@ actor TranslationEngine {
             }
             return stats
         }
+    }
+
+    /// Trả bộ đệm GPU chưa dùng cho hệ thống (khi iOS báo sắp hết bộ nhớ).
+    func releaseCache() {
+        if memoryConfigured { Memory.clearCache() }
     }
 
     /// Chạy thử 1 lượt rất ngắn ngay sau khi nạp: Metal biên dịch kernel và cấp phát bộ đệm ở đây,
