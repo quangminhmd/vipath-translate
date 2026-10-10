@@ -1,6 +1,6 @@
 # ViPath Translate — dịch y học / giải phẫu bệnh offline trên iPhone
 
-Ứng dụng SwiftUI dịch **Anh → Việt** chạy hoàn toàn trên iPhone 18 Pro Max bằng MLX, dựa trên glossary và hồ sơ ngành của dự án [Vitranslate](https://github.com/cloud1710/Vitranslate). Có ba chế độ: dán văn bản, dịch khi gõ, và phụ đề trực tiếp từ lời nói (giảng đường, hội thảo, Zoom/Teams). Với mỗi đoạn, app chỉ chèn những thuật ngữ glossary thực sự xuất hiện vào prompt, rồi kiểm tra lại bản dịch.
+Ứng dụng SwiftUI dịch **Anh → Việt** chạy hoàn toàn trên iPhone bằng MLX, dựa trên glossary và hồ sơ ngành của dự án [Vitranslate](https://github.com/cloud1710/Vitranslate). Có ba chế độ: dán văn bản, dịch khi gõ, và phụ đề trực tiếp từ lời nói (giảng đường, hội thảo, Zoom/Teams). Với mỗi đoạn, app chỉ chèn những thuật ngữ glossary thực sự xuất hiện vào prompt, rồi kiểm tra lại bản dịch.
 
 ## Cách hoạt động
 
