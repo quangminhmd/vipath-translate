@@ -75,6 +75,8 @@ App tối ưu cho **iPhone 18 Pro Max (12 GB RAM)** nhưng cài được trên c
 | ⚠︎ **Dùng được, giới hạn** | iPhone 16 Pro Max, 16 Pro, 16 Plus, 16 · iPhone 15 Pro Max, 15 Pro | 8 GB | Mô hình dịch ≤ 4B; Hunyuan-MT-7B sát giới hạn; luôn nạp lần lượt |
 | ✕ **Không khuyến cáo** | iPhone 15, 15 Plus và các đời trước có iOS 26 | ≤ 6 GB | Chỉ Qwen3.5-2B (TranslateGemma-4B sát giới hạn); phù hợp tra glossary, Dịch nhanh của Apple, nhận dạng giọng nói |
 
+**iPad (iPadOS 26 trở lên)** cũng cài được — cùng một app, bản build TestFlight cài được trên cả iPhone lẫn iPad. Trên iPad, các tab hiện ở thanh bên (không bị gom vào “Thêm”) và xoay được mọi chiều. Phân loại mô hình theo RAM giống iPhone: iPad có chip M (iPad Pro, iPad Air) hoặc A17 Pro (iPad mini) thường có 8 GB → nhóm “dùng được, giới hạn”; một số iPad Pro dung lượng lớn có 16 GB → đầy đủ. Phụ đề Zoom/Teams trên cùng iPad cũng dùng được (cần bật PiP hoặc Split View).
+
 Không chắc máy có bao nhiêu RAM: mở tab **Dịch → chọn mô hình**, đầu danh sách ghi *“Máy này: … GB RAM”*. Các dòng máy khác (vd. iPhone 17, iPhone Air) xếp vào nhóm theo con số này.
 
 ### Phân loại mô hình dịch theo RAM

@@ -39,6 +39,8 @@ struct ViPathTranslateApp: App {
                 Tab("Đã lưu", systemImage: "tray.full", value: AppTab.saved) { SavedListView() }
                 Tab("Cài đặt", systemImage: "gearshape", value: AppTab.settings) { SettingsView() }
             }
+            // iPad: thanh bên (sidebar) hiện đủ mọi tab, không bị gom vào "Thêm"; iPhone giữ thanh tab dưới
+            .tabViewStyle(.sidebarAdaptable)
             .tabBarMinimizeBehavior(.onScrollDown)
             .environment(viewModel)
             .environment(typing)
