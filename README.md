@@ -148,7 +148,7 @@ Văn bản ─► GPBSpeechNormalizer (1p/19q, pT1aN1b, p.R132H…) ─► sea-g
 1. **Thoát Xcode** (⌘Q).
 2. Mở **Terminal** và chạy:
    ```bash
-   cd ~/Documents/ViPathTranslate && bash Tools/build_vieneu_ios.sh
+   cd ~/Developer/ViPathTranslate && bash Tools/build_vieneu_ios.sh
    ```
    Script sẽ tự làm các việc sau:
    - Kiểm tra hoặc cài cmake, ninja (qua Homebrew) và Rust.

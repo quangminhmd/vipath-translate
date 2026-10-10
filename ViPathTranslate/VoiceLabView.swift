@@ -43,7 +43,7 @@ struct VoiceLabView: View {
         Section {
             if !VieNeuEngine.isCompiledIn {
                 Label("VieNeu chưa được build vào app", systemImage: "hammer")
-                Text("Trên Mac: thoát Xcode, mở Terminal và chạy\n`cd ~/Documents/ViPathTranslate && bash Tools/build_vieneu_ios.sh`\nrồi build lại app.")
+                Text("Trên Mac: thoát Xcode, mở Terminal và chạy\n`cd ~/Developer/ViPathTranslate && bash Tools/build_vieneu_ios.sh`\nrồi build lại app.")
                     .font(.caption).foregroundStyle(.secondary)
             } else if !VieNeuResources.missing.isEmpty {
                 Label("Thiếu tệp mô hình VieNeu", systemImage: "exclamationmark.triangle")

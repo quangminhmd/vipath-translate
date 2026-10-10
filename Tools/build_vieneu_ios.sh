@@ -3,7 +3,7 @@
 #  build_vieneu_ios.sh — dựng VieNeu-TTS cho ViPath (iPhone, offline)
 #
 #  Chạy trên Mac, từ thư mục gốc dự án:
-#      cd ~/Documents/ViPathTranslate && bash Tools/build_vieneu_ios.sh
+#      cd ~/Developer/ViPathTranslate && bash Tools/build_vieneu_ios.sh
 #
 #  Việc script làm:
 #    1. Kiểm tra / cài công cụ: Xcode CLT, Homebrew, cmake, ninja, Rust (rustup)
